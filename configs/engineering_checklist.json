@@ -1,0 +1,179 @@
+{
+  "title": "SARE Engineering Checklist",
+  "last_updated": "2026-02-19",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Set project governance baseline",
+      "status": "done",
+      "done_criteria": "Git repo + CI test gate + required passing checks"
+    },
+    {
+      "id": 2,
+      "title": "Choose one production runtime path (C++ core)",
+      "status": "done",
+      "done_criteria": "CLI/Web route solve path through C++ bindings when available, with Python fallback for portability",
+      "evidence": [
+        "python/sare/interface/web.py",
+        "python/sare/interface/cli.py",
+        "core/bindings/pybind_module.cpp"
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Complete PyBind surface for solving and training",
+      "status": "done",
+      "done_criteria": "Bindings expose graph/search config/results, default transform list, and beam/mcts execution with trace data",
+      "evidence": [
+        "core/bindings/pybind_module.cpp",
+        "core/search/search_state.hpp"
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Refactor concrete classes out of .cpp-only definitions",
+      "status": "done",
+      "done_criteria": "No test includes of .cpp implementation files",
+      "evidence": [
+        "core/transforms/algebra_transforms.hpp",
+        "core/transforms/logic_transforms.hpp",
+        "core/transforms/ast_transforms.hpp",
+        "core/energy/syntax_energy.hpp",
+        "core/energy/complexity_energy.hpp",
+        "core/energy/resource_energy.hpp",
+        "tests/test_transforms.cpp",
+        "tests/test_search.cpp",
+        "tests/test_energy.cpp"
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Make graph deltas fully reversible",
+      "status": "done",
+      "done_criteria": "Round-trip correctness for diff/apply/invert/undo",
+      "evidence": [
+        "core/graph/graph.hpp",
+        "core/graph/graph.cpp",
+        "core/graph/graph_diff.cpp",
+        "tests/test_graph.cpp"
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Fix sandbox evaluation correctness and safety",
+      "status": "done",
+      "done_criteria": "True baseline-vs-candidate search comparison, no const_cast mutation",
+      "evidence": [
+        "core/plasticity/sandbox_runner.cpp",
+        "tests/test_plasticity.cpp"
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Implement ModuleGenerator v1 candidate creation",
+      "status": "done",
+      "done_criteria": "Persistent failures produce concrete generated transform candidates",
+      "evidence": [
+        "core/plasticity/module_generator.cpp",
+        "tests/test_plasticity.cpp"
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Build benchmark and verifier suites",
+      "status": "done",
+      "done_criteria": "Executable benchmark sets with expected outcomes and regression reports",
+      "evidence": [
+        "benchmarks/algebra/smoke.json",
+        "benchmarks/logic/smoke.json",
+        "benchmarks/verifier/regression.json",
+        "scripts/run_benchmarks.py",
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Wire real heuristic learning into search",
+      "status": "done",
+      "done_criteria": "Beam scoring uses learned H(G), and training reads real logged graph features",
+      "evidence": [
+        "python/sare/engine.py",
+        "python/sare/heuristics/trainer.py",
+        "python/sare/logging/logger.py",
+        "python/sare/interface/cli.py",
+        "python/sare/interface/web.py"
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Ship a closed self-improvement loop with promotion gates",
+      "status": "done",
+      "done_criteria": "solve->log->mine->propose->gate->promote loop available via autonomous runner with benchmark rollback gate",
+      "evidence": [
+        "scripts/autonomous_loop.py",
+        "scripts/run_benchmarks.py",
+        "python/sare/learning/abstraction_learning.py",
+        "python/sare/meta/macro_registry.py"
+      ]
+    },
+    {
+      "id": 11,
+      "title": "M1 Runtime Unification",
+      "status": "done",
+      "done_criteria": "One solve API path selected for production, with deterministic fallback",
+      "evidence": [
+        "python/sare/interface/web.py",
+        "python/sare/interface/cli.py"
+      ]
+    },
+    {
+      "id": 12,
+      "title": "M2 Safe Promotion Gate",
+      "status": "done",
+      "done_criteria": "Candidate promotion compares baseline search vs candidate search safely",
+      "evidence": [
+        "core/plasticity/sandbox_runner.cpp",
+        "tests/test_plasticity.cpp"
+      ]
+    },
+    {
+      "id": 13,
+      "title": "M3 Candidate Generation v1",
+      "status": "done",
+      "done_criteria": "Failure signatures synthesize executable transform candidates",
+      "evidence": [
+        "core/plasticity/module_generator.cpp"
+      ]
+    },
+    {
+      "id": 14,
+      "title": "M4 Heuristic Inference in Search",
+      "status": "done",
+      "done_criteria": "Search consumes optional trained heuristic scorer with tunable kappa",
+      "evidence": [
+        "python/sare/engine.py",
+        "python/sare/interface/cli.py",
+        "python/sare/interface/web.py"
+      ]
+    },
+    {
+      "id": 15,
+      "title": "M5 Autonomous Loop Runner",
+      "status": "done",
+      "done_criteria": "Headless loop runs solve/log/learn/promote with cycle report output",
+      "evidence": [
+        "scripts/autonomous_loop.py"
+      ]
+    },
+    {
+      "id": 16,
+      "title": "M6 Benchmarks and Hard Gates",
+      "status": "done",
+      "done_criteria": "Regression-aware benchmark suite can block unsafe promotions",
+      "evidence": [
+        "benchmarks/verifier/regression.json",
+        "scripts/run_benchmarks.py"
+      ]
+    }
+  ]
+}

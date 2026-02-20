@@ -1,0 +1,11 @@
+{
+  "suite": "logic_smoke",
+  "description": "Logical simplification smoke tests.",
+  "cases": [
+    {
+      "id": "double_negation",
+      "expression": "-(-x) + 0",
+      "min_reduction_pct": 10.0
+    }
+  ]
+}

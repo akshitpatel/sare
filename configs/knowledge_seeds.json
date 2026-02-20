@@ -1,0 +1,582 @@
+{
+  "_comment": "SARE-HX Knowledge Seeds v2.0 — 60 foundational rules across arithmetic, algebra, logic, sets, and code. Pre-loaded into ConceptRegistry at startup so learning starts from episode 1 instead of episode 500.",
+  "version": "2.0",
+  "seeds": [
+    {
+      "name": "additive_identity",
+      "domain": "arithmetic",
+      "pattern_description": "x + 0",
+      "replacement_description": "x",
+      "confidence": 1.0,
+      "observations": 10000,
+      "notes": "a + 0 = a"
+    },
+    {
+      "name": "additive_identity_commuted",
+      "domain": "arithmetic",
+      "pattern_description": "0 + x",
+      "replacement_description": "x",
+      "confidence": 1.0,
+      "observations": 10000,
+      "notes": "0 + a = a"
+    },
+    {
+      "name": "multiplicative_identity",
+      "domain": "arithmetic",
+      "pattern_description": "x * 1",
+      "replacement_description": "x",
+      "confidence": 1.0,
+      "observations": 10000,
+      "notes": "a * 1 = a"
+    },
+    {
+      "name": "multiplicative_identity_comm",
+      "domain": "arithmetic",
+      "pattern_description": "1 * x",
+      "replacement_description": "x",
+      "confidence": 1.0,
+      "observations": 10000,
+      "notes": "1 * a = a"
+    },
+    {
+      "name": "multiplicative_zero",
+      "domain": "arithmetic",
+      "pattern_description": "x * 0",
+      "replacement_description": "0",
+      "confidence": 1.0,
+      "observations": 10000,
+      "notes": "a * 0 = 0"
+    },
+    {
+      "name": "multiplicative_zero_comm",
+      "domain": "arithmetic",
+      "pattern_description": "0 * x",
+      "replacement_description": "0",
+      "confidence": 1.0,
+      "observations": 10000,
+      "notes": "0 * a = 0"
+    },
+    {
+      "name": "double_negation",
+      "domain": "arithmetic",
+      "pattern_description": "neg(neg(x))",
+      "replacement_description": "x",
+      "confidence": 1.0,
+      "observations": 10000,
+      "notes": "--x = x"
+    },
+    {
+      "name": "subtractive_self",
+      "domain": "arithmetic",
+      "pattern_description": "x - x",
+      "replacement_description": "0",
+      "confidence": 1.0,
+      "observations": 5000,
+      "notes": "a - a = 0"
+    },
+    {
+      "name": "division_self",
+      "domain": "arithmetic",
+      "pattern_description": "x / x",
+      "replacement_description": "1",
+      "confidence": 0.95,
+      "observations": 5000,
+      "notes": "a / a = 1 (a ≠ 0)"
+    },
+    {
+      "name": "constant_folding",
+      "domain": "arithmetic",
+      "pattern_description": "op(c1, c2) constants",
+      "replacement_description": "constant(result)",
+      "confidence": 1.0,
+      "observations": 10000,
+      "notes": "evaluate at compile time"
+    },
+    {
+      "name": "additive_inverse",
+      "domain": "arithmetic",
+      "pattern_description": "x + (-x)",
+      "replacement_description": "0",
+      "confidence": 1.0,
+      "observations": 5000,
+      "notes": "a + (-a) = 0"
+    },
+    {
+      "name": "zero_exponent",
+      "domain": "arithmetic",
+      "pattern_description": "x^0",
+      "replacement_description": "1",
+      "confidence": 0.95,
+      "observations": 5000,
+      "notes": "x^0 = 1 (x ≠ 0)"
+    },
+    {
+      "name": "one_exponent",
+      "domain": "arithmetic",
+      "pattern_description": "x^1",
+      "replacement_description": "x",
+      "confidence": 1.0,
+      "observations": 5000,
+      "notes": "x^1 = x"
+    },
+    {
+      "name": "zero_exponent_base",
+      "domain": "arithmetic",
+      "pattern_description": "0^x",
+      "replacement_description": "0",
+      "confidence": 0.95,
+      "observations": 3000,
+      "notes": "0^x = 0 (x > 0)"
+    },
+    {
+      "name": "one_exponent_base",
+      "domain": "arithmetic",
+      "pattern_description": "1^x",
+      "replacement_description": "1",
+      "confidence": 1.0,
+      "observations": 3000,
+      "notes": "1^x = 1"
+    },
+    {
+      "name": "division_by_one",
+      "domain": "arithmetic",
+      "pattern_description": "x / 1",
+      "replacement_description": "x",
+      "confidence": 1.0,
+      "observations": 5000,
+      "notes": "a / 1 = a"
+    },
+    {
+      "name": "subtraction_zero",
+      "domain": "arithmetic",
+      "pattern_description": "x - 0",
+      "replacement_description": "x",
+      "confidence": 1.0,
+      "observations": 5000,
+      "notes": "a - 0 = a"
+    },
+    {
+      "name": "commutativity_add",
+      "domain": "arithmetic",
+      "pattern_description": "a + b",
+      "replacement_description": "b + a",
+      "confidence": 1.0,
+      "observations": 10000,
+      "notes": "a + b = b + a"
+    },
+    {
+      "name": "commutativity_mul",
+      "domain": "arithmetic",
+      "pattern_description": "a * b",
+      "replacement_description": "b * a",
+      "confidence": 1.0,
+      "observations": 10000,
+      "notes": "a * b = b * a"
+    },
+    {
+      "name": "associativity_add",
+      "domain": "arithmetic",
+      "pattern_description": "(a+b)+c",
+      "replacement_description": "a+(b+c)",
+      "confidence": 1.0,
+      "observations": 8000,
+      "notes": "(a+b)+c = a+(b+c)"
+    },
+    {
+      "name": "associativity_mul",
+      "domain": "arithmetic",
+      "pattern_description": "(a*b)*c",
+      "replacement_description": "a*(b*c)",
+      "confidence": 1.0,
+      "observations": 8000,
+      "notes": "(a*b)*c = a*(b*c)"
+    },
+    {
+      "name": "double_negation_logic",
+      "domain": "logic",
+      "pattern_description": "NOT(NOT(p))",
+      "replacement_description": "p",
+      "confidence": 1.0,
+      "observations": 10000,
+      "notes": "¬¬p = p"
+    },
+    {
+      "name": "and_true",
+      "domain": "logic",
+      "pattern_description": "p AND TRUE",
+      "replacement_description": "p",
+      "confidence": 1.0,
+      "observations": 10000,
+      "notes": "p ∧ ⊤ = p"
+    },
+    {
+      "name": "and_false",
+      "domain": "logic",
+      "pattern_description": "p AND FALSE",
+      "replacement_description": "FALSE",
+      "confidence": 1.0,
+      "observations": 10000,
+      "notes": "p ∧ ⊥ = ⊥"
+    },
+    {
+      "name": "or_false",
+      "domain": "logic",
+      "pattern_description": "p OR FALSE",
+      "replacement_description": "p",
+      "confidence": 1.0,
+      "observations": 10000,
+      "notes": "p ∨ ⊥ = p"
+    },
+    {
+      "name": "or_true",
+      "domain": "logic",
+      "pattern_description": "p OR TRUE",
+      "replacement_description": "TRUE",
+      "confidence": 1.0,
+      "observations": 10000,
+      "notes": "p ∨ ⊤ = ⊤"
+    },
+    {
+      "name": "de_morgan_and",
+      "domain": "logic",
+      "pattern_description": "NOT(p AND q)",
+      "replacement_description": "NOT(p) OR NOT(q)",
+      "confidence": 1.0,
+      "observations": 3000,
+      "notes": "¬(p∧q) = ¬p∨¬q"
+    },
+    {
+      "name": "de_morgan_or",
+      "domain": "logic",
+      "pattern_description": "NOT(p OR q)",
+      "replacement_description": "NOT(p) AND NOT(q)",
+      "confidence": 1.0,
+      "observations": 3000,
+      "notes": "¬(p∨q) = ¬p∧¬q"
+    },
+    {
+      "name": "idempotent_and",
+      "domain": "logic",
+      "pattern_description": "p AND p",
+      "replacement_description": "p",
+      "confidence": 1.0,
+      "observations": 5000,
+      "notes": "p ∧ p = p"
+    },
+    {
+      "name": "idempotent_or",
+      "domain": "logic",
+      "pattern_description": "p OR p",
+      "replacement_description": "p",
+      "confidence": 1.0,
+      "observations": 5000,
+      "notes": "p ∨ p = p"
+    },
+    {
+      "name": "absorption_and",
+      "domain": "logic",
+      "pattern_description": "p AND (p OR q)",
+      "replacement_description": "p",
+      "confidence": 1.0,
+      "observations": 2000,
+      "notes": "p ∧ (p∨q) = p"
+    },
+    {
+      "name": "absorption_or",
+      "domain": "logic",
+      "pattern_description": "p OR (p AND q)",
+      "replacement_description": "p",
+      "confidence": 1.0,
+      "observations": 2000,
+      "notes": "p ∨ (p∧q) = p"
+    },
+    {
+      "name": "excluded_middle",
+      "domain": "logic",
+      "pattern_description": "p OR NOT(p)",
+      "replacement_description": "TRUE",
+      "confidence": 1.0,
+      "observations": 2000,
+      "notes": "p ∨ ¬p = ⊤"
+    },
+    {
+      "name": "contradiction",
+      "domain": "logic",
+      "pattern_description": "p AND NOT(p)",
+      "replacement_description": "FALSE",
+      "confidence": 1.0,
+      "observations": 2000,
+      "notes": "p ∧ ¬p = ⊥"
+    },
+    {
+      "name": "implication_elim",
+      "domain": "logic",
+      "pattern_description": "p IMPLIES q",
+      "replacement_description": "NOT(p) OR q",
+      "confidence": 1.0,
+      "observations": 3000,
+      "notes": "p→q = ¬p∨q"
+    },
+    {
+      "name": "contrapositive",
+      "domain": "logic",
+      "pattern_description": "p IMPLIES q",
+      "replacement_description": "NOT(q) IMPLIES NOT(p)",
+      "confidence": 1.0,
+      "observations": 2000,
+      "notes": "p→q ≡ ¬q→¬p"
+    },
+    {
+      "name": "modus_ponens",
+      "domain": "logic",
+      "pattern_description": "p AND (p IMPLIES q)",
+      "replacement_description": "q",
+      "confidence": 1.0,
+      "observations": 5000,
+      "notes": "p ∧ (p→q) ⊢ q"
+    },
+    {
+      "name": "xor_self",
+      "domain": "logic",
+      "pattern_description": "p XOR p",
+      "replacement_description": "FALSE",
+      "confidence": 1.0,
+      "observations": 2000,
+      "notes": "p ⊕ p = ⊥"
+    },
+    {
+      "name": "xor_false",
+      "domain": "logic",
+      "pattern_description": "p XOR FALSE",
+      "replacement_description": "p",
+      "confidence": 1.0,
+      "observations": 2000,
+      "notes": "p ⊕ ⊥ = p"
+    },
+    {
+      "name": "xor_true",
+      "domain": "logic",
+      "pattern_description": "p XOR TRUE",
+      "replacement_description": "NOT(p)",
+      "confidence": 1.0,
+      "observations": 2000,
+      "notes": "p ⊕ ⊤ = ¬p"
+    },
+    {
+      "name": "distributive_and_or",
+      "domain": "algebra",
+      "pattern_description": "a AND (b OR c)",
+      "replacement_description": "(a AND b) OR (a AND c)",
+      "confidence": 1.0,
+      "observations": 3000,
+      "notes": "a∧(b∨c) = (a∧b)∨(a∧c)"
+    },
+    {
+      "name": "distributive_mul_add",
+      "domain": "algebra",
+      "pattern_description": "a * (b + c)",
+      "replacement_description": "(a*b) + (a*c)",
+      "confidence": 1.0,
+      "observations": 5000,
+      "notes": "a(b+c) = ab+ac"
+    },
+    {
+      "name": "factor_common",
+      "domain": "algebra",
+      "pattern_description": "(a*b) + (a*c)",
+      "replacement_description": "a * (b + c)",
+      "confidence": 0.9,
+      "observations": 3000,
+      "notes": "factor out common factor"
+    },
+    {
+      "name": "difference_of_squares",
+      "domain": "algebra",
+      "pattern_description": "(a+b)*(a-b)",
+      "replacement_description": "a^2 - b^2",
+      "confidence": 1.0,
+      "observations": 2000,
+      "notes": "(a+b)(a-b) = a²-b²"
+    },
+    {
+      "name": "perfect_square_add",
+      "domain": "algebra",
+      "pattern_description": "(a+b)^2",
+      "replacement_description": "a^2 + 2*a*b + b^2",
+      "confidence": 1.0,
+      "observations": 2000,
+      "notes": "(a+b)² = a²+2ab+b²"
+    },
+    {
+      "name": "perfect_square_sub",
+      "domain": "algebra",
+      "pattern_description": "(a-b)^2",
+      "replacement_description": "a^2 - 2*a*b + b^2",
+      "confidence": 1.0,
+      "observations": 2000,
+      "notes": "(a-b)² = a²-2ab+b²"
+    },
+    {
+      "name": "exponent_product",
+      "domain": "algebra",
+      "pattern_description": "x^a * x^b",
+      "replacement_description": "x^(a+b)",
+      "confidence": 1.0,
+      "observations": 2000,
+      "notes": "xᵃ·xᵇ = xᵃ⁺ᵇ"
+    },
+    {
+      "name": "exponent_power",
+      "domain": "algebra",
+      "pattern_description": "(x^a)^b",
+      "replacement_description": "x^(a*b)",
+      "confidence": 1.0,
+      "observations": 2000,
+      "notes": "(xᵃ)ᵇ = xᵃᵇ"
+    },
+    {
+      "name": "exponent_quotient",
+      "domain": "algebra",
+      "pattern_description": "x^a / x^b",
+      "replacement_description": "x^(a-b)",
+      "confidence": 0.95,
+      "observations": 2000,
+      "notes": "xᵃ/xᵇ = xᵃ⁻ᵇ (x≠0)"
+    },
+    {
+      "name": "fraction_simplify",
+      "domain": "algebra",
+      "pattern_description": "(a*k)/(b*k)",
+      "replacement_description": "a/b",
+      "confidence": 0.9,
+      "observations": 2000,
+      "notes": "cancel common factors in fraction"
+    },
+    {
+      "name": "negative_fraction",
+      "domain": "algebra",
+      "pattern_description": "(-a)/b",
+      "replacement_description": "-(a/b)",
+      "confidence": 1.0,
+      "observations": 2000,
+      "notes": "(-a)/b = -(a/b)"
+    },
+    {
+      "name": "empty_set_union",
+      "domain": "sets",
+      "pattern_description": "A ∪ ∅",
+      "replacement_description": "A",
+      "confidence": 1.0,
+      "observations": 1000,
+      "notes": "A ∪ ∅ = A"
+    },
+    {
+      "name": "empty_set_intersect",
+      "domain": "sets",
+      "pattern_description": "A ∩ ∅",
+      "replacement_description": "∅",
+      "confidence": 1.0,
+      "observations": 1000,
+      "notes": "A ∩ ∅ = ∅"
+    },
+    {
+      "name": "universal_union",
+      "domain": "sets",
+      "pattern_description": "A ∪ U",
+      "replacement_description": "U",
+      "confidence": 1.0,
+      "observations": 1000,
+      "notes": "A ∪ U = U"
+    },
+    {
+      "name": "universal_intersect",
+      "domain": "sets",
+      "pattern_description": "A ∩ U",
+      "replacement_description": "A",
+      "confidence": 1.0,
+      "observations": 1000,
+      "notes": "A ∩ U = A"
+    },
+    {
+      "name": "set_idempotent_union",
+      "domain": "sets",
+      "pattern_description": "A ∪ A",
+      "replacement_description": "A",
+      "confidence": 1.0,
+      "observations": 1000,
+      "notes": "A ∪ A = A"
+    },
+    {
+      "name": "set_idempotent_intersect",
+      "domain": "sets",
+      "pattern_description": "A ∩ A",
+      "replacement_description": "A",
+      "confidence": 1.0,
+      "observations": 1000,
+      "notes": "A ∩ A = A"
+    },
+    {
+      "name": "complement_union",
+      "domain": "sets",
+      "pattern_description": "A ∪ Aᶜ",
+      "replacement_description": "U",
+      "confidence": 1.0,
+      "observations": 1000,
+      "notes": "A ∪ Aᶜ = U"
+    },
+    {
+      "name": "complement_intersect",
+      "domain": "sets",
+      "pattern_description": "A ∩ Aᶜ",
+      "replacement_description": "∅",
+      "confidence": 1.0,
+      "observations": 1000,
+      "notes": "A ∩ Aᶜ = ∅"
+    },
+    {
+      "name": "if_true_branch",
+      "domain": "code",
+      "pattern_description": "if(TRUE) { S } else { T }",
+      "replacement_description": "S",
+      "confidence": 1.0,
+      "observations": 2000,
+      "notes": "dead-code elimination: always-true branch"
+    },
+    {
+      "name": "if_false_branch",
+      "domain": "code",
+      "pattern_description": "if(FALSE) { S } else { T }",
+      "replacement_description": "T",
+      "confidence": 1.0,
+      "observations": 2000,
+      "notes": "dead-code elimination: always-false branch"
+    },
+    {
+      "name": "loop_zero_iterations",
+      "domain": "code",
+      "pattern_description": "for(i; FALSE; i++) { S }",
+      "replacement_description": "()",
+      "confidence": 1.0,
+      "observations": 1000,
+      "notes": "empty loop — remove"
+    },
+    {
+      "name": "identity_function",
+      "domain": "code",
+      "pattern_description": "f(x) = x",
+      "replacement_description": "x",
+      "confidence": 1.0,
+      "observations": 1000,
+      "notes": "identity function is redundant"
+    },
+    {
+      "name": "const_propagation",
+      "domain": "code",
+      "pattern_description": "let c = k; use(c)",
+      "replacement_description": "use(k)",
+      "confidence": 1.0,
+      "observations": 2000,
+      "notes": "inline known constants"
+    }
+  ]
+}

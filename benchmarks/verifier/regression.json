@@ -1,0 +1,16 @@
+{
+  "suite": "regression_guardrail",
+  "description": "Guardrail suite to catch regressions where search increases energy.",
+  "cases": [
+    {
+      "id": "no_regression_x_plus_zero",
+      "expression": "x + 0",
+      "max_energy_increase": 0.0
+    },
+    {
+      "id": "no_regression_nested",
+      "expression": "((x + 0) * 1) + ((y * 1) + 0)",
+      "max_energy_increase": 0.0
+    }
+  ]
+}

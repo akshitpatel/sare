@@ -1,0 +1,26 @@
+{
+  "suite": "algebra_smoke",
+  "description": "Core algebra simplification benchmarks.",
+  "cases": [
+    {
+      "id": "add_zero",
+      "expression": "x + 0",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "mul_one",
+      "expression": "x * 1",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "const_fold",
+      "expression": "3 + 4",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "mixed",
+      "expression": "(x + 0) * 1 + (3 + 4)",
+      "min_reduction_pct": 25.0
+    }
+  ]
+}

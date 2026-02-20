@@ -1,0 +1,37 @@
+# SARE-HX Default Configuration
+# These are the default energy weights and search parameters.
+
+energy:
+  weights:
+    alpha: 1.0     # syntax error weight
+    beta: 1.0      # constraint violation weight
+    gamma: 1.0     # test failure weight
+    delta: 0.5     # complexity penalty weight
+    lambda: 0.3    # resource penalty weight
+    mu: 0.2        # uncertainty penalty weight
+
+search:
+  algorithm: beam_search    # beam_search | mcts | hybrid
+  beam_width: 8
+  max_depth: 50
+  kappa: 0.1               # heuristic weight in scoring
+  budget_seconds: 30.0
+  max_expansions: 10000
+  utility_threshold: -0.5  # minimum transform utility
+
+logging:
+  output: logs/solves.jsonl
+  verbose: false
+
+# Phase activation flags
+phases:
+  graph: true          # Phase 1 ✓
+  energy: true         # Phase 1 ✓
+  transforms: true     # Phase 1 ✓
+  search: true         # Phase 1 ✓
+  verification: true   # Phase 1 ✓
+  memory: false        # Phase 2
+  heuristics: false    # Phase 2
+  abstraction: false   # Phase 3
+  plasticity: false    # Phase 4
+  causal: false        # Phase 5

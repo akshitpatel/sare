@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "macros": [
+    {
+      "name": "macro_add_const_f9f3d713",
+      "steps": [
+        "add_zero_elim",
+        "const_fold"
+      ],
+      "created_at": "2026-02-19T16:09:22Z",
+      "frequency": 3,
+      "enabled": true
+    },
+    {
+      "name": "macro_add_mul_8da76e79",
+      "steps": [
+        "add_zero_elim",
+        "mul_one_elim"
+      ],
+      "created_at": "2026-02-19T14:59:23Z",
+      "frequency": 2,
+      "enabled": true
+    }
+  ]
+}
