@@ -53,8 +53,8 @@ _OPERATOR_WORDS: Dict[str, str] = {
 }
 
 _LOGIC_WORDS: Dict[str, str] = {
-    "and": "and", "or": "or", "not": "not",
-    "true": "True", "false": "False",
+    "and": "AND", "or": "OR", "not": "NOT",
+    "true": "TRUE", "false": "FALSE",
     "xor": "^",
 }
 

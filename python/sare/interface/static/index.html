@@ -2,31 +2,30 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>SARE-HX · Cognitive Control Center</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
-    rel="stylesheet">
+    href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet" />
   <style>
     :root {
-      --bg: #0a0b0f;
-      --bg2: #111318;
-      --bg3: #181b22;
-      --glass: rgba(255, 255, 255, 0.04);
-      --border: rgba(255, 255, 255, 0.08);
-      --cyan: #22d3ee;
-      --green: #34d399;
-      --purple: #a78bfa;
-      --pink: #f472b6;
-      --yellow: #fbbf24;
-      --red: #f87171;
-      --text1: #f1f5f9;
-      --text2: #94a3b8;
-      --text3: #475569;
-      --r: 14px;
-      --r2: 10px;
+      --bg: #040608;
+      --surface: #0b1016;
+      --panel: #111820;
+      --border: #1a2432;
+      --border-light: #283548;
+      --accent: #00e5ff;
+      --accent-faded: #00e5ff22;
+      --accent2: #ff2a6d;
+      --accent3: #05d59e;
+      --accent4: #ffb800;
+      --text: #d1d5db;
+      --text-bright: #f3f4f6;
+      --muted: #6b7280;
+      --glow: 0 0 10px rgba(0, 229, 255, 0.4);
+      --glow-red: 0 0 10px rgba(255, 42, 109, 0.4);
     }
 
     * {
@@ -37,1407 +36,991 @@
 
     body {
       background: var(--bg);
-      color: var(--text1);
-      font-family: 'Inter', system-ui, sans-serif;
-      min-height: 100vh
-    }
-
-    .topbar {
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      height: 100vh;
+      overflow: hidden;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 28px;
-      height: 52px;
-      background: rgba(10, 11, 15, .92);
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      backdrop-filter: blur(12px)
+      flex-direction: column
     }
 
-    .logo {
-      font-weight: 800;
-      font-size: 1rem;
-      background: linear-gradient(135deg, var(--cyan), var(--purple));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent
+    ::selection {
+      background: var(--accent-faded);
+      color: var(--accent)
     }
 
-    .ticker {
-      display: flex;
-      gap: 16px;
-      font-size: 0.72rem;
-      color: var(--text2)
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px
     }
 
-    .tick-val {
-      font-family: 'JetBrains Mono', monospace;
-      color: var(--cyan);
-      font-weight: 600
+    ::-webkit-scrollbar-track {
+      background: var(--bg)
     }
 
-    .dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--green);
-      animation: pulse 2s infinite
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-light);
+      border-radius: 2px
     }
 
-    @keyframes pulse {
-
-      0%,
-      100% {
-        opacity: 1
-      }
-
-      50% {
-        opacity: .35
-      }
+    /* ── Typography & Tags ── */
+    .mono {
+      font-family: 'JetBrains Mono', monospace
     }
 
-    .tab-nav {
-      display: flex;
-      gap: 2px;
-      padding: 12px 22px 0;
-      overflow-x: auto;
-      scrollbar-width: none;
-      background: var(--bg2);
-      border-bottom: 1px solid var(--border)
-    }
-
-    .tab-nav::-webkit-scrollbar {
-      display: none
-    }
-
-    .tb {
-      padding: 8px 15px;
-      border: none;
-      background: transparent;
-      color: var(--text2);
-      font-size: 0.78rem;
-      font-weight: 500;
-      cursor: pointer;
-      border-radius: 8px 8px 0 0;
-      border-bottom: 2px solid transparent;
-      transition: all .18s;
-      white-space: nowrap
-    }
-
-    .tb:hover {
-      background: var(--glass);
-      color: var(--text1)
-    }
-
-    .tb.active {
-      background: var(--glass);
-      color: var(--cyan);
-      border-bottom-color: var(--cyan)
-    }
-
-    main {
-      max-width: 1160px;
-      margin: 0 auto;
-      padding: 22px
-    }
-
-    .tp {
-      display: none
-    }
-
-    .tp.active {
-      display: block
-    }
-
-    .g2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px
-    }
-
-    .g3 {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 16px
-    }
-
-    .cs2 {
-      grid-column: span 2
-    }
-
-    .card {
-      background: var(--glass);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 18px;
-      margin-bottom: 16px
-    }
-
-    .card-hd {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 14px
-    }
-
-    .card-title {
-      font-weight: 700;
-      font-size: 0.88rem
-    }
-
-    .sep {
-      height: 1px;
-      background: var(--border);
-      margin: 12px 0
-    }
-
-    .sr {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 14px
-    }
-
-    .st {
-      flex: 1;
-      min-width: 80px;
-      text-align: center;
-      padding: 13px 8px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--border);
-      border-radius: var(--r2)
-    }
-
-    .sv {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.35rem;
-      font-weight: 700
-    }
-
-    .sl {
-      font-size: 0.66rem;
-      color: var(--text3);
+    .display {
+      font-family: 'Chakra Petch', sans-serif;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-top: 4px
-    }
-
-    .c-cyan {
-      color: var(--cyan)
-    }
-
-    .c-green {
-      color: var(--green)
-    }
-
-    .c-purple {
-      color: var(--purple)
-    }
-
-    .c-yellow {
-      color: var(--yellow)
-    }
-
-    .c-red {
-      color: var(--red)
-    }
-
-    .c-pink {
-      color: var(--pink)
-    }
-
-    .ir {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 10px
-    }
-
-    .inp {
-      flex: 1;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid var(--border);
-      border-radius: var(--r2);
-      padding: 10px 14px;
-      color: var(--text1);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9rem;
-      outline: none;
-      transition: border .2s
-    }
-
-    .inp:focus {
-      border-color: var(--cyan)
-    }
-
-    .inp::placeholder {
-      color: var(--text3)
-    }
-
-    .btn {
-      padding: 9px 18px;
-      border: none;
-      border-radius: var(--r2);
-      font-weight: 600;
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: all .18s;
-      white-space: nowrap
-    }
-
-    .btn-p {
-      background: linear-gradient(135deg, #0891b2, #6d28d9);
-      color: #fff
-    }
-
-    .btn-p:hover {
-      opacity: .82;
-      transform: translateY(-1px)
-    }
-
-    .btn-p.ld {
-      opacity: .55;
-      cursor: default
-    }
-
-    .btn-g {
-      background: var(--glass);
-      border: 1px solid var(--border);
-      color: var(--text2)
-    }
-
-    .btn-g:hover {
-      color: var(--text1);
-      border-color: var(--cyan)
-    }
-
-    .btn-sm {
-      padding: 5px 11px;
-      font-size: 0.73rem
-    }
-
-    .chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 12px
-    }
-
-    .chip {
-      padding: 3px 11px;
-      border-radius: 20px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border);
-      color: var(--text2);
-      font-size: 0.73rem;
-      cursor: pointer;
-      transition: all .18s
-    }
-
-    .chip:hover {
-      background: rgba(34, 211, 238, .1);
-      border-color: var(--cyan);
-      color: var(--cyan)
-    }
-
-    .tc {
-      padding: 3px 9px;
-      border-radius: 6px;
-      background: rgba(34, 211, 238, .08);
-      border: 1px solid rgba(34, 211, 238, .2);
-      color: var(--cyan);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.68rem
-    }
-
-    .tc.concept {
-      background: rgba(167, 139, 250, .1);
-      border-color: rgba(167, 139, 250, .3);
-      color: var(--purple)
-    }
-
-    .ebar {
-      height: 5px;
-      background: rgba(255, 255, 255, .06);
-      border-radius: 3px;
-      margin: 7px 0
-    }
-
-    .efill {
-      height: 100%;
-      border-radius: 3px;
-      background: linear-gradient(90deg, var(--cyan), var(--green));
-      transition: width .55s ease
-    }
-
-    .pw {
-      height: 4px;
-      background: rgba(255, 255, 255, .06);
-      border-radius: 2px;
-      margin-top: 4px
-    }
-
-    .pb {
-      height: 100%;
-      border-radius: 2px;
-      background: var(--cyan);
-      transition: width .4s
+      letter-spacing: 0.05em
     }
 
     .badge {
-      padding: 2px 8px;
-      border-radius: 20px;
-      font-size: 0.66rem;
-      font-weight: 600
-    }
-
-    .b-c {
-      background: rgba(34, 211, 238, .12);
-      color: var(--cyan);
-      border: 1px solid rgba(34, 211, 238, .25)
-    }
-
-    .b-g {
-      background: rgba(52, 211, 153, .12);
-      color: var(--green);
-      border: 1px solid rgba(52, 211, 153, .25)
-    }
-
-    .b-p {
-      background: rgba(167, 139, 250, .1);
-      color: var(--purple);
-      border: 1px solid rgba(167, 139, 250, .25)
-    }
-
-    .b-y {
-      background: rgba(251, 191, 36, .1);
-      color: var(--yellow);
-      border: 1px solid rgba(251, 191, 36, .25)
-    }
-
-    .b-r {
-      background: rgba(248, 113, 113, .1);
-      color: var(--red);
-      border: 1px solid rgba(248, 113, 113, .25)
-    }
-
-    .ri {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      padding: 9px 0;
-      border-bottom: 1px solid var(--border)
-    }
-
-    .ri:last-child {
-      border-bottom: none
-    }
-
-    .rim {
-      flex: 1;
-      min-width: 0
-    }
-
-    .rt {
-      font-weight: 600;
-      font-size: 0.82rem;
-      margin-bottom: 2px
-    }
-
-    .rs {
-      font-size: 0.72rem;
-      color: var(--text2);
-      line-height: 1.5
-    }
-
-    .ps {
-      padding: 9px 13px;
-      margin-bottom: 7px;
-      background: rgba(34, 211, 238, .04);
-      border: 1px solid rgba(34, 211, 238, .12);
-      border-radius: 10px;
-      border-left: 3px solid var(--cyan)
-    }
-
-    .ps-t {
-      font-weight: 700;
-      font-size: 0.8rem;
-      margin-bottom: 3px
-    }
-
-    .ps-s {
-      font-size: 0.72rem;
-      color: var(--text2);
-      margin-bottom: 2px
-    }
-
-    .ps-c {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.68rem;
-      color: var(--cyan)
-    }
-
-    .cr {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 9px;
-      margin-bottom: 9px;
-      font-size: 0.76rem
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      border: 1px solid
     }
 
-    .cl {
-      width: 100px;
-      color: var(--text2);
+    .b-cyan {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--accent-faded)
+    }
+
+    .b-red {
+      color: var(--accent2);
+      border-color: var(--accent2);
+      background: rgba(255, 42, 109, 0.1)
+    }
+
+    .b-green {
+      color: var(--accent3);
+      border-color: var(--accent3);
+      background: rgba(5, 213, 158, 0.1)
+    }
+
+    .b-amber {
+      color: var(--accent4);
+      border-color: var(--accent4);
+      background: rgba(255, 184, 0, 0.1)
+    }
+
+    /* ── Layout Framework ── */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 44px;
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      background: var(--surface);
       flex-shrink: 0
     }
 
-    .ct {
+    .logo {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-bright);
+      display: flex;
+      align-items: center;
+      gap: 12px
+    }
+
+    .logo .version {
+      color: var(--muted);
+      font-size: 10px;
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono'
+    }
+
+    .top-stats {
+      display: flex;
+      gap: 20px;
+      font-size: 11px
+    }
+
+    .ts-item {
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .ts-val {
+      color: var(--accent);
+      font-weight: 600;
+      font-family: 'JetBrains Mono'
+    }
+
+    .ts-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent3);
+      box-shadow: 0 0 8px var(--accent3)
+    }
+
+    .workspace {
+      display: flex;
       flex: 1;
-      height: 5px;
-      background: rgba(255, 255, 255, .06);
-      border-radius: 3px
+      overflow: hidden
     }
 
-    .cf {
-      height: 100%;
-      border-radius: 3px;
-      transition: width .5s
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 56px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 0;
+      gap: 8px;
+      z-index: 10
     }
 
-    .cp {
-      width: 32px;
-      text-align: right;
-      color: var(--text1);
+    .nav-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 18px;
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative
+    }
+
+    .nav-btn:hover {
+      color: var(--text-bright);
+      background: var(--border)
+    }
+
+    .nav-btn.active {
+      color: var(--accent);
+      border-color: var(--border-light);
+      background: var(--accent-faded)
+    }
+
+    .nav-btn.active::after {
+      content: '';
+      position: absolute;
+      left: -8px;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 20px;
+      width: 3px;
+      background: var(--accent);
+      border-radius: 0 4px 4px 0
+    }
+
+    /* ── Multi-pane Grid layout ── */
+    .main-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg)
+    }
+
+    .view-container {
+      flex: 1;
+      display: none;
+      padding: 12px;
+      gap: 12px;
+      overflow: hidden
+    }
+
+    .view-container.active {
+      display: grid
+    }
+
+    .grid-2col {
+      grid-template-columns: 1fr 400px
+    }
+
+    .grid-3col {
+      grid-template-columns: 250px 1fr 350px
+    }
+
+    .grid-dashboard {
+      grid-template-columns: 1fr 1fr 400px;
+      grid-template-rows: min-content 1fr;
+      grid-template-areas: "top top side" "botleft botright side"
+    }
+
+    /* ── Panels ── */
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden
+    }
+
+    .panel-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 600
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-bright)
+    }
+
+    .panel-body {
+      padding: 12px;
+      overflow-y: auto;
+      flex: 1
+    }
+
+    /* ── Form Controls & Buttons ── */
+    input,
+    textarea,
+    select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border-light);
+      color: var(--text-bright);
+      padding: 8px 10px;
+      border-radius: 4px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem
+      font-size: 12px;
+      outline: none;
+      transition: border 0.2s
     }
 
-    .empty {
-      text-align: center;
-      padding: 36px 20px;
-      color: var(--text3)
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: inset 0 0 0 1px var(--accent-faded)
     }
 
-    .empty .ico {
-      font-size: 1.8rem;
-      margin-bottom: 8px
+    label {
+      display: block;
+      font-size: 10px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 600;
+      letter-spacing: 0.5px
+    }
+
+    .form-group {
+      margin-bottom: 12px
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      border: 1px solid;
+      transition: 0.2s;
+      font-family: 'Chakra Petch', sans-serif
+    }
+
+    .btn-cyan {
+      background: var(--accent-faded);
+      border-color: var(--accent);
+      color: var(--accent)
+    }
+
+    .btn-cyan:hover {
+      background: var(--accent);
+      color: #000;
+      box-shadow: var(--glow)
+    }
+
+    .btn-outline {
+      background: transparent;
+      border-color: var(--border-light);
+      color: var(--text)
+    }
+
+    .btn-outline:hover {
+      border-color: var(--text-bright);
+      color: var(--text-bright)
+    }
+
+    .btn-red {
+      background: rgba(255, 42, 109, 0.1);
+      border-color: var(--accent2);
+      color: var(--accent2)
+    }
+
+    .btn-red:hover {
+      background: var(--accent2);
+      color: #fff;
+      box-shadow: var(--glow-red)
+    }
+
+    /* ── Visual Data Elements ── */
+    .data-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+      margin-bottom: 12px
+    }
+
+    .data-block {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column
+    }
+
+    .data-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--text-bright);
+      line-height: 1
+    }
+
+    .data-lbl {
+      font-size: 9px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 4px;
+      font-weight: 600
+    }
+
+    .terminal-out {
+      background: var(--bg);
+      padding: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--muted);
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 4px
+    }
+
+    .terminal-out .cmd {
+      color: var(--accent3)
+    }
+
+    .terminal-out .err {
+      color: var(--accent2)
+    }
+
+    .terminal-out .sys {
+      color: var(--accent)
+    }
+
+    /* ── Tables & Lists ── */
+    .dense-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace
+    }
+
+    .dense-table th {
+      text-align: left;
+      padding: 6px;
+      border-bottom: 1px solid var(--border-light);
+      color: var(--muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      font-size: 9px
+    }
+
+    .dense-table td {
+      padding: 6px;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .dense-table tr:hover td {
+      background: var(--surface)
+    }
+
+    /* ── Complex Elements ── */
+    .memory-bar {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      flex: 1
+    }
+
+    .memory-fill {
+      height: 100%;
+      transition: width 0.3s
+    }
+
+    .memory-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 8px 0;
+      font-size: 11px;
+      font-family: 'JetBrains Mono'
+    }
+
+    .pulse-ring {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      position: relative
+    }
+
+    .pulse-ring::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 1px solid var(--accent);
+      animation: pulse-out 2s infinite
+    }
+
+    @keyframes pulse-out {
+      0% {
+        transform: scale(0.5);
+        opacity: 1
+      }
+
+      100% {
+        transform: scale(3);
+        opacity: 0
+      }
+    }
+
+    /* Utility */
+    .c-cyan {
+      color: var(--accent)
+    }
+
+    .c-red {
+      color: var(--accent2)
+    }
+
+    .c-green {
+      color: var(--accent3)
+    }
+
+    .c-amber {
+      color: var(--accent4)
+    }
+
+    .flex-row {
+      display: flex;
+      gap: 8px;
+      align-items: center
+    }
+
+    .flex-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px
     }
   </style>
 </head>
 
 <body>
 
-  <header class="topbar">
-    <div class="logo">SARE-HX</div>
-    <div style="display:flex;align-items:center;gap:15px">
-      <!-- Hippocampus Status Pill -->
-      <div id="hip-status"
-        style="display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:rgba(52,211,153,0.1);color:var(--green);font-size:0.7rem;font-weight:600;border:1px solid rgba(52,211,153,0.2);transition:all 0.3s">
-        Awake 🟢
+  <header>
+    <div class="logo display">
+      <div class="pulse-ring"></div>
+      SARE-HX <span class="version">v7.0.4-AGI</span>
+    </div>
+    <div class="top-stats display">
+      <div class="ts-item">
+        <div class="ts-dot"></div><span class="ts-val">ONLINE</span>
       </div>
-      <div class="ticker">
-        <span class="dot"></span>
-        <span>Episodes: <span class="tick-val" id="t-ep">—</span></span>
-        <span>Seeds: <span class="tick-val" id="t-seeds">—</span></span>
-        <span>Concepts: <span class="tick-val" id="t-conc">—</span></span>
-        <span>Solves: <span class="tick-val" id="t-solves">—</span></span>
+      <div class="ts-item"><span style="color:var(--muted)">SYS_LOAD</span><span class="ts-val">0.04%</span></div>
+      <div class="ts-item"><span style="color:var(--muted)">AGI_SCORE</span><span class="ts-val c-cyan">6.5/10</span>
       </div>
+      <div class="ts-item"><span style="color:var(--muted)">MEMORY_OPS</span><span class="ts-val"
+          id="top-mem">14K</span></div>
     </div>
   </header>
 
-  <nav class="tab-nav">
-    <button class="tb" data-tab="solve" onclick="sw('solve')">⚡ Solve</button>
-    <button class="tb" data-tab="memory" onclick="sw('memory')">💾 Memory</button>
-    <button class="tb" data-tab="mind" onclick="sw('mind')">🧠 Mind</button>
-    <button class="tb" data-tab="frontier" onclick="sw('frontier')">🗺 Frontier</button>
-    <button class="tb" data-tab="concepts" onclick="sw('concepts')">💡 Concepts</button>
-    <button class="tb" data-tab="curiosity" onclick="sw('curiosity')">🔭 Curiosity</button>
-    <button class="tb" data-tab="checklist" onclick="sw('checklist')">📋 Checklist</button>
-    <button class="tb" data-tab="goals" onclick="sw('goals')">🎯 Goals</button>
-    <button class="tb" data-tab="nlp" onclick="sw('nlp')">💬 NL Parse</button>
-    <button class="tb" data-tab="explain" onclick="sw('explain')">🔬 Explain</button>
-  </nav>
+  <div class="workspace">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <button class="nav-item nav-btn active" data-tab="dashboard" onclick="sw('dashboard')"
+        title="Cognitive Dashboard">❇</button>
+      <button class="nav-item nav-btn" data-tab="solve" onclick="sw('solve')"
+        title="Hybrid Solver & NL Pipeline">⏣</button>
+      <button class="nav-item nav-btn" data-tab="memory" onclick="sw('memory')"
+        title="Episodic & Concept Memory">▤</button>
+      <button class="nav-item nav-btn" data-tab="grounding" onclick="sw('grounding')"
+        title="World Grounding & Knowledge">⟁</button>
+      <button class="nav-item nav-btn" data-tab="tom" onclick="sw('tom')" title="Theory of Mind">👤</button>
+    </div>
 
-  <main>
+    <div class="main-area">
 
-    <!-- ═══ SOLVE ═══ -->
-    <div class="tp" id="tab-solve">
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Expression Solver</div>
-          <span class="badge b-c" id="conf-badge" style="display:none"></span>
-        </div>
-        <div class="ir">
-          <input class="inp" id="expr-in" placeholder="e.g.  (x + 0) * 1  or  NOT(NOT(p))"
-            onkeydown="if(event.key==='Enter')solve()">
-          <button class="btn btn-p" id="solve-btn" onclick="solve()">⚡ Solve</button>
-        </div>
-        <div class="chips">
-          <button class="chip" onclick="se('x + 0')">x + 0</button>
-          <button class="chip" onclick="se('(x+0)*(y*1)')">( x+0 )·( y·1 )</button>
-          <button class="chip" onclick="se('NOT(NOT(p))')">¬¬p</button>
-          <button class="chip" onclick="se('p AND TRUE')">p ∧ ⊤</button>
-          <button class="chip" onclick="se('a + (b * 1) + 0')">a+(b·1)+0</button>
-          <button class="chip" onclick="se('x * 0')">x · 0</button>
-          <button class="chip" onclick="se('x - x')">x − x</button>
-          <button class="chip" onclick="se('x / x')">x ÷ x</button>
-        </div>
-      </div>
-
-      <div id="solve-results" style="display:none">
-        <div class="g2">
-          <div class="card">
-            <div class="card-hd">
-              <div class="card-title">Energy</div>
-              <span class="badge" id="delta-badge"></span>
-            </div>
-            <div class="sr">
-              <div class="st">
-                <div class="sv c-yellow" id="ei">—</div>
-                <div class="sl">Before</div>
-              </div>
-              <div class="st">
-                <div class="sv c-green" id="ef">—</div>
-                <div class="sl">After</div>
-              </div>
-              <div class="st">
-                <div class="sv c-cyan" id="conf-v">—</div>
-                <div class="sl">Conf</div>
-              </div>
-            </div>
-            <div class="ebar">
-              <div class="efill" id="ebar" style="width:0"></div>
-            </div>
-            <div id="strat-hint" style="font-size:0.7rem;color:var(--text3);margin-top:5px"></div>
-          </div>
-          <div class="card">
-            <div class="card-hd">
-              <div class="card-title">Stats</div>
-            </div>
-            <div class="sr">
-              <div class="st">
-                <div class="sv c-purple" id="r-st">—</div>
-                <div class="sl">Steps</div>
-              </div>
-              <div class="st">
-                <div class="sv c-pink" id="r-ex">—</div>
-                <div class="sl">Expand</div>
-              </div>
-              <div class="st">
-                <div class="sv c-cyan" id="r-ms">—</div>
-                <div class="sl">ms</div>
-              </div>
+      <!-- DASHBOARD VIEW -->
+      <div class="view-container grid-dashboard active" id="tab-dashboard">
+        <div class="panel" style="grid-area:top">
+          <div class="panel-header display"><span class="panel-title">System Telemetry</span></div>
+          <div class="panel-body">
+            <div class="data-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:0">
+              <div class="data-block"><span class="data-val c-cyan" id="db-episodes">-</span><span
+                  class="data-lbl">Episodic Memories</span></div>
+              <div class="data-block"><span class="data-val c-green" id="db-concepts">-</span><span
+                  class="data-lbl">Learned Concepts</span></div>
+              <div class="data-block"><span class="data-val c-amber" id="db-cs">-</span><span class="data-lbl">Common
+                  Sense Facts</span></div>
+              <div class="data-block"><span class="data-val c-red" id="db-tom">-</span><span class="data-lbl">ToM Agent
+                  Models</span></div>
+              <div class="data-block"><span class="data-val">42.1ms</span><span class="data-lbl">Avg Response
+                  Latency</span></div>
             </div>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-hd">
-            <div class="card-title">Transform Trace</div>
+        <div class="panel" style="grid-area:botleft">
+          <div class="panel-header display"><span class="panel-title">Active Cognitive Stream</span><span
+              class="badge b-green">LIVE</span></div>
+          <div class="panel-body terminal-out" id="dashboard-log">
+            <span class="sys">[SYSTEM]</span> AGI Kernel Initialized.<br>
+            <span class="sys">[SYSTEM]</span> Loading ConceptRegistry (C++ bindings)... Done.<br>
+            <span class="sys">[SYSTEM]</span> Memory subsystem connected. Hippocampus active.<br>
+            <span class="sys">[SYSTEM]</span> TheoryOfMind Engine listening.<br>
+            <span class="sys">[SYSTEM]</span> Ready for input.
           </div>
-          <div id="trace" style="display:flex;flex-wrap:wrap;gap:6px;min-height:22px"></div>
         </div>
 
-        <div class="card" id="proof-card" style="display:none">
-          <div class="card-hd">
-            <div class="card-title">📜 Step-by-Step Proof</div>
-            <span class="badge b-c" id="proof-badge">0 steps</span>
+        <div class="panel" style="grid-area:botright">
+          <div class="panel-header display"><span class="panel-title">Concept Ontology Map</span></div>
+          <div class="panel-body" style="padding:0">
+            <table class="dense-table" id="db-concept-table">
+              <thead>
+                <tr>
+                  <th>Concept ID</th>
+                  <th>Domain</th>
+                  <th>Conf</th>
+                  <th>Obs</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="4" style="text-align:center;color:var(--muted)">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <div id="proof-steps"></div>
-          <div class="sep"></div>
-          <div id="proof-concl" style="font-size:0.8rem;color:var(--text2);line-height:1.6"></div>
         </div>
 
-        <div class="card">
-          <div class="card-hd">
-            <div class="card-title">Learned Rules</div>
-          </div>
-          <div id="learned"></div>
-        </div>
-
-        <div class="card">
-          <div class="card-hd">
-            <div class="card-title">Energy Breakdown</div>
-          </div>
-          <div id="breakdown" style="display:flex;flex-wrap:wrap;gap:10px"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══ MEMORY ═══ -->
-    <div class="tp" id="tab-memory">
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Persistent Memory</div>
-          <button class="btn btn-g btn-sm" onclick="loadMem()">↻ Refresh</button>
-        </div>
-        <div class="sr">
-          <div class="st">
-            <div class="sv c-cyan" id="ms-ep">—</div>
-            <div class="sl">Episodes</div>
-          </div>
-          <div class="st">
-            <div class="sv c-green" id="ms-slv">—</div>
-            <div class="sl">Solved</div>
-          </div>
-          <div class="st">
-            <div class="sv c-purple" id="ms-rt">—</div>
-            <div class="sl">Solve Rate</div>
-          </div>
-          <div class="st">
-            <div class="sv c-yellow" id="ms-str">—</div>
-            <div class="sl">Strategies</div>
-          </div>
-          <div class="st">
-            <div class="sv c-pink" id="ms-avg">—</div>
-            <div class="sl">Avg ΔE</div>
-          </div>
-          <div class="st">
-            <div class="sv c-cyan" id="ms-sd">—</div>
-            <div class="sl">Seeds</div>
+        <div class="panel" style="grid-area:side">
+          <div class="panel-header display"><span class="panel-title">Quick Actions</span></div>
+          <div class="panel-body flex-col">
+            <div class="data-block" style="background:var(--surface)">
+              <label>Natural Language Command</label>
+              <textarea id="db-quick-input" rows="2" placeholder="Ask SARE-HX anything..."></textarea>
+              <button class="btn btn-cyan" style="margin-top:8px" onclick="doQuickNL()">Execute NL Pipeline</button>
+            </div>
+            <div id="db-quick-result" class="terminal-out" style="min-height:150px;display:none"></div>
           </div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Recent Episodes</div>
+
+      <!-- SOLVER VIEW -->
+      <div class="view-container grid-2col" id="tab-solve">
+        <div class="flex-col" style="overflow:hidden">
+          <div class="panel" style="flexShrink:0">
+            <div class="panel-header display"><span class="panel-title">Hybrid Solver Input</span><span
+                class="badge b-cyan">MCTS + BEAM</span></div>
+            <div class="panel-body">
+              <div class="form-group">
+                <label>Mathematical / Logical Expression</label>
+                <input id="solve-expr" type="text" value="2*y + 1 = 2*x - 3" placeholder="e.g. 2*x + 1 = 5" />
+              </div>
+              <div class="flex-row">
+                <div class="form-group" style="flex:1;margin:0">
+                  <label>Budget (sec)</label>
+                  <input id="solve-budget" type="number" value="15" />
+                </div>
+                <button class="btn btn-cyan" style="margin-top:14px;flex:2" onclick="doSolve()">Run Symbolic
+                  Solver</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" style="flex:1;display:flex;flex-direction:column">
+            <div class="panel-header display"><span class="panel-title">Energy Trace & Proof</span><span
+                class="badge b-amber" id="solve-status">AWAITING</span></div>
+            <div class="panel-body flex-col" style="overflow-y:auto">
+              <div class="data-grid" id="solve-stats" style="display:none">
+                <div class="data-block"><span class="data-val c-red" id="s-init">0</span><span class="data-lbl">Initial
+                    Energy</span></div>
+                <div class="data-block"><span class="data-val c-green" id="s-final">0</span><span class="data-lbl">Final
+                    Energy</span></div>
+                <div class="data-block"><span class="data-val c-cyan" id="s-steps">0</span><span
+                    class="data-lbl">Depth</span></div>
+              </div>
+              <label style="margin-top:8px;display:none" id="lbl-proof">Proof Trace Sequence</label>
+              <div id="solve-proof" class="terminal-out" style="display:none;min-height:100px"></div>
+            </div>
+          </div>
         </div>
-        <div id="ep-list">
-          <div class="empty">
-            <div class="ico">💾</div>No episodes yet.
+
+        <div class="panel">
+          <div class="panel-header display"><span class="panel-title">Memory Augmentation</span><span
+              class="badge b-red">RETRIEVAL</span></div>
+          <div class="panel-body flex-col">
+            <label>Pre-Search Episodic Recall</label>
+            <div class="terminal-out" id="solve-memory" style="min-height:200px">
+              <span class="sys">Waiting for problem signature to query Hippocampus...</span><br>
+              <span class="muted">Memory-Augmented Solving searches past solved episodes for identical graph structural
+                fingerprints before initiating MCTS, bypassing search computation.</span>
+            </div>
+            <label style="margin-top:12px">LLM NL Explanation</label>
+            <div class="terminal-out" id="solve-explain"
+              style="flex:1;border-color:var(--accent2);background:rgba(255,42,109,0.02)">
+              No explanation generated yet.
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- ═══ MIND ═══ -->
-    <div class="tp" id="tab-mind">
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Self-Model / Metacognition</div>
-          <button class="btn btn-g btn-sm" onclick="loadSelf()">↻ Refresh</button>
-        </div>
-        <div class="sr">
-          <div class="st">
-            <div class="sv c-cyan" id="sm-slv">—</div>
-            <div class="sl">Solves</div>
+      <!-- GROUNDING AND COMMONSENSE VIEW -->
+      <div class="view-container grid-2col" id="tab-grounding">
+        <div class="flex-col">
+          <div class="panel">
+            <div class="panel-header display"><span class="panel-title">World Grounder (Ingestion)</span></div>
+            <div class="panel-body">
+              <div class="flex-row">
+                <select id="gr-type" style="flex:1">
+                  <option value="text">Natural Language Text</option>
+                  <option value="csv">CSV/Tabular File</option>
+                  <option value="json">JSON Structure</option>
+                </select>
+                <button class="btn btn-outline"
+                  onclick="$('gr-payload').value='Albert Einstein was a physicist in Germany.'">Load Sample</button>
+              </div>
+              <textarea id="gr-payload" rows="4" style="margin-top:8px" placeholder="Paste data here..."></textarea>
+              <button class="btn btn-green" style="margin-top:8px;width:100%" onclick="doGround()">Ground into Symbolic
+                Graph</button>
+            </div>
           </div>
-          <div class="st">
-            <div class="sv c-green" id="sm-dom">—</div>
-            <div class="sl">Domains</div>
-          </div>
-          <div class="st">
-            <div class="sv c-yellow" id="sm-cal">—</div>
-            <div class="sl">Calib Err</div>
-          </div>
-          <div class="st">
-            <div class="sv c-purple" id="sm-pri">—</div>
-            <div class="sl">Focus</div>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Domain Competence</div>
-        </div>
-        <div id="dom-comp">
-          <div class="empty">
-            <div class="ico">🧠</div>Solve problems to build competence map.
+          <div class="panel" style="flex:1">
+            <div class="panel-header display"><span class="panel-title">Grounded Graph Output</span></div>
+            <div class="panel-body terminal-out" id="gr-out" style="white-space:pre-wrap">Submit data to ground it into
+              nodes and edges.</div>
           </div>
         </div>
-      </div>
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Curiosity Weights</div>
-        </div>
-        <div id="cur-wts">
-          <div class="empty">
-            <div class="ico">🎯</div>No weights yet.
+
+        <div class="panel">
+          <div class="panel-header display"><span class="panel-title">Common Sense Base</span><span
+              class="badge b-amber">CONCEPTNET ZEROSHOT</span></div>
+          <div class="panel-body flex-col">
+            <div class="flex-row">
+              <input id="cs-q" type="text" placeholder="Concept (e.g. fire, dog, zero)" style="flex:2" />
+              <button class="btn btn-amber" onclick="doCS()">Query KB</button>
+            </div>
+            <div class="terminal-out" id="cs-out" style="flex:1;margin-top:8px"></div>
+            <label style="margin-top:8px">Online Augmentation</label>
+            <div class="flex-row">
+              <input id="cs-aug" type="text" placeholder="e.g. water, sky" />
+              <button class="btn btn-outline" onclick="doCSAug()">Fetch API</button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- ═══ FRONTIER ═══ -->
-    <div class="tp" id="tab-frontier">
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Learning Frontier (ZPD)</div>
-          <button class="btn btn-g btn-sm" onclick="loadFrontier()">↻ Refresh</button>
-        </div>
-        <div class="sr">
-          <div class="st">
-            <div class="sv c-cyan" id="fr-t">—</div>
-            <div class="sl">Total</div>
-          </div>
-          <div class="st">
-            <div class="sv c-green" id="fr-s">—</div>
-            <div class="sl">Solved</div>
-          </div>
-          <div class="st">
-            <div class="sv c-red" id="fr-u">—</div>
-            <div class="sl">Unsolved</div>
-          </div>
-          <div class="st">
-            <div class="sv c-yellow" id="fr-r">—</div>
-            <div class="sl">Success%</div>
+      <!-- MEMORY VIEW -->
+      <div class="view-container grid-dashboard" id="tab-memory">
+        <div class="panel" style="grid-area:top">
+          <div class="panel-header display"><span class="panel-title">Hippocampus Diagnostics</span></div>
+          <div class="panel-body data-grid" style="margin:0">
+            <div class="data-block"><span class="data-val c-cyan" id="m-ep">0</span><span class="data-lbl">Total
+                Episodes</span></div>
+            <div class="data-block"><span class="data-val" id="m-vec">0</span><span class="data-lbl">Vector
+                Embeddings</span></div>
+            <div class="data-block"><span class="data-val" id="m-syn">0</span><span class="data-lbl">Synthetic
+                MACROS</span></div>
           </div>
         </div>
-        <div id="fr-zpd"></div>
-      </div>
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Frontier Problems</div>
-        </div>
-        <div id="fr-list">
-          <div class="empty">
-            <div class="ico">🗺</div>Solve problems to populate frontier.
+        <div class="panel" style="grid-area:botleft">
+          <div class="panel-header display"><span class="panel-title">Memory Allocation Vector</span></div>
+          <div class="panel-body">
+            <div class="memory-row"><span style="width:100px">Episodic Buffer</span>
+              <div class="memory-bar">
+                <div class="memory-fill" style="width:75%;background:var(--accent)"></div>
+              </div><span>375/500</span>
+            </div>
+            <div class="memory-row"><span style="width:100px">Concept Vectors</span>
+              <div class="memory-bar">
+                <div class="memory-fill" style="width:40%;background:var(--accent2)"></div>
+              </div><span>4,211 alloc</span>
+            </div>
+            <div class="memory-row"><span style="width:100px">Rule Registry</span>
+              <div class="memory-bar">
+                <div class="memory-fill" style="width:90%;background:var(--accent3)"></div>
+              </div><span>66+ objects</span>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- ═══ CONCEPTS ═══ -->
-    <div class="tp" id="tab-concepts">
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Concept Registry</div>
-          <button class="btn btn-g btn-sm" onclick="loadConcepts()">↻ Refresh</button>
-        </div>
-        <div class="sr">
-          <div class="st">
-            <div class="sv c-cyan" id="cc-t">—</div>
-            <div class="sl">Rules</div>
-          </div>
-          <div class="st">
-            <div class="sv c-green" id="cc-a">—</div>
-            <div class="sl">Active</div>
-          </div>
-          <div class="st">
-            <div class="sv c-purple" id="cc-d">—</div>
-            <div class="sl">Domains</div>
+        <div class="panel" style="grid-area:botright;grid-column: span 2">
+          <div class="panel-header display"><span class="panel-title">Discovered Concept Ontology (K-Means + LLM
+              Named)</span></div>
+          <div class="panel-body" style="padding:0">
+            <table class="dense-table" id="m-concept-table">
+              <thead>
+                <tr>
+                  <th>Concept Signature</th>
+                  <th>Auto-Name</th>
+                  <th>Domain</th>
+                  <th>Observations</th>
+                  <th>Confidence</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="5" style="text-align:center;color:var(--muted)">Loading ontology...</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Rules</div>
-          <input id="cc-filter" class="inp" style="width:200px;padding:5px 11px;font-size:0.76rem"
-            placeholder="Filter..." oninput="filterC()">
-        </div>
-        <div id="cc-list">
-          <div class="empty">
-            <div class="ico">💡</div>Loading…
+
+      <!-- TOM VIEW -->
+      <div class="view-container grid-2col" id="tab-tom">
+        <div class="panel">
+          <div class="panel-header display"><span class="panel-title">BDI Agent Modeling (Theory of Mind)</span></div>
+          <div class="panel-body flex-col">
+            <div class="flex-row">
+              <input id="tom-id" type="text" placeholder="Agent ID (e.g. alice)" style="flex:1" />
+              <button class="btn btn-outline" onclick="doTomReg()">Register / View</button>
+            </div>
+            <label style="margin-top:12px">Inject Belief State</label>
+            <div class="flex-row">
+              <input id="tom-b" type="text" placeholder="Belief statement..." />
+              <select id="tom-t" style="width:80px">
+                <option value="true">True</option>
+                <option value="false">False</option>
+              </select>
+              <button class="btn btn-cyan" onclick="doTomBelief()">Inject</button>
+            </div>
+            <label style="margin-top:12px">False Belief Test (Sally-Anne Protocol)</label>
+            <div class="flex-row">
+              <input id="tom-fb-b" type="text" placeholder="Agent believes..." style="flex:1" />
+              <input id="tom-fb-r" type="text" placeholder="Reality is..." style="flex:1" />
+              <button class="btn btn-red" onclick="doTomFB()">Run Test</button>
+            </div>
           </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header display"><span class="panel-title">ToM Engine Console</span></div>
+          <div class="panel-body terminal-out" id="tom-out" style="white-space:pre-wrap">Awaiting ToM commands...</div>
         </div>
       </div>
-    </div>
 
-    <!-- ═══ CURIOSITY ═══ -->
-    <div class="tp" id="tab-curiosity">
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Curiosity Engine</div>
-          <div style="display:flex;gap:7px">
-            <button class="btn btn-g btn-sm" onclick="loadCur()">↻ Refresh</button>
-            <button class="btn btn-p btn-sm" onclick="genProbs()">Generate</button>
-          </div>
-        </div>
-        <div class="sr">
-          <div class="st">
-            <div class="sv c-cyan" id="cu-p">—</div>
-            <div class="sl">Pending</div>
-          </div>
-          <div class="st">
-            <div class="sv c-green" id="cu-s">—</div>
-            <div class="sl">Solved</div>
-          </div>
-          <div class="st">
-            <div class="sv c-purple" id="cu-t">—</div>
-            <div class="sl">Generated</div>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Problem Queue</div>
-        </div>
-        <div id="cu-list">
-          <div class="empty">
-            <div class="ico">🔭</div>Click Generate.
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- ═══ CHECKLIST ═══ -->
-    <div class="tp" id="tab-checklist">
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Engineering Checklist</div>
-          <button class="btn btn-g btn-sm" onclick="loadCheck()">↻ Refresh</button>
-        </div>
-        <div id="cl-content">
-          <div class="empty">
-            <div class="ico">📋</div>Loading…
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══ GOALS ═══ -->
-    <div class="tp" id="tab-goals">
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Autonomous Goal Stack</div>
-          <button class="btn btn-g btn-sm" onclick="loadGoals()">↻ Refresh</button>
-        </div>
-        <div class="sr">
-          <div class="st">
-            <div class="sv c-cyan" id="g-act">—</div>
-            <div class="sl">Active</div>
-          </div>
-          <div class="st">
-            <div class="sv c-green" id="g-ach">—</div>
-            <div class="sl">Achieved</div>
-          </div>
-        </div>
-        <div id="next-goal"
-          style="display:none;padding:11px 14px;border-radius:10px;background:rgba(34,211,238,.06);border:1px solid rgba(34,211,238,.2);margin-bottom:12px">
-          <div
-            style="font-size:0.66rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">
-            Next Goal</div>
-          <div id="ng-txt" style="font-weight:600;color:var(--cyan)"></div>
-          <div class="pw" style="margin-top:7px">
-            <div class="pb" id="ng-prog"></div>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Goals</div>
-        </div>
-        <div id="g-list">
-          <div class="empty">
-            <div class="ico">🎯</div>Solve problems to auto-generate goals.
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══ NL PARSE ═══ -->
-    <div class="tp" id="tab-nlp">
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Natural Language → Expression</div>
-        </div>
-        <div class="ir">
-          <input class="inp" id="nl-in" placeholder="e.g. x plus zero times one"
-            onkeydown="if(event.key==='Enter')nlParse()">
-          <button class="btn btn-p" onclick="nlParse()">Parse →</button>
-        </div>
-        <div class="chips">
-          <button class="chip" onclick="sn('x plus zero')">x plus zero</button>
-          <button class="chip" onclick="sn('x times one')">x times one</button>
-          <button class="chip" onclick="sn('x minus x')">x minus x</button>
-          <button class="chip" onclick="sn('not not x')">not not x</button>
-          <button class="chip" onclick="sn('p and true')">p and true</button>
-          <button class="chip" onclick="sn('three plus four')">3 + 4</button>
-        </div>
-      </div>
-      <div class="card" id="nl-card" style="display:none">
-        <div class="card-hd">
-          <div class="card-title">Parse Result</div>
-        </div>
-        <div class="sr">
-          <div class="st" style="flex:2">
-            <div class="sv c-cyan" id="nl-expr" style="font-size:1rem;font-family:'JetBrains Mono',monospace">—</div>
-            <div class="sl">Expression</div>
-          </div>
-          <div class="st">
-            <div class="sv c-green" id="nl-conf">—</div>
-            <div class="sl">Confidence</div>
-          </div>
-          <div class="st">
-            <div class="sv c-purple" id="nl-dom">—</div>
-            <div class="sl">Domain</div>
-          </div>
-        </div>
-        <div id="nl-warn" style="margin-bottom:10px"></div>
-        <button class="btn btn-p btn-sm" onclick="nlSolve()">⚡ Solve This</button>
-      </div>
-    </div>
-
-    <!-- ═══ EXPLAIN ═══ -->
-    <div class="tp" id="tab-explain">
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">🔬 Abductive Reasoner</div>
-        </div>
-        <p style="font-size:0.78rem;color:var(--text2);margin-bottom:13px">Given an observed solve outcome, SARE
-          explains <em>why</em> those transforms worked — inference to the best explanation.</p>
-        <div class="g2" style="gap:9px;margin-bottom:9px">
-          <div>
-            <div style="font-size:0.7rem;color:var(--text3);margin-bottom:4px">Transforms (comma-separated)</div>
-            <input class="inp" id="ex-tr" placeholder="additive_identity, multiplicative_identity">
-          </div>
-          <div>
-            <div style="font-size:0.7rem;color:var(--text3);margin-bottom:4px">Energy delta</div>
-            <input class="inp" id="ex-d" placeholder="4.2" type="number" step="0.1">
-          </div>
-        </div>
-        <div style="display:flex;gap:9px;align-items:center">
-          <select id="ex-dom" class="inp" style="width:170px;padding:8px 11px">
-            <option value="general">general</option>
-            <option value="arithmetic">arithmetic</option>
-            <option value="logic">logic</option>
-            <option value="algebra">algebra</option>
-            <option value="sets">sets</option>
-            <option value="code">code</option>
-          </select>
-          <button class="btn btn-p" onclick="runExplain()">🔬 Explain</button>
-          <button class="btn btn-g btn-sm" onclick="useLastSolve()">Use Last Solve</button>
-        </div>
-      </div>
-      <div id="ex-results" style="display:none">
-        <div class="card">
-          <div class="card-hd">
-            <div class="card-title">Best Explanation</div>
-            <span class="badge b-c" id="ex-conf-lbl"></span>
-          </div>
-          <div id="ex-best"></div>
-        </div>
-        <div class="card">
-          <div class="card-hd">
-            <div class="card-title">All Hypotheses</div>
-          </div>
-          <div id="ex-hyps"></div>
-        </div>
-      </div>
-    </div>
-
-  </main>
-
-  <script>
-// ── state ──────────────────────────────────────────────────────────────
-var _last = null, _nlExpr = '';
-var _allConcepts = [];
-
-// ── tabs ───────────────────────────────────────────────────────────────
-function sw(name) {
-  document.querySelectorAll('.tb').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-  document.querySelectorAll('.tp').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
-  ({memory:loadMem, mind:loadSelf, frontier:loadFrontier, concepts:loadConcepts,
-    curiosity:loadCur, checklist:loadCheck, goals:loadGoals})[name]?.();
-}
-
-// ── fetch ──────────────────────────────────────────────────────────────
-async function api(path, opts) {
-  try {
-    var r = await fetch(path, opts);
-    if (!r.ok) return null;
-    return await r.json();
-  } catch(e) { console.warn(path, e); return null; }
-}
-function fe(v) { return v != null ? Number(v).toFixed(3) : '—'; }
-function fp(v) { return v != null ? Number(v).toFixed(1)+'%' : '—'; }
-function se(v) { document.getElementById('expr-in').value = v; }
-function sn(v) { document.getElementById('nl-in').value = v; }
-
-// ── ticker ─────────────────────────────────────────────────────────────
-async function tick() {
-  var h = await api('/api/hippocampus/status');
-  if (h) {
-    var hs = document.getElementById('hip-status');
-    if (h.state === 'sleeping') {
-      hs.innerHTML = 'Sleeping: ' + h.current_task + ' 🌙';
-      hs.style.background = 'rgba(167,139,250,0.1)';
-      hs.style.color = 'var(--purple)';
-      hs.style.borderColor = 'rgba(167,139,250,0.2)';
-      hs.style.boxShadow = '0 0 10px rgba(167,139,250,0.2)';
-    } else {
-      hs.innerHTML = 'Awake 🟢';
-      hs.style.background = 'rgba(52,211,153,0.1)';
-      hs.style.color = 'var(--green)';
-      hs.style.borderColor = 'rgba(52,211,153,0.2)';
-      hs.style.boxShadow = 'none';
-    }
-  }
-
-  var m = await api('/api/memory/stats');
-  if (m && m.stats) {
-    document.getElementById('t-ep').textContent    = m.stats.total_episodes ?? '—';
-    document.getElementById('t-seeds').textContent = m.seeds_loaded ?? '—';
-    document.getElementById('t-conc').textContent  = m.concept_count ?? '—';
-  }
-  var s = await api('/api/self');
-  if (s) document.getElementById('t-solves').textContent = s.total_solves ?? '—';
-}
-
-// ── solve ──────────────────────────────────────────────────────────────
-async function solve() {
-  var expr = document.getElementById('expr-in').value.trim();
-  if (!expr) return;
-  var btn = document.getElementById('solve-btn');
-  btn.classList.add('ld'); btn.textContent = '…';
-  document.getElementById('solve-results').style.display = 'none';
-
-  var d = await api('/api/solve', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({expression: expr})
-  });
-  btn.classList.remove('ld'); btn.textContent = '⚡ Solve';
-  if (!d) return;
-  
-  if (d.status === 'needs_help') {
-    showQuestionModal(d);
-    return;
-  }
-  
-  _last = d;
-  renderSolve(d);
-  tick();
-}
-
-function renderSolve(d) {
-  document.getElementById('solve-results').style.display = '';
-  var iE = d.initial?.energy?.total ?? 0;
-  var fE = d.result?.energy?.total  ?? 0;
-  var delta = iE - fE;
-  var pct   = iE > 0 ? delta/iE*100 : 0;
-
-  document.getElementById('ei').textContent     = fe(iE);
-  document.getElementById('ef').textContent     = fe(fE);
-  document.getElementById('conf-v').textContent = d.confidence != null ? fp(d.confidence*100) : '—';
-
-  var db = document.getElementById('delta-badge');
-  if (delta > 0.01) {
-    db.textContent = '−'+delta.toFixed(3)+' ('+pct.toFixed(1)+'%)';
-    db.className = 'badge b-g';
-  } else { db.textContent = 'No reduction'; db.className = 'badge b-r'; }
-
-  document.getElementById('ebar').style.width = Math.min(pct,100)+'%';
-  document.getElementById('r-st').textContent  = d.steps_taken ?? d.result?.steps ?? '—';
-  document.getElementById('r-ex').textContent  = d.expansions  ?? d.result?.expansions ?? '—';
-  var ms = d.elapsed_seconds != null ? (d.elapsed_seconds*1000).toFixed(1) : '—';
-  document.getElementById('r-ms').textContent  = ms;
-
-  var cb = document.getElementById('conf-badge');
-  if (d.confidence != null) { cb.textContent = 'Confidence: '+(d.confidence*100).toFixed(0)+'%'; cb.style.display=''; }
-
-  document.getElementById('strat-hint').textContent = d.strategy_hit ? '✅ Memory hit — warm-started from similar past solve' : '';
-
-  var tr = document.getElementById('trace');
-  var transforms = d.transforms_applied ?? d.result?.transforms ?? [];
-  tr.innerHTML = transforms.length
-    ? transforms.map(t => '<span class="tc'+(t.startsWith('concept_')?' concept':'')+'">' + t + '</span>').join('')
-    : '<span style="color:var(--text3);font-size:0.75rem">Identity — no transforms applied</span>';
-
-  // Proof
-  var pc = document.getElementById('proof-card');
-  if (d.proof) {
-    var proof = d.proof;
-    var steps = proof.steps ?? [];
-    document.getElementById('proof-badge').textContent = steps.length + ' steps';
-    document.getElementById('proof-steps').innerHTML = steps.length
-      ? steps.map(s => '<div class="ps"><div class="ps-t">Step '+s.step+'. '+s.rule_name+'</div><div class="ps-s">'+s.explanation+'</div><div class="ps-c">'+s.detail+'</div></div>').join('')
-      : '<div style="color:var(--text3);font-size:0.8rem;padding:8px 0">Expression already in its simplest form.</div>';
-    document.getElementById('proof-concl').textContent = proof.conclusion ?? '';
-    pc.style.display = '';
-  } else { pc.style.display = 'none'; }
-
-  // Learned
-  var ll = document.getElementById('learned');
-  var rules = d.learned_concepts ?? [];
-  ll.innerHTML = rules.length
-    ? rules.map(r => '<div class="ri"><div class="rim"><div class="rt" style="color:var(--pink);font-family:monospace">'+r.name+'</div><div class="rs">Domain: '+r.domain+' · Conf: '+((r.confidence??0)*100).toFixed(0)+'%</div></div><span class="badge '+(r.promoted?'b-g':'b-y')+'">'+(r.promoted?'Promoted':'Rejected')+'</span></div>').join('')
-    : '<div class="empty"><div class="ico">💡</div>No new rules from this solve.</div>';
-
-  // Breakdown
-  var bd = document.getElementById('breakdown');
-  var comps = d.initial?.energy?.components ?? {};
-  bd.innerHTML = Object.entries(comps).filter(([,v])=>v>0)
-    .map(([k,v]) => '<div style="text-align:center;padding:9px 13px;background:var(--glass);border:1px solid var(--border);border-radius:10px"><div style="font-family:monospace;font-size:.95rem;font-weight:700;color:var(--cyan)">'+v.toFixed(3)+'</div><div style="font-size:.63rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:3px">'+k+'</div></div>').join('')
-    || '<span style="color:var(--text3);font-size:.78rem">No components</span>';
-}
-
-// ── memory ─────────────────────────────────────────────────────────────
-async function loadMem() {
-  var d = await api('/api/memory/stats');
-  if (!d) return;
-  var s = d.stats ?? {};
-  document.getElementById('ms-ep').textContent  = s.total_episodes ?? '—';
-  document.getElementById('ms-slv').textContent = s.solved ?? '—';
-  document.getElementById('ms-rt').textContent  = s.solve_rate != null ? fp(s.solve_rate*100) : '—';
-  document.getElementById('ms-str').textContent = s.strategy_count ?? '—';
-  document.getElementById('ms-avg').textContent = s.avg_energy_saved != null ? s.avg_energy_saved.toFixed(2) : '—';
-  document.getElementById('ms-sd').textContent  = d.seeds_loaded ?? '—';
-  var el = document.getElementById('ep-list');
-  var eps = d.recent_episodes ?? [];
-  el.innerHTML = eps.length
-    ? eps.map(e => '<div class="ri"><div class="rim"><div class="rt" style="font-family:monospace">'+e.problem_id+'</div><div class="rs">ΔE '+(e.energy_delta?.toFixed(3)??'—')+' · '+(e.elapsed_ms?.toFixed(1)??'—')+'ms · '+(e.steps??0)+' steps</div></div><span class="badge '+(e.success?'b-g':'b-r')+'">'+(e.success?'✓':'✗')+'</span></div>').join('')
-    : '<div class="empty"><div class="ico">💾</div>No episodes yet.</div>';
-}
-
-// ── self-model ─────────────────────────────────────────────────────────
-async function loadSelf() {
-  var d = await api('/api/self');
-  if (!d) return;
-  document.getElementById('sm-slv').textContent = d.total_solves ?? '—';
-  document.getElementById('sm-dom').textContent = Object.keys(d.domains ?? {}).length;
-  document.getElementById('sm-cal').textContent = d.calibration_error != null ? d.calibration_error.toFixed(3) : '—';
-  document.getElementById('sm-pri').textContent = d.prioritized_domain ?? '—';
-  var dc = document.getElementById('dom-comp');
-  var doms = d.domains ?? {};
-  dc.innerHTML = Object.entries(doms).length
-    ? Object.entries(doms).map(([name, info]) => {
-        var r = ((info.solve_rate??0)*100).toFixed(0);
-        var col = r>=70?'var(--green)':r>=40?'var(--yellow)':'var(--red)';
-        return '<div class="cr"><div class="cl">'+name+'</div><div class="ct"><div class="cf" style="width:'+r+'%;background:'+col+'"></div></div><div class="cp">'+r+'%</div><span class="badge '+(r>=70?'b-g':r>=40?'b-y':'b-r')+'" style="margin-left:7px">'+(info.mastery_level??'')+'</span></div>';
-      }).join('')
-    : '<div class="empty"><div class="ico">🧠</div>Solve problems to build competence map.</div>';
-  var cw = document.getElementById('cur-wts');
-  var wts = d.curiosity_weights ?? {};
-  var tot = Object.values(wts).reduce((a,b)=>a+b,0)||1;
-  cw.innerHTML = Object.entries(wts).length
-    ? Object.entries(wts).map(([k,v]) => '<div class="cr"><div class="cl">'+k+'</div><div class="ct"><div class="cf" style="width:'+(v/tot*100).toFixed(0)+'%;background:var(--purple)"></div></div><div class="cp">'+(v/tot*100).toFixed(0)+'%</div></div>').join('')
-    : '<div class="empty"><div class="ico">🎯</div>No weights yet.</div>';
-}
-
-// ── frontier ───────────────────────────────────────────────────────────
-async function loadFrontier() {
-  var d = await api('/api/frontier');
-  if (!d) return;
-  document.getElementById('fr-t').textContent = d.total   ?? '—';
-  document.getElementById('fr-s').textContent = d.solved  ?? '—';
-  document.getElementById('fr-u').textContent = d.unsolved ?? '—';
-  document.getElementById('fr-r').textContent = d.success_rate != null ? fp(d.success_rate*100) : '—';
-  document.getElementById('fr-zpd').innerHTML = d.zpd_domain
-    ? '<span class="badge b-c" style="font-size:.75rem;padding:4px 11px">ZPD Focus: '+d.zpd_domain+'</span>'
-    : '';
-  var fl = document.getElementById('fr-list');
-  var items = (d.recent_attempts ?? []).slice(0,15);
-  fl.innerHTML = items.length
-    ? items.map(p => '<div class="ri"><div class="rim"><div class="rt" style="font-family:monospace">'+p.problem_id+'</div><div class="rs">ΔE '+(p.delta?.toFixed(3)??'—')+' · '+(p.num_transforms??0)+' transforms</div></div><span class="badge '+(p.success?'b-g':'b-r')+'">'+(p.success?'Solved':'Failed')+'</span></div>').join('')
-    : '<div class="empty"><div class="ico">🗺</div>Frontier empty — solve more problems.</div>';
-}
-
-// ── concepts ───────────────────────────────────────────────────────────
-async function loadConcepts() {
-  var d = await api('/api/concepts');
-  if (!d) return;
-  var rules = d.rules ?? (Array.isArray(d) ? d : []);
-  _allConcepts = rules;
-  document.getElementById('cc-t').textContent = rules.length;
-  document.getElementById('cc-a').textContent = rules.filter(r=>r.active!==false).length;
-  var doms = new Set(rules.map(r=>r.domain).filter(Boolean));
-  document.getElementById('cc-d').textContent = doms.size;
-  renderC(rules);
-}
-function filterC() {
-  var q = document.getElementById('cc-filter').value.toLowerCase();
-  renderC(_allConcepts.filter(r=>(r.name+r.domain+(r.description??'')).toLowerCase().includes(q)));
-}
-function renderC(list) {
-  document.getElementById('cc-list').innerHTML = list.length
-    ? list.map(r => '<div class="ri"><div class="rim"><div class="rt" style="font-family:monospace;color:var(--pink)">'+r.name+'</div><div class="rs">'+( r.domain??'')+ ' · Conf: '+((r.confidence??1)*100).toFixed(0)+'%'+(r.pattern_description?' · '+r.pattern_description+' → '+(r.replacement_description??''):'')+'</div></div><span class="badge '+(r.active!==false?'b-g':'b-r')+'">'+(r.active!==false?'On':'Off')+'</span></div>').join('')
-    : '<div class="empty"><div class="ico">💡</div>No concepts found.</div>';
-}
-
-// ── curiosity ──────────────────────────────────────────────────────────
-async function loadCur() {
-  var d = await api('/api/curiosity');
-  if (!d) return;
-  document.getElementById('cu-p').textContent = d.pending_count  ?? '—';
-  document.getElementById('cu-s').textContent = d.solved_count   ?? '—';
-  document.getElementById('cu-t').textContent = d.total_generated ?? '—';
-  var items = (d.problems ?? []).slice(0,20);
-  document.getElementById('cu-list').innerHTML = items.length
-    ? items.map(p => { 
-        return '<div class="ri"><div class="rim"><div class="rt" style="font-family:monospace">[curiosity:'+p.id+']</div><div class="rs">Origin: '+p.origin+' · Nodes: '+p.nodes+'</div></div><button class="btn btn-g btn-sm" onclick="solveCuriosity(\''+p.id+'\', this)">Solve →</button></div>'; 
-      }).join('')
-    : '<div class="empty"><div class="ico">🔭</div>No pending problems.</div>';
-}
-async function genProbs() {
-  await api('/api/curiosity/generate', {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
-  loadCur();
-}
-
-async function solveCuriosity(id, btn) {
-  var ogText = btn.textContent;
-  btn.classList.add('ld'); btn.textContent = '…';
-  var d = await api('/api/curiosity/solve', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({id: id})
-  });
-  btn.classList.remove('ld'); btn.textContent = ogText;
-  if (d && !d.error) {
-    _last = d;
-    renderSolve(d);
-    sw('solve'); 
-    se(d.expression || '[curiosity:'+id+']');
-    tick();
-    loadCur();
-  } else if (d && d.error) {
-    alert("Curiosity Solve Error: " + d.error);
-  }
-}
-
-// ── checklist ──────────────────────────────────────────────────────────
-async function loadCheck() {
-  var d = await api('/api/engineering_checklist');
-  if (!d) return;
-  var el = document.getElementById('cl-content');
-  var secs = d.sections ?? [];
-  if (!secs.length) {
-    el.innerHTML = '<pre style="font-size:.72rem;color:var(--text2);white-space:pre-wrap">'+JSON.stringify(d,null,2)+'</pre>';
-    return;
-  }
-  el.innerHTML = secs.map(s => '<div style="margin-bottom:14px"><div class="card-title" style="margin-bottom:7px">'+(s.name??s.title??'')+'</div>'
-    +(s.items??[]).map(item => '<div class="ri"><div class="rim"><div class="rt">'+(item.name??item.description??item)+'</div>'+(item.description?'<div class="rs">'+item.description+'</div>':'')+'</div><span class="badge '+(item.status==='done'||item.complete?'b-g':item.status==='partial'?'b-y':'b-r')+'">'+(item.status??'pending')+'</span></div>').join('')+'</div>').join('<div class="sep"></div>');
-}
-
-// ── goals ──────────────────────────────────────────────────────────────
-async function loadGoals() {
-  var d = await api('/api/goals');
-  if (!d || d.error) return;
-  document.getElementById('g-act').textContent = d.active_count   ?? '—';
-  document.getElementById('g-ach').textContent = d.achieved_count ?? '—';
-  var nb = document.getElementById('next-goal');
-  if (d.next_goal) {
-    nb.style.display = '';
-    document.getElementById('ng-txt').textContent = d.next_goal.description ?? '';
-    document.getElementById('ng-prog').style.width = ((d.next_goal.progress??0)*100).toFixed(0)+'%';
-  } else { nb.style.display = 'none'; }
-  var goals = d.active_goals ?? [];
-  document.getElementById('g-list').innerHTML = goals.length
-    ? goals.map(g => '<div class="ri"><div class="rim"><div class="rt">'+g.description+'</div><div class="rs">Priority: '+g.priority+' · Domain: '+(g.domain??'system')+' · '+Math.round((g.progress??0)*100)+'% complete</div><div class="pw" style="margin-top:5px"><div class="pb" style="width:'+Math.round((g.progress??0)*100)+'%"></div></div></div><span class="badge b-c">'+(g.type??'').replace(/_/g,' ')+'</span></div>').join('')
-    : '<div class="empty"><div class="ico">🎯</div>Solve problems to auto-generate goals.</div>';
-}
-
-// ── nl parser ──────────────────────────────────────────────────────────
-async function nlParse() {
-  var text = document.getElementById('nl-in').value.trim();
-  if (!text) return;
-  var d = await api('/api/parse?q=' + encodeURIComponent(text));
-  if (!d || d.error) return;
-  _nlExpr = d.expression;
-  document.getElementById('nl-expr').textContent = d.expression || '(empty)';
-  document.getElementById('nl-conf').textContent = d.confidence != null ? fp(d.confidence*100) : '—';
-  document.getElementById('nl-dom').textContent  = d.domain || '—';
-  document.getElementById('nl-warn').innerHTML   = (d.warnings??[]).map(w=>'<div style="font-size:.72rem;color:var(--yellow);margin-bottom:3px">⚠ '+w+'</div>').join('');
-  document.getElementById('nl-card').style.display = '';
-}
-async function nlSolve() {
-  if (!_nlExpr) return;
-  se(_nlExpr); sw('solve'); solve();
-}
-
-// ── explain ────────────────────────────────────────────────────────────
-async function runExplain() {
-  var transforms = document.getElementById('ex-tr').value.split(',').map(s=>s.trim()).filter(Boolean);
-  var delta  = parseFloat(document.getElementById('ex-d').value) || 0;
-  var domain = document.getElementById('ex-dom').value;
-  var d = await api('/api/explain', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({transforms, delta, domain, top_k:5})
-  });
-  if (!d) return;
-  document.getElementById('ex-results').style.display = '';
-  document.getElementById('ex-conf-lbl').textContent = 'confidence: ' + (d.confidence_level ?? '—');
-  var best = d.best_explanation;
-  document.getElementById('ex-best').innerHTML = best
-    ? '<div class="ps"><div class="ps-t">'+best.name+'</div><div class="ps-s">Domain: '+best.domain+' · Posterior: '+(best.posterior*100).toFixed(0)+'% · Action: '+best.recommended_action+'</div>'+(best.reasoning_chain??[]).map(l=>'<div class="ps-c" style="margin-top:2px">'+l+'</div>').join('')+'</div>'
-    : '—';
-  document.getElementById('ex-hyps').innerHTML = (d.hypotheses??[]).map((h,i)=>'<div class="ri"><div class="rim"><div class="rt">'+( i+1)+'. '+h.name+'</div><div class="rs">Posterior: '+(h.posterior*100).toFixed(0)+'% · Occam: '+h.occam_score.toFixed(3)+' · '+h.domain+'</div></div><span class="badge '+(h.recommended_action==='accept'?'b-g':h.recommended_action==='verify'?'b-y':'b-r')+'">'+h.recommended_action+'</span></div>').join('');
-}
-function useLastSolve() {
-  if (!_last) return;
-  document.getElementById('ex-tr').value = (_last.transforms_applied??[]).join(', ');
-  document.getElementById('ex-d').value  = _last.delta ?? 0;
-  runExplain();
-}
-
-// ── active metacognitive questioning ─────────────────────────────────────
-let _currentQuestion = null;
-function showQuestionModal(d) {
-  _currentQuestion = d;
-  document.getElementById('q-text').textContent = d.question_data.question;
-  document.getElementById('q-ans').value = '';
-  document.getElementById('q-err').style.display = 'none';
-  var m = document.getElementById('q-modal');
-  m.style.display = 'flex';
-  setTimeout(() => document.getElementById('q-ans').focus(), 100);
-}
-
-async function submitAnswer() {
-  if (!_currentQuestion) return;
-  var ans = document.getElementById('q-ans').value.trim();
-  if (!ans) return;
-  
-  var btn = document.getElementById('q-submit');
-  btn.classList.add('ld'); btn.textContent = '…';
-  
-  var d = await api('/api/teach', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      rule_text: ans,
-      domain: _currentQuestion.question_data.domain
-    })
-  });
-  
-  btn.classList.remove('ld'); btn.textContent = 'Teach & Resume';
-  
-  if (!d || d.error) {
-    var err = document.getElementById('q-err');
-    err.textContent = d?.error || 'Failed to learn rule.';
-    err.style.display = '';
-    return;
-  }
-  
-  document.getElementById('q-modal').style.display = 'none';
-  // Resume the solve now that we know the rule
-  solve();
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  sw('solve');
-  tick();
-  setInterval(tick, 5000);
-});
-  </script>
-
-  <!-- ═══ QUESTION MODAL ═══ -->
-  <div id="q-modal"
-    style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(8px)">
-    <div
-      style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:30px;width:500px;max-width:90%;box-shadow:0 10px 40px rgba(0,0,0,0.5)">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-        <div
-          style="width:40px;height:40px;border-radius:20px;background:var(--glass-hov);display:flex;align-items:center;justify-content:center;font-size:1.4rem">
-          🤔</div>
-        <div>
-          <div style="font-size:1.1rem;font-weight:600;color:var(--text)">SARE has a question</div>
-          <div style="font-size:0.8rem;color:var(--text3)">Active Metacognitive Learning</div>
-        </div>
-      </div>
-      <div id="q-text"
-        style="font-size:0.95rem;color:var(--text2);margin-bottom:20px;line-height:1.5;background:var(--glass);padding:15px;border-radius:8px;border-left:3px solid var(--purple)">
-      </div>
-      <div style="margin-bottom:15px">
-        <div style="font-size:0.75rem;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">
-          Teach SARE the Rule</div>
-        <input type="text" id="q-ans" class="inp" placeholder="e.g. A and false is false"
-          style="width:100%;font-size:0.9rem" onkeydown="if(event.key==='Enter') submitAnswer()">
-        <div id="q-err" style="color:var(--red);font-size:0.75rem;margin-top:6px;display:none"></div>
-      </div>
-      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:25px">
-        <button class="btn btn-n"
-          onclick="document.getElementById('q-modal').style.display='none'; document.getElementById('solve-btn').textContent='⚡ Solve'; document.getElementById('solve-btn').classList.remove('ld');">Cancel</button>
-        <button class="btn btn-p" id="q-submit" onclick="submitAnswer()">Teach & Resume</button>
-      </div>
     </div>
   </div>
+
+  <script>
+// Utilities
+const $ = id => document.getElementById(id);
+function sw(name) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.view-container').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+  if(name==='dashboard') refreshDashboard();
+  if(name==='memory') loadMem();
+}
+function log(msg, type='sys') {
+  const el = $('dashboard-log');
+  if(el){ el.innerHTML += `<br><span class="${type}">[${new Date().toISOString().split('T')[1].slice(0,-1)}]</span> ${msg}`; el.scrollTop = el.scrollHeight; }
+}
+
+async function api(path, body) {
+  const r = await fetch(path, { method: body?'POST':'GET', headers: {'Content-Type':'application/json'}, body: body?JSON.stringify(body):undefined });
+  return r.json();
+}
+
+// Global Refresh
+async function refreshDashboard() {
+  const [mem, cs, tom, conc] = await Promise.all([
+    api('/api/memory/stats').catch(()=>({})),
+    api('/api/commonsense', {action:'stats'}).catch(()=>({})),
+    api('/api/tom', {action:'summary'}).catch(()=>({})),
+    api('/api/concepts').catch(()=>({}))
+  ]);
+  
+  $('db-episodes').textContent = mem.episodes_stored ?? '0';
+  $('m-ep').textContent = mem.episodes_stored ?? '0';
+  $('m-vec').textContent = mem.vector_count ?? '0';
+  $('m-syn').textContent = mem.synthetic_rules ?? '0';
+  
+  $('db-cs').textContent = cs.total_facts ?? '0';
+  $('db-tom').textContent = tom.total_agents ?? '0';
+  
+  const rules = conc.rules || [];
+  $('db-concepts').textContent = rules.length;
+  
+  const tbody = rules.map(r => `<tr>
+    <td class="c-cyan">${r.name}</td>
+    <td>${r.domain}</td>
+    <td class="mono c-green">${(r.confidence||0).toFixed(2)}</td>
+    <td class="mono">${r.observations||1}</td>
+  </tr>`).join('');
+  
+  if(tbody){
+    $('db-concept-table').querySelector('tbody').innerHTML = tbody.slice(0, 1000); // truncate for UI
+    $('m-concept-table').querySelector('tbody').innerHTML = tbody.slice(0, 2000);
+  }
+}
+
+// Quick NL
+async function doQuickNL() {
+  const q = $('db-quick-input').value.trim();
+  if(!q) return;
+  const out = $('db-quick-result'); out.style.display = 'block';
+  out.innerHTML = `<span class="sys">&gt; Processing NL query via LLM bridge...</span>`;
+  const d = await api('/api/solve-full', {question: q});
+  if(d.error) { out.innerHTML += `<br><span class="err">Error: ${d.error}</span>`; return; }
+  out.innerHTML += `<br><br><span class="c-cyan">Expression:</span> ${d.expression}<br><span class="c-green">Answer:</span> ${d.answer_nl}`;
+  log(`NL Query processed: "${q}" -> ${d.expression}`);
+}
+
+// Symbolic Solver
+async function doSolve() {
+  const e = $('solve-expr').value.trim();
+  const b = +$('solve-budget').value;
+  if(!e) return;
+  
+  $('solve-status').textContent = 'COMPUTING...';
+  $('solve-status').className = 'badge b-red';
+  $('solve-stats').style.display = 'none';
+  $('solve-proof').style.display = 'none';
+  $('lbl-proof').style.display = 'none';
+  $('solve-memory').innerHTML = '<span class="sys">&gt; Querying Hippocampus vector DB...</span><br><span class="sys">&gt; Searching graph structural topology...</span>';
+  $('solve-explain').innerHTML = '<span class="muted">Awaiting solver completion...</span>';
+  
+  log(`Dispatching symbolic trace for: ${e}`, 'sys');
+  const t0 = Date.now();
+  const d = await api('/api/solve', {expression: e, budget: b, algorithm: 'hybrid'});
+  const t1 = Date.now();
+  
+  if(d.error) { $('solve-status').textContent = 'ERROR'; $('solve-status').className='badge b-red'; return; }
+  
+  $('solve-status').textContent = d.solve_success === false ? 'AIDE-REQUIRED' : 'SOLVED';
+  $('solve-status').className = d.solve_success === false ? 'badge b-amber' : 'badge b-green';
+  
+  $('solve-stats').style.display = 'grid';
+  $('s-init').textContent = d.initial?.energy?.total?.toFixed(2) || '0';
+  $('s-final').textContent = d.result?.energy?.total?.toFixed(2) || '0';
+  $('s-steps').textContent = d.steps_taken || '0';
+  
+  if(d.transforms_applied?.length) {
+    $('lbl-proof').style.display = 'block';
+    $('solve-proof').style.display = 'block';
+    $('solve-proof').innerHTML = d.transforms_applied.map((t,i) => `[${i+1}] <span class="c-cyan">${t}</span>`).join('<br>');
+  }
+  
+  $('solve-explain').innerHTML = `<span class="c-cyan">${e}</span><br><br>${d.nl_explanation || '<span class="err">NL explanation generation skipped or failed.</span>'}`;
+  
+  // Memory augment view
+  if(d.recalled_memory && d.recalled_memory.length > 0) {
+    let html = `<span class="c-green">✓ Found ${d.recalled_memory.length} structurally similar episodes</span><br><br>`;
+    d.recalled_memory.forEach((r,i) => {
+      html += `[MATCH ${i+1}] <span class="c-amber">Sim: ${r.similarity.toFixed(2)}</span> | Orig: <span class="mono">${r.problem_id}</span><br>`;
+      html += `↳ Sequence: <span class="muted">${r.transforms.join(' -> ')}</span><br><br>`;
+    });
+    $('solve-memory').innerHTML = html;
+  } else {
+    $('solve-memory').innerHTML = `<span class="err">No episodic matches found. Synthesizing from strict semantics.</span>`;
+  }
+  
+  log(`Solve complete in ${t1-t0}ms. Delta Eval: ${d.delta}`, 'sys');
+  refreshDashboard();
+}
+
+// Grounding
+async function doGround() {
+  const k = $('gr-type').value;
+  const p = $('gr-payload').value.trim();
+  if(!p) return;
+  $('gr-out').innerHTML = '<span class="sys">Executing grounding subsystem...</span>';
+  const d = await api('/api/ground', {kind: k, payload: p});
+  if(d.error) { $('gr-out').innerHTML = `<span class="err">${d.error}</span>`; return; }
+  $('gr-out').innerHTML = `<span class="c-cyan">Graph Constructed:</span> ${d.node_count} nodes, ${d.edge_count} edges.\n\n` +
+    JSON.stringify(d.graph?.nodes?.slice(0,5), null, 2) + `\n<span class="muted">...and ${Math.max(0, d.node_count-5)} more nodes</span>`;
+  log(`Grounding complete: ${d.node_count} nodes mapped.`);
+}
+
+// Common Sense
+async function doCS() {
+  const q = $('cs-q').value.trim();
+  if(!q) return;
+  $('cs-out').innerHTML = '<span class="sys">Querying local KB...</span>';
+  const d = await api('/api/commonsense', {action:'query', concept:q, depth:1});
+  if(d.error) { $('cs-out').innerHTML = `<span class="err">${d.error}</span>`; return;}
+  $('cs-out').innerHTML = `<span class="c-green">Matches: ${d.total_matched}</span>\n` + 
+    d.facts.map(f => `<span class="c-cyan">${f.subject}</span> <span class="muted">${f.relation}</span> <span class="c-amber">${f.object}</span>`).join('\n');
+}
+async function doCSAug(){
+  const q = $('cs-aug').value.trim();
+  $('cs-out').innerHTML = '<span class="sys">Fetching ConceptNet API...</span>';
+  const d = await api('/api/commonsense', {action:'augment', concepts: q.split(',')});
+  $('cs-out').innerHTML = `<span class="c-green">Augmented KB. Total facts now: ${d.total_facts}</span>`;
+  refreshDashboard();
+}
+
+// Theory of Mind
+async function doTomReg() {
+  const id= $('tom-id').value.trim();
+  const d = await api('/api/tom', {action:'register', agent_id:id});
+  $('tom-out').innerHTML = `<span class="c-cyan">Agent Model Loaded:</span>\n` + JSON.stringify(d.state, null, 2);
+  log(`ToM: registered agent ${id}`);
+}
+async function doTomBelief() {
+  const id= $('tom-id').value.trim();
+  const b = $('tom-b').value.trim();
+  const t = $('tom-t').value === 'true';
+  const d = await api('/api/tom', {action:'add_belief', agent_id:id, belief:b, truth:t});
+  $('tom-out').innerHTML = `<span class="c-green">Belief updated:</span> ${b} -> ${t}\n\n` + JSON.stringify(d,null,2);
+}
+async function doTomFB() {
+  const id= $('tom-id').value.trim();
+  const b = $('tom-fb-b').value.trim();
+  const r = $('tom-fb-r').value.trim();
+  const d = await api('/api/tom', {action:'false_belief', agent_id:id, belief:b, reality:r});
+  $('tom-out').innerHTML = `<span class="c-amber">False Belief Evaluation:</span>\n` + JSON.stringify(d,null,2);
+  log(`ToM: Executed false-belief assessment on ${id}`);
+}
+
+// Init
+window.onload = refreshDashboard;
+  </script>
 </body>
 
 </html>

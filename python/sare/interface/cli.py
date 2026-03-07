@@ -23,7 +23,7 @@ from sare.engine import (
     ALL_TRANSFORMS, EXAMPLE_PROBLEMS,
     load_problem, load_problem_from_file, SearchResult, load_heuristic_scorer,
 )
-from sare.logging.logger import SareLogger, SolveLog
+from sare.sare_logging.logger import SareLogger, SolveLog
 
 _BINDINGS_ERROR = None
 try:

@@ -89,21 +89,37 @@ class SeededConceptRegistry:
     """
     Pure-Python ConceptRegistry that works when C++ bindings are unavailable.
     Provides the same interface so web.py can call it generically.
+    
+    Epic 22: Supports save/load for full concept persistence across reboots.
     """
+
+    PERSIST_PATH = Path(__file__).resolve().parents[3] / "data" / "memory" / "concept_registry.json"
+    SYNTH_CODE_PATH = Path(__file__).resolve().parents[3] / "data" / "memory" / "hallucinated_rules.py"
 
     def __init__(self):
         self._seeds: dict = {}
         self._learned: list = []
+        self._synthetic_code: list[dict] = []  # {name, code, problem, timestamp}
 
     def add_rule(self, rule):
         """Accept a rule object or dict."""
-        name = getattr(rule, "name", None) or rule.get("name", "")
+        name = getattr(rule, "name", None) or (rule.get("name", "") if isinstance(rule, dict) else "")
         if name:
             self._learned.append(rule)
+
+    def add_synthetic_rule(self, name: str, code: str, problem: str):
+        """Persist a newly hallucinated Python transform to memory."""
+        import time
+        entry = {"name": name, "code": code, "problem": problem, "timestamp": time.time()}
+        self._synthetic_code.append(entry)
+        log.info(f"Adopted synthetic rule '{name}' into persistent memory.")
 
     def get_rules(self):
         seed_rules = list(self._seeds.values())
         return seed_rules + self._learned
+
+    def get_synthetic_rules(self) -> list[dict]:
+        return list(self._synthetic_code)
 
     def get_consolidated_rules(self, min_confidence: float = 0.8):
         return [
@@ -111,6 +127,56 @@ class SeededConceptRegistry:
             if (getattr(r, "confidence", r.get("confidence", 0)) if isinstance(r, dict)
                 else getattr(r, "confidence", 0)) >= min_confidence
         ]
+
+    def save(self, path: Optional[Path] = None):
+        """Persist learned rules and synthetic code to disk."""
+        p = Path(path or self.PERSIST_PATH)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            payload = {
+                "learned": [
+                    r if isinstance(r, dict) else {
+                        "name": getattr(r, "name", ""),
+                        "domain": getattr(r, "domain", "general"),
+                        "confidence": getattr(r, "confidence", 0.9),
+                        "observations": getattr(r, "observations", 1),
+                    }
+                    for r in self._learned
+                ],
+                "synthetic": self._synthetic_code,
+            }
+            import json
+            with open(p, "w") as f:
+                json.dump(payload, f, indent=2)
+
+            # Also write synthetic code as importable Python
+            sp = self.SYNTH_CODE_PATH
+            sp.parent.mkdir(parents=True, exist_ok=True)
+            with open(sp, "w") as f:
+                f.write("# Auto-generated hallucinated transforms — loaded on SARE-HX startup\n")
+                for entry in self._synthetic_code:
+                    f.write(f"\n# Problem: {entry.get('problem', '?')}\n")
+                    f.write(entry.get("code", "") + "\n")
+
+            log.info(f"ConceptRegistry saved: {len(self._learned)} learned, {len(self._synthetic_code)} synthetic transforms.")
+        except Exception as e:
+            log.error(f"ConceptRegistry save failed: {e}")
+
+    def load(self, path: Optional[Path] = None):
+        """Load previously persisted rules from disk."""
+        p = Path(path or self.PERSIST_PATH)
+        if not p.exists():
+            log.info("No persisted ConceptRegistry found. Starting fresh.")
+            return
+        try:
+            import json
+            with open(p) as f:
+                payload = json.load(f)
+            self._learned = payload.get("learned", [])
+            self._synthetic_code = payload.get("synthetic", [])
+            log.info(f"ConceptRegistry loaded: {len(self._learned)} learned, {len(self._synthetic_code)} synthetic rules.")
+        except Exception as e:
+            log.error(f"ConceptRegistry load failed: {e}")
 
     def __len__(self):
         return len(self._seeds) + len(self._learned)

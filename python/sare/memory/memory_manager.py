@@ -41,12 +41,15 @@ _sb = None
 GraphSignature = None
 StrategyMemory = None
 EpisodicStore = None
+GraphEmbedder = None
+VectorDB = None
 
 try:
-    import sare.sare_bindings as _sb  # type: ignore
     GraphSignature = getattr(_sb, "GraphSignature", None)
     StrategyMemory = getattr(_sb, "StrategyMemory", None)
     EpisodicStore  = getattr(_sb, "EpisodicStore",  None)
+    GraphEmbedder  = getattr(_sb, "GraphEmbedder", None)
+    VectorDB       = getattr(_sb, "VectorDB", None)
 except Exception as e:            # pragma: no cover
     log.warning("MemoryManager C++ bindings unavailable: %s", e)
 
@@ -105,16 +108,39 @@ class MemoryManager:
 
         self._episodes_path  = self.persist_dir / "episodes.jsonl"
         self._strategies_path = self.persist_dir / "strategies.json"
-
+        
         # In-memory stores (Python-native, C++ optional)
         self._episodes: List[SolveEpisode] = []
         self._strategies: dict = {}   # signature → strategy dict
+        
+        # Tier 2: Lifelong Memory Scaling (Epic 12)
+        self._vector_db = VectorDB() if VectorDB else None
+        self._vector_db_path = self.persist_dir / "strategies_vector.bin"
+        
+        # Mapping from signature to problem_id/embedding payload
+        self._payload_to_strategy: dict = {}
 
     # ── Before-solve: strategy lookup ─────────────────────────
+
+    def _semantic_lookup(self, graph) -> Optional[dict]:
+        """Perform ANN search over VectorDB to find structurally similar past strategies."""
+        if not self._vector_db or not GraphEmbedder:
+            return None
+        
+        try:
+            embed = GraphEmbedder.embed(graph)
+            results = self._vector_db.search(embed, k=1, threshold=0.85)
+            if results:
+                best_match_sig = results[0][0]
+                return self._strategies.get(best_match_sig)
+        except Exception as e:
+            log.warning("VectorDB semantic lookup failed: %s", e)
+        return None
 
     def before_solve(self, graph) -> StrategyHint:
         """
         Compute signature for `graph`, look up best past strategy.
+        First tries exact structural match, then falls back to Semantic Vector ANN search.
         Returns a StrategyHint with the recommended transform sequence.
         """
         hint = StrategyHint()
@@ -123,7 +149,7 @@ class MemoryManager:
             sig = self._compute_signature(graph)
             hint.signature = sig
 
-            strat = self._strategies.get(sig) or self._soft_lookup(sig)
+            strat = self._strategies.get(sig) or self._semantic_lookup(graph) or self._soft_lookup(sig)
             if strat:
                 hint.found = True
                 hint.transform_sequence = strat.get("transform_sequence", [])
@@ -149,8 +175,8 @@ class MemoryManager:
 
         if episode.success and episode.transform_sequence:
             try:
-                sig = graph and self._compute_signature(graph) or episode.problem_id
-                self._upsert_strategy(sig, episode)
+                sig = self._compute_signature(graph) if graph else episode.problem_id
+                self._upsert_strategy(sig, episode, graph)
             except Exception as e:
                 log.debug("after_solve strategy update error: %s", e)
 
@@ -162,6 +188,35 @@ class MemoryManager:
         episode_count = len(self._episodes)
         if episode_count in (200, 500, 1000) or episode_count % 500 == 0:
             self._maybe_trigger_training(episode_count)
+
+    def _upsert_strategy(self, sig: str, episode: SolveEpisode, graph=None):
+        """Update or insert a strategy record and its semantic vector."""
+        if sig not in self._strategies:
+            self._strategies[sig] = {
+                "transform_sequence": episode.transform_sequence,
+                "avg_energy_reduction": episode.initial_energy - episode.final_energy,
+                "success_rate": 1.0,
+                "attempts": 1
+            }
+            # Epic 12: Insert into VectorDB for semantic lookup
+            if self._vector_db and GraphEmbedder and graph and episode.problem_id not in self._payload_to_strategy:
+                try:
+                    embed = GraphEmbedder.embed(graph)
+                    self._vector_db.insert(embed, sig)
+                    self._payload_to_strategy[episode.problem_id] = sig
+                except Exception as e:
+                    log.warning("VectorDB insert failed: %s", e)
+        else:
+            strat = self._strategies[sig]
+            attempts = strat["attempts"] + 1
+            strat["success_rate"] = ((strat["success_rate"] * strat["attempts"]) + 1.0) / attempts
+            
+            new_reduction = episode.initial_energy - episode.final_energy
+            strat["avg_energy_reduction"] = ((strat["avg_energy_reduction"] * strat["attempts"]) + new_reduction) / attempts
+            
+            strat["attempts"] = attempts
+            if new_reduction > strat["avg_energy_reduction"]:
+                strat["transform_sequence"] = episode.transform_sequence
 
     # ── Persistence ────────────────────────────────────────────
 
@@ -180,9 +235,16 @@ class MemoryManager:
         except OSError as e:
             log.warning("Failed to save strategies: %s", e)
 
+        if self._vector_db:
+            try:
+                self._vector_db.save(str(self._vector_db_path))
+            except Exception as e:
+                log.warning("Failed to save VectorDB: %s", e)
+
         log.info(
-            "Memory saved: %d episodes, %d strategies",
-            len(self._episodes), len(self._strategies),
+            "Memory saved: %d episodes, %d strategies, %d vectors",
+            len(self._episodes), len(self._strategies), 
+            self._vector_db.size() if self._vector_db else 0
         )
 
     def load(self):
@@ -210,7 +272,15 @@ class MemoryManager:
             except Exception as e:
                 log.warning("Strategy load error: %s", e)
 
-    # ── Statistics ─────────────────────────────────────────────
+        # Load VectorDB
+        if self._vector_db and self._vector_db_path.exists():
+            try:
+                self._vector_db.load(str(self._vector_db_path))
+                log.info("Loaded %d vectors from VectorDB", self._vector_db.size())
+            except Exception as e:
+                log.warning("VectorDB load error: %s", e)
+
+    # ── Soft matching (Python fallback) ─────────────────────────────────────────────
 
     def stats(self) -> dict:
         total = len(self._episodes)
@@ -224,6 +294,7 @@ class MemoryManager:
                 sum(e.initial_energy - e.final_energy for e in self._episodes if e.success)
                 / max(solved, 1), 3
             ),
+            "vector_count":      self._vector_db.size() if self._vector_db else 0,
         }
 
     @property

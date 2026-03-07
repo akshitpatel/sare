@@ -69,6 +69,16 @@ _ARITHMETIC_PATTERNS: Dict[str, dict] = {
         "pattern": "self_minus_self",
         "delta": -4.0,
     },
+    "equation_subtract": {
+        "operators": ["=", "==", "eq"],
+        "pattern": "equation_shift_term",
+        "delta": -2.0,  # Penalty for increasing size, but offset by isolating var
+    },
+    "equation_divide": {
+        "operators": ["=", "==", "eq"],
+        "pattern": "equation_divide_coeff",
+        "delta": -1.0,  # Isolating the variable, usually leads to simplifications
+    },
 }
 
 _LOGIC_PATTERNS: Dict[str, dict] = {
@@ -172,9 +182,25 @@ class ConceptRule(Transform):
 
     def _resolve_pattern(self) -> Optional[dict]:
         """Look up the structural pattern for this rule name."""
-        info = _ARITHMETIC_PATTERNS.get(self._rule_name)
+        name = self._rule_name
+
+        # --- Analogy Transfer Rule Name Resolution ---
+        if name.startswith("transfer_"):
+            if "identity_add" in name and "logic" in name: name = "and_true"
+            elif "identity_mul" in name and "logic" in name: name = "or_false"
+            elif "annihilator_mul" in name and "logic" in name: name = "and_false"
+            elif "involution" in name and "arithmetic" in name: name = "double_negation"
+            elif "involution" in name and "algebra" in name: name = "double_negation"
+            elif "self_inverse" in name and "logic" in name: name = "xor_self"
+            elif "complement_max" in name and "logic" in name: name = "exclusion_middle"
+            elif "complement_min" in name and "logic" in name: name = "contradiction"
+            else:
+                # If analog target isn't explicitly mapped here, fall back to exact match attempts
+                name = name.split("_to_")[-1]
+
+        info = _ARITHMETIC_PATTERNS.get(name)
         if not info:
-            info = _LOGIC_PATTERNS.get(self._rule_name)
+            info = _LOGIC_PATTERNS.get(name)
         return info
 
     def _match_pattern(self, graph: Graph, info: dict) -> List[dict]:
@@ -323,6 +349,57 @@ class ConceptRule(Transform):
                             }
             return None
 
+        elif pattern == "equation_shift_term":
+            # a + b = c → a = c - b or b = c - a
+            if len(children) == 2:
+                # We want to identify if one child is an addition and the other is a term
+                for i, side in enumerate(children):
+                    other_side = children[1 - i]
+                    # if LHS is an addition: X + Y = RHS
+                    if side.type == "operator" and side.label in ("+", "add"):
+                        sub_children = [graph.get_node(e.target) for e in graph.outgoing(side.id)]
+                        sub_children = [c for c in sub_children if c]
+                        if len(sub_children) == 2:
+                            # Propose subtracting sub_children[0]
+                            return {
+                                "eq_op": op_node.id,
+                                "add_op": side.id,
+                                "term_to_shift": sub_children[0].id,
+                                "term_to_keep": sub_children[1].id,
+                                "other_side": other_side.id,
+                                "_action": "shift_addition_term",
+                            }
+            return None
+
+        elif pattern == "equation_divide_coeff":
+            # a * b = c → a = c / b
+            if len(children) == 2:
+                for i, side in enumerate(children):
+                    other_side = children[1 - i]
+                    # if LHS is multiplication: X * Y = RHS
+                    if side.type == "operator" and side.label in ("*", "mul"):
+                        sub_children = [graph.get_node(e.target) for e in graph.outgoing(side.id)]
+                        sub_children = [c for c in sub_children if c]
+                        if len(sub_children) == 2:
+                            # If one is a constant, prefer dividing by the constant
+                            shift_idx = 0
+                            if sub_children[1].type == "constant":
+                                shift_idx = 1
+                            elif sub_children[0].type == "constant":
+                                shift_idx = 0
+                            else:
+                                shift_idx = 0 # default
+                            
+                            return {
+                                "eq_op": op_node.id,
+                                "mul_op": side.id,
+                                "term_to_shift": sub_children[shift_idx].id,
+                                "term_to_keep": sub_children[1 - shift_idx].id,
+                                "other_side": other_side.id,
+                                "_action": "divide_multiplication_coeff",
+                            }
+            return None
+
         return None
 
     def _apply_pattern(self, graph: Graph, ctx: dict,
@@ -370,6 +447,76 @@ class ConceptRule(Transform):
                     g.add_edge(e.source, keep_id, e.relationship_type)
             g.remove_node(op_id)
             g.remove_node(inner_id)
+
+        elif action == "shift_addition_term":
+            # X + Y = RHS  →  Y = RHS - X
+            eq_op   = ctx["eq_op"]
+            add_op  = ctx["add_op"]
+            t_shift = ctx["term_to_shift"]
+            t_keep  = ctx["term_to_keep"]
+            rhs     = ctx["other_side"]
+
+            # 1. Rewire `t_keep` to directly connect to `eq_op` instead of `add_op`
+            for e in list(g.edges):
+                if e.target == add_op and e.source == eq_op:
+                    g.remove_edge(e.id)
+                    g.add_edge(eq_op, t_keep, e.relationship_type)
+
+            # 2. Create new Subtraction operator under `eq_op` replacing `rhs`
+            sub_id = g.add_node("operator", "-")
+            
+            # Detach RHS from eq_op and attach to sub
+            for e in list(g.edges):
+                if e.target == rhs and e.source == eq_op:
+                    g.remove_edge(e.id)
+                    g.add_edge(eq_op, sub_id, e.relationship_type)
+            
+            # Connect Subtraction to RHS and shifted term
+            g.add_edge(sub_id, rhs, "left")
+            
+            # Detach shifted term from add_op and attach to sub
+            for e in list(g.edges):
+                if e.target == t_shift and e.source == add_op:
+                    g.remove_edge(e.id)
+                    g.add_edge(sub_id, t_shift, "right")
+
+            # Remove the old addition op
+            g.remove_node(add_op)
+
+        elif action == "divide_multiplication_coeff":
+            # X * Y = RHS  →  Y = RHS / X
+            eq_op   = ctx["eq_op"]
+            mul_op  = ctx["mul_op"]
+            t_shift = ctx["term_to_shift"]
+            t_keep  = ctx["term_to_keep"]
+            rhs     = ctx["other_side"]
+
+            # 1. Rewire `t_keep` to directly connect to `eq_op` instead of `mul_op`
+            for e in list(g.edges):
+                if e.target == mul_op and e.source == eq_op:
+                    g.remove_edge(e.id)
+                    g.add_edge(eq_op, t_keep, e.relationship_type)
+
+            # 2. Create new Division operator under `eq_op` replacing `rhs`
+            div_id = g.add_node("operator", "/")
+            
+            # Detach RHS from eq_op and attach to div
+            for e in list(g.edges):
+                if e.target == rhs and e.source == eq_op:
+                    g.remove_edge(e.id)
+                    g.add_edge(eq_op, div_id, e.relationship_type)
+            
+            # Connect Division to RHS and shifted term
+            g.add_edge(div_id, rhs, "numerator")
+            
+            # Detach shifted term from mul_op and attach to div
+            for e in list(g.edges):
+                if e.target == t_shift and e.source == mul_op:
+                    g.remove_edge(e.id)
+                    g.add_edge(div_id, t_shift, "denominator")
+
+            # Remove the old mul op
+            g.remove_node(mul_op)
 
         return g, delta * self._confidence
 

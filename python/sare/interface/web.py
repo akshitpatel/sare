@@ -21,7 +21,7 @@ from sare.engine import (
     Graph, EnergyEvaluator, BeamSearch, MCTSSearch, EXAMPLE_PROBLEMS,
     load_problem, load_heuristic_scorer,
 )
-from sare.logging.logger import SareLogger, SolveLog
+from sare.sare_logging.logger import SareLogger, SolveLog
 from sare.learning.abstraction_learning import mine_frequent_patterns, propose_macros
 from sare.meta.macro_registry import list_macros, macro_steps_set, upsert_macros
 _BINDINGS_ERROR = None
@@ -60,6 +60,13 @@ except Exception as e:  # pragma: no cover
 CausalInduction_ = getattr(_sb, "CausalInduction", None) if '_sb' in dir() else None  # type: ignore
 reflection_engine = ReflectionEngine() if ReflectionEngine else None
 concept_registry  = ConceptRegistry()  if ConceptRegistry  else None
+
+# Inject registry into causal modules now that it exists
+if '_analogy_transfer' in dir() and _analogy_transfer:
+    _analogy_transfer.concept_registry = concept_registry
+if '_abductive_ranker' in dir() and _abductive_ranker:
+    _abductive_ranker.concept_registry = concept_registry
+
 causal_induction  = CausalInduction_() if CausalInduction_  else None
 curriculum_gen    = CurriculumGenerator() if CurriculumGenerator else None
 _energy_for_runner = EnergyEvaluator()
@@ -72,6 +79,14 @@ experiment_runner = (
         causal_induction=causal_induction,
         concept_registry=concept_registry,
         transforms=None,  # filled lazily in run_batch
+        # Bridge: convert C++ sare_bindings.Graph → Python engine Graph before solve
+        graph_converter=lambda g: _cpp_graph_to_py_graph(g),
+        # Pillar 3 + 4: credit_assigner and self_model patched in after they are initialized
+        credit_assigner=None,
+        self_model=None,
+        # Tier 1A + 1B: cross-domain analogies and abductive reasoning
+        analogy_transfer=_analogy_transfer if '_analogy_transfer' in dir() else None,
+        abductive_ranker=_abductive_ranker if '_abductive_ranker' in dir() else None,
     )
     if (ExperimentRunner and curriculum_gen)
     else None
@@ -104,6 +119,12 @@ except Exception as _fm_err:  # pragma: no cover
     print(f"[sare] FrontierManager unavailable: {_fm_err}")
 
 try:
+    from sare.learning.credit_assignment import CreditAssigner  # type: ignore
+except Exception as _ca_err:  # pragma: no cover
+    CreditAssigner = None  # type: ignore
+    print(f"[sare] CreditAssigner unavailable: {_ca_err}")
+
+try:
     from sare.meta.goal_setter import GoalSetter  # type: ignore
 except Exception as _gs_err:  # pragma: no cover
     GoalSetter = None  # type: ignore
@@ -134,18 +155,24 @@ except Exception as _pb_err:  # pragma: no cover
     print(f"[sare] ProofBuilder unavailable: {_pb_err}")
 
 try:
-    from sare.interface.nl_parser_v2 import EnhancedNLParser as BasicNLParser  # type: ignore
-    _nl_parser = BasicNLParser()
-    print("[sare] EnhancedNLParser (v2) loaded")
-except Exception:  # pragma: no cover
+    from sare.interface.universal_parser import UniversalParser
+    _nl_parser = UniversalParser()
+    print("[sare] UniversalParser (Epic 10) loaded")
+except Exception as e:
+    print(f"[sare] UniversalParser failed: {e}")
     try:
-        from sare.interface.nl_parser import BasicNLParser  # type: ignore
+        from sare.interface.nl_parser_v2 import EnhancedNLParser as BasicNLParser  # type: ignore
         _nl_parser = BasicNLParser()
-        print("[sare] Fallback BasicNLParser loaded")
-    except Exception as _np_err:
-        BasicNLParser = None  # type: ignore
-        _nl_parser = None
-        print(f"[sare] NLParser unavailable: {_np_err}")
+        print("[sare] EnhancedNLParser (v2) loaded fallback")
+    except Exception:  # pragma: no cover
+        try:
+            from sare.interface.nl_parser import BasicNLParser  # type: ignore
+            _nl_parser = BasicNLParser()
+            print("[sare] Fallback BasicNLParser loaded")
+        except Exception as _np_err:
+            BasicNLParser = None  # type: ignore
+            _nl_parser = None
+            print(f"[sare] NLParser unavailable: {_np_err}")
 
 try:
     from sare.causal.analogy_transfer import AnalogyTransfer  # type: ignore
@@ -180,6 +207,19 @@ except Exception as _hc_err:
     _hippocampus = None
     print(f"[sare] HippocampusDaemon unavailable: {_hc_err}")
 
+# ── Tier 5: LLM Hybrid Bridge ──────────────────────────────────────────────
+try:
+    from sare.interface.llm_bridge import (
+        parse_nl_problem, explain_solve_trace, llm_status, llm_available
+    )
+    print(f"[sare] LLMBridge loaded (LLM available: {llm_available()})")
+except Exception as _llm_err:
+    parse_nl_problem = None  # type: ignore
+    explain_solve_trace = None  # type: ignore
+    llm_status = None  # type: ignore
+    llm_available = None  # type: ignore
+    print(f"[sare] LLMBridge unavailable: {_llm_err}")
+
 # Instantiate memory manager and restore from disk
 memory_manager = MemoryManager() if MemoryManager else None
 if memory_manager:
@@ -196,6 +236,16 @@ if self_model:
     except Exception as _e:
         print(f"[sare] SelfModel restore failed: {_e}")
 
+# Pillar 4: patch self_model into experiment_runner (created before self_model above)
+if experiment_runner and self_model:
+    experiment_runner.self_model = self_model
+    print("[sare] SelfModel wired into ExperimentRunner (Pillar 4 active)")
+
+# Tier 1B: patch self_model into curriculum_gen for abductive domain targeting
+if curriculum_gen and self_model:
+    curriculum_gen._self_model = self_model
+    print("[sare] SelfModel wired into CurriculumGenerator (Tier 1B active)")
+
 frontier_manager = FrontierManager() if FrontierManager else None
 if frontier_manager:
     try:
@@ -203,12 +253,122 @@ if frontier_manager:
     except Exception as _e:
         print(f"[sare] FrontierManager restore failed: {_e}")
 
+# CreditAssigner — tracks per-transform utility from solve traces
+# Now persists directly to data/memory/credit_assigner.json via save()/load()
+credit_assigner = CreditAssigner() if CreditAssigner else None
+if credit_assigner:
+    try:
+        credit_assigner.load()  # warm-start from disk (falls back to SelfModel below)
+        if not credit_assigner.utilities and self_model and hasattr(self_model, 'get_transform_utilities'):
+            saved = self_model.get_transform_utilities()
+            if saved:
+                credit_assigner.utilities.update(saved)
+                print(f"[sare] CreditAssigner warmed from SelfModel ({len(saved)} utilities)")
+        if credit_assigner.utilities:
+            print(f"[sare] CreditAssigner: {len(credit_assigner.utilities)} utilities loaded")
+    except Exception as _e:
+        print(f"[sare] CreditAssigner restore failed: {_e}")
+
+# Pillar 3: patch credit_assigner into experiment_runner after it's loaded
+if experiment_runner and credit_assigner:
+    experiment_runner.credit_assigner = credit_assigner
+    print("[sare] CreditAssigner wired into ExperimentRunner (Pillar 3 active)")
+
+# Tier 1: patch analogy_transfer and abductive_ranker and inject registry
+if experiment_runner:
+    if _analogy_transfer:
+        _analogy_transfer.concept_registry = concept_registry
+        experiment_runner.analogy_transfer = _analogy_transfer
+        print("[sare] AnalogyTransfer wired into ExperimentRunner (Tier 1A active)")
+    if _abductive_ranker:
+        _abductive_ranker.concept_registry = concept_registry
+        experiment_runner.abductive_ranker = _abductive_ranker
+        print("[sare] AbductiveRanker wired into ExperimentRunner (Tier 1B active)")
+
+# CurriculumGenerator — restore past problem counter + history
+if curriculum_gen:
+    try:
+        curriculum_gen.load()
+    except Exception as _e:
+        print(f"[sare] CurriculumGenerator restore failed: {_e}")
+
 goal_setter = GoalSetter() if GoalSetter else None
 if goal_setter:
     try:
         goal_setter.load()
     except Exception as _e:
         print(f"[sare] GoalSetter restore failed: {_e}")
+
+# Pillar 3: Grounded Concept Formation — initialize experience memory
+try:
+    from sare.memory.concept_formation import ConceptMemory, ConceptFormation
+    concept_memory = ConceptMemory()
+    concept_memory.load()
+    print(f"[sare] ConceptMemory loaded ({len(concept_memory)} episodes)")
+except Exception as _e:
+    concept_memory = None
+    print(f"[sare] ConceptMemory init failed: {_e}")
+
+# AGI Gap #4: Common Sense Knowledge Base
+try:
+    from sare.knowledge.commonsense import CommonSenseBase
+    common_sense = CommonSenseBase()
+    common_sense.load()
+    if common_sense.total_facts() == 0:
+        common_sense.seed()  # Load built-in facts on first run
+    print(f"[sare] CommonSenseBase ready ({common_sense.total_facts()} facts)")
+except Exception as _e:
+    common_sense = None
+    print(f"[sare] CommonSenseBase init failed: {_e}")
+
+# AGI Gap #5: Theory of Mind Engine
+try:
+    from sare.social.theory_of_mind import TheoryOfMindEngine
+    tom_engine = TheoryOfMindEngine()
+    tom_engine.load()
+    print(f"[sare] TheoryOfMindEngine ready ({len(tom_engine._agents)} agents)")
+except Exception as _e:
+    tom_engine = None
+    print(f"[sare] TheoryOfMindEngine init failed: {_e}")
+
+# ── Graceful shutdown: persist everything to disk on exit ──────────────────
+import atexit as _atexit
+
+def _on_shutdown():
+    """Flush all learning state to disk when the server exits."""
+    if self_model:
+        try: self_model.save(); print("[sare] SelfModel saved.")
+        except Exception as _e: print(f"[sare] SelfModel save error: {_e}")
+    if frontier_manager:
+        try: frontier_manager.save(); print("[sare] FrontierManager saved.")
+        except Exception as _e: print(f"[sare] FrontierManager save error: {_e}")
+    if credit_assigner:
+        try: credit_assigner.save(); print("[sare] CreditAssigner saved.")
+        except Exception as _e: print(f"[sare] CreditAssigner save error: {_e}")
+    if curriculum_gen:
+        try: curriculum_gen.save(); print("[sare] CurriculumGenerator saved.")
+        except Exception as _e: print(f"[sare] CurriculumGenerator save error: {_e}")
+    if memory_manager:
+        try: memory_manager.save(); print("[sare] MemoryManager saved.")
+        except Exception: pass
+    # Epic 22: Save learned + synthetic rules so they survive reboots
+    if concept_registry and hasattr(concept_registry, "save"):
+        try: concept_registry.save(); print("[sare] ConceptRegistry saved.")
+        except Exception as _e: print(f"[sare] ConceptRegistry save error: {_e}")
+    # Pillar 3: save concept memory episodes
+    if concept_memory and hasattr(concept_memory, "save"):
+        try: concept_memory.save(); print("[sare] ConceptMemory saved.")
+        except Exception as _e: print(f"[sare] ConceptMemory save error: {_e}")
+    # AGI Gap #4: Save commonsense facts
+    if common_sense and hasattr(common_sense, "save"):
+        try: common_sense.save(); print("[sare] CommonSenseBase saved.")
+        except Exception as _e: print(f"[sare] CommonSenseBase save error: {_e}")
+    # AGI Gap #5: Save Theory of Mind agent models
+    if tom_engine and hasattr(tom_engine, "save"):
+        try: tom_engine.save(); print("[sare] TheoryOfMindEngine saved.")
+        except Exception as _e: print(f"[sare] TheoryOfMindEngine save error: {_e}")
+
+_atexit.register(_on_shutdown)
 
 # Pre-load foundational knowledge into ConceptRegistry
 _seeds_loaded = 0
@@ -218,6 +378,56 @@ if concept_registry and load_seeds:
         print(f"[sare] Loaded {_seeds_loaded} knowledge seeds into ConceptRegistry")
     except Exception as _e:
         print(f"[sare] Seed loading failed: {_e}")
+
+# Epic 22: Load persisted learned/synthetic rules on startup
+if concept_registry and hasattr(concept_registry, "load"):
+    try:
+        concept_registry.load()
+        _n_synth = len(concept_registry.get_synthetic_rules()) if hasattr(concept_registry, "get_synthetic_rules") else 0
+        print(f"[sare] Concept persistence loaded ({_n_synth} synthetic transforms restored)")
+    except Exception as _e:
+        print(f"[sare] Concept persistence load error: {_e}")
+
+# ── Bootstrap CurriculumGenerator with seed graphs ──
+# Build minimal C++ Graph objects so ExperimentRunner can generate problems
+# immediately without needing prior human solves.
+# Each seed = (op x y) structure that maps to a solvable algebraic expression.
+_BOOTSTRAP_SEEDS = [
+    # (op_label, arg1, arg2) — simple binary expressions
+    ("add",  "x", "zero"),   # x + 0  → identity_add
+    ("mul",  "x", "one"),    # x * 1  → identity_mul
+    ("mul",  "x", "zero"),   # x * 0  → annihilator
+    ("add",  "x", "x"),      # x + x  → idempotent add
+    ("sub",  "x", "x"),      # x - x  → self_inverse
+    ("and",  "x", "true"),   # x ∧ T  → identity_and
+    ("or",   "x", "false"),  # x ∨ F  → identity_or
+    ("and",  "x", "x"),      # x ∧ x  → idempotent
+]
+if curriculum_gen:
+    try:
+        from sare.sare_bindings import Graph as _CG  # type: ignore
+        _boot_added = 0
+        for _op, _a1, _a2 in _BOOTSTRAP_SEEDS:
+            try:
+                _g = _CG()
+                _op_id = _g.add_node("OP");  _g.get_node(_op_id).set_attribute("label", _op)
+                _a1_id = _g.add_node("VAR"); _g.get_node(_a1_id).set_attribute("label", _a1)
+                _a2_id = _g.add_node("VAR"); _g.get_node(_a2_id).set_attribute("label", _a2)
+                _g.add_edge(_op_id, _a1_id, "arg")
+                _g.add_edge(_op_id, _a2_id, "arg")
+                curriculum_gen.add_seed(_g)
+                _boot_added += 1
+            except Exception as _be:
+                print(f"[sare] bootstrap seed '{_op}' failed: {_be}")
+        if _boot_added:
+            print(f"[sare] CurriculumGenerator seeded with {_boot_added} bootstrap C++ graphs")
+    except ImportError:
+        pass
+
+# Inject transforms into experiment_runner so it can solve from day 1
+if experiment_runner:
+    from sare.engine import ALL_TRANSFORMS as _all_t  # type: ignore
+    experiment_runner.transforms = _all_t
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 ENGINEERING_CHECKLIST_PATH = REPO_ROOT / "configs" / "engineering_checklist.json"
@@ -464,6 +674,8 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_inspect(expr)
         elif parsed.path == "/api/concepts":
             self._api_concepts()
+        elif parsed.path == "/api/analogies":
+            self._api_analogies()
         elif parsed.path == "/api/curiosity":
             self._api_curiosity_get()
         elif parsed.path == "/api/experiment/stats":
@@ -492,6 +704,10 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_bootstrap()
         elif parsed.path == "/api/hippocampus/status":
             self._api_hippocampus_status()
+        elif parsed.path == "/api/autolearn":
+            self._api_autolearn_status()
+        elif parsed.path == "/api/llm-status":
+            self._api_llm_status()
         else:
             self.send_error(404)
 
@@ -530,14 +746,39 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             body = json.loads(self.rfile.read(length)) if length else {}
             self._api_explain(
                 transforms=body.get("transforms", []),
-                delta=float(body.get("delta", 0)),
+                delta=body.get("delta", 0.0),
                 domain=body.get("domain", "general"),
-                top_k=int(body.get("top_k", 5)),
+                top_k=body.get("top_k", 5),
+                expression=body.get("expression", "")
             )
         elif parsed.path == "/api/teach":
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
             self._api_teach(body)
+        elif parsed.path == "/api/autolearn":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_autolearn_control(body)
+        elif parsed.path == "/api/solve-nl":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_solve_nl(body)
+        elif parsed.path == "/api/ground":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_ground(body)
+        elif parsed.path == "/api/solve-full":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_solve_full(body)
+        elif parsed.path == "/api/commonsense":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_commonsense(body)
+        elif parsed.path == "/api/tom":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_tom(body)
         else:
             self.send_error(404)
 
@@ -624,6 +865,7 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         max_depth = body.get("max_depth", 30)
         budget = body.get("budget", 10.0)
         kappa = float(body.get("kappa", 0.1))
+        force_python = bool(body.get("force_python", False))
 
         if not expr:
             self._json_response({"error": "No expression"}, 400)
@@ -641,14 +883,32 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             except Exception:
                 pass
 
-        cpp_result = _solve_with_cpp_bindings(
-            graph=graph,
-            algorithm=algorithm,
-            beam_width=beam_width,
-            max_depth=max_depth,
-            budget=budget,
-            kappa=kappa,
-        )
+        # Pillars 3 (Human Brain): Retrieve past episodes for this exact graph signature
+        recalled_memory = []
+        if concept_memory:
+            try:
+                similar = concept_memory.retrieve_similar(graph, top_k=3)
+                for s in similar:
+                    ep = s["episode"]
+                    if ep.get("transforms"):
+                        recalled_memory.append({
+                            "similarity": round(s["similarity"], 2),
+                            "problem_id": ep.get("problem_id", ""),
+                            "transforms": ep.get("transforms", [])[:5]
+                        })
+            except Exception as e:
+                print(f"[sare] Memory retrieval error: {e}")
+
+        cpp_result = None
+        if not force_python:
+            cpp_result = _solve_with_cpp_bindings(
+                graph=graph,
+                algorithm=algorithm,
+                beam_width=beam_width,
+                max_depth=max_depth,
+                budget=budget,
+                kappa=kappa,
+            )
         if cpp_result is not None:
             result_graph = cpp_result["graph"]
             result_energy_total = cpp_result["energy_total"]
@@ -678,6 +938,7 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
                     budget_seconds=budget,
                     kappa=kappa,
                     heuristic_fn=heuristic_fn,
+                    attention_scorer=_attention_scorer,
                 )
             result_graph = result.graph
             result_energy_total = result.energy.total
@@ -689,6 +950,68 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             result_trajectory = result.energy_trajectory
 
         delta = initial.total - result_energy_total
+
+        # ── TIER 7 & EPIC 24: METACOGNITIVE LOOP + PROGRAM SYNTHESIS ──
+        if delta <= 0.01:
+            from sare.memory.program_synthesizer import ProgramSynthesizer
+            from sare.memory.metacognition import MetacognitiveController
+            
+            try:
+                controller = MetacognitiveController()
+                plan = controller.generate_plan(expr_str)
+                synth = ProgramSynthesizer(concept_registry)
+                
+                print(f"MCTS stuck. Triggering Metacognitive Loop with {len(plan)} sub-goals...")
+                
+                for subgoal in plan:
+                    goal_prompt = f"Sub-goal for {expr_str}: {subgoal}. Write a graph mutation function."
+                    print(f"Executing Metacognitive Sub-Goal: {subgoal}")
+                    
+                    # Pillar 2: Use attention to select the most relevant sub-graph
+                    try:
+                        from sare.memory.attention import AttentionSelector, WorkingMemoryWorkspace
+                        window_nodes = AttentionSelector.select_window(result_graph)
+                        workspace = WorkingMemoryWorkspace(result_graph, window_nodes)
+                        focused_graph = workspace.extract_subgraph()
+                        print(f"  Attention: Focusing on {len(focused_graph.nodes)}/{len(result_graph.nodes)} nodes")
+                    except Exception:
+                        focused_graph = result_graph
+                        workspace = None
+                    
+                    s_success, s_code, s_mutated = synth.generate_transform(focused_graph, goal_prompt)
+                    
+                    # Re-integrate the mutated sub-graph back into the full parent graph
+                    if s_success and s_mutated and workspace:
+                        try:
+                            s_graph = workspace.graft(s_mutated)
+                        except Exception:
+                            s_graph = s_mutated
+                    elif s_success and s_mutated:
+                        s_graph = s_mutated
+                    else:
+                        s_graph = None
+                    
+                    if s_success and s_graph:
+                        s_energy = energy.compute(s_graph)
+                        if s_energy.total < result_energy_total:
+                            print(f"Synthesizer succeeded for sub-goal! Adopted transform.")
+                            result_graph = s_graph
+                            result_energy_total = s_energy.total
+                            result_energy_components = s_energy.components
+                            result_transforms.append(f"synthetic_llm_subgoal")
+                            result_steps += 1
+                            result_trajectory.append(float(s_energy.total))
+                            
+                            # Epic 22: Permanently adopt into persistent memory
+                            rule_name = f"synth_{hash(subgoal) % 100000}"
+                            if hasattr(concept_registry, "add_synthetic_rule"):
+                                concept_registry.add_synthetic_rule(rule_name, s_code, expr_str)
+                            
+                    controller.mark_goal_completed()
+                    
+                delta = initial.total - result_energy_total
+            except Exception as e:
+                print(f"Synthesizer/Metacognition failed: {e}")
 
         # ── ACTIVE QUESTIONER: if no progress made, ask for help ──
         if delta <= 0.01 and _active_questioner:
@@ -721,6 +1044,20 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             budget_exhausted=False,
             solve_success=(delta > 0.01),
         ))
+
+        # Pillar 3: Record this solve episode into concept memory for clustering
+        if concept_memory and delta > 0.01:
+            try:
+                concept_memory.record(result_graph, expr_str, result_transforms)
+                # Run concept formation every 10 new episodes
+                if len(concept_memory) % 10 == 0:
+                    from sare.memory.concept_formation import ConceptFormation
+                    former = ConceptFormation(concept_memory, concept_registry)
+                    new_concepts = former.run()
+                    if new_concepts:
+                        print(f"[Pillar 3] Discovered {len(new_concepts)} new concepts from experience!")
+            except Exception:
+                pass  # Non-critical
 
         # ── MEMORY: record this episode after solve ──
         if memory_manager and _MemEpisode:
@@ -807,6 +1144,29 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             except Exception:
                 pass
 
+        # ── CREDIT ASSIGNMENT: update per-transform utility from this trace ──
+        if credit_assigner and result_transforms and result_trajectory:
+            try:
+                credit_assigner.assign_credit(result_transforms, result_trajectory)
+                # Persist updated utilities back into SelfModel for warm-start
+                if self_model and hasattr(self_model, 'update_transform_utilities'):
+                    self_model.update_transform_utilities(credit_assigner.get_all_utilities())
+                # ── PERSIST immediately after every human solve ─────────────
+                credit_assigner.save()      # data/memory/credit_assigner.json
+                if self_model:
+                    self_model.save()       # data/memory/self_model.json
+                if frontier_manager:
+                    frontier_manager.save() # data/memory/frontier.jsonl
+                # Reload transforms with updated utility ordering for next solve
+                from sare.engine import reload_transforms  # type: ignore
+                reload_transforms(
+                    include_macros=True,
+                    concept_registry=concept_registry,
+                    utility_scores=credit_assigner.get_all_utilities(),
+                )
+            except Exception:
+                pass
+
         # ── Build proof (TODO-08) ──
         proof_dict = self._api_proof(
             transforms_applied=result_transforms,
@@ -815,8 +1175,31 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             expression=expr_str,
         )
 
+        # ── Epic 20: LLM Explanation Writer ──────────────────────────────
+        nl_explanation = None
+        if explain_solve_trace and delta > 0.01:
+            try:
+                # Infer domain from expression string heuristically
+                _domain = "general"
+                if self_model:
+                    try: _domain = self_model.infer_domain(expr_str)
+                    except Exception: pass
+                nl_explanation = explain_solve_trace(
+                    problem=expr_str,
+                    transforms_applied=result_transforms,
+                    energy_before=initial.total,
+                    energy_after=result_energy_total,
+                    final_expression=result_graph.to_expression() if hasattr(result_graph, 'to_expression') else expr_str,
+                    expression=expr_str,
+                    domain=_domain,
+                    goal="simplify",
+                )
+            except Exception as _nl_e:
+                print(f"[sare] LLM explanation failed: {_nl_e}")
+
         self._json_response({
             "expression": expr_str,
+            "nl_explanation": nl_explanation,
             "initial": {
                 "graph": graph.to_dict(),
                 "energy": {
@@ -840,6 +1223,7 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             "reduction_pct":      round(reduction_pct, 1),
             "confidence":         round(confidence, 3),
             "strategy_hit":       bool(strategy_hint and strategy_hint.found),
+            "recalled_memory":    recalled_memory,
             "learned_concepts":   learned_concepts,
             "memory":             memory_stats,
             # Flattened convenience fields for UI
@@ -938,18 +1322,41 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             }, 503)
             return
         rules = concept_registry.get_rules()
+        out = []
+        for r in rules:
+            try:
+                out.append({
+                    "name": getattr(r, "name", "unknown"),
+                    "domain": getattr(r, "domain", "general"),
+                    "confidence": getattr(r, "confidence", 1.0),
+                    "observations": getattr(r, "observations", 0)
+                })
+            except Exception:
+                pass
+
         self._json_response({
-            "count": len(rules),
-            "concepts": [
-                {
-                    "name": r.name,
-                    "pattern": f"{r.pattern.node_count()}n/{r.pattern.edge_count()}e",
-                    "replacement": f"{r.replacement.node_count()}n/{r.replacement.edge_count()}e",
-                    "confidence": r.confidence,
-                    "observations": r.observations
-                } 
-                for r in rules
-            ]
+            "count": len(out),
+            "concepts": out,
+            "rules": out
+        })
+
+    def _api_analogies(self):
+        if '_analogy_transfer' not in globals() or not _analogy_transfer:
+            self._json_response({"error": "Analogy transfer is disabled."}, 503)
+            return
+        
+        transfers = []
+        for domain in ["arithmetic", "logic", "algebra", "sets"]:
+            transfers.extend(_analogy_transfer.transfer_from_domain(domain))
+            
+        # Deduplicate by rule name
+        unique = {}
+        for tr in transfers:
+            unique[tr.name] = tr.to_dict()
+            
+        self._json_response({
+            "count": len(unique),
+            "analogies": list(unique.values())
         })
 
     def _api_curiosity_get(self):
@@ -960,17 +1367,22 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
                 "curriculum_error": _CURRICULUM_ERROR,
             }, 503)
             return
-        # Return current curriculum state (pending problems)
-        pending = curriculum_gen.pending_problems()
+        # Return current curriculum state (pending problems — skip ghost entries)
+        pending = [p for p in curriculum_gen.pending_problems() if p.graph is not None]
         problems = []
         for p in pending:
+            try:
+                nc = p.graph.node_count() if hasattr(p.graph, 'node_count') else len(p.graph.get_node_ids())
+                ec = p.graph.edge_count() if hasattr(p.graph, 'edge_count') else len(p.graph.get_edge_ids())
+            except Exception:
+                nc, ec = 0, 0
             problems.append({
                 "id": p.id,
                 "origin": p.origin,
-                "nodes": p.graph.node_count(),
-                "edges": p.graph.edge_count(),
+                "nodes": nc,
+                "edges": ec,
             })
-        
+
         self._json_response({
             "pending_count": len(pending),
             "problems": problems
@@ -1300,17 +1712,77 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         delta: float,
         domain: str = "general",
         top_k: int = 5,
+        expression: str = "",
     ):
-        """GET|POST /api/explain — AbductiveRanker: explain an observed solve outcome."""
-        if not _abductive_ranker:
-            self._json_response({"error": "AbductiveRanker unavailable"}, 503)
-            return
-
-        # Lazily inject live ConceptRegistry into ranker
-        if _abductive_ranker.registry is None and concept_registry:
-            _abductive_ranker.registry = concept_registry
-
+        """GET|POST /api/explain — AbductiveRanker/CausalEngine: explain an observed solve outcome."""
         try:
+            # ── Tier 4: Phase 5 Causal Modeling ──
+            # Try to build a causal counterfactual mathematical proof first.
+            if expression and _nl_parser:
+                try:
+                    from sare.sare_bindings import CounterfactualSimulator, Intervention
+                    parse_res = _nl_parser.parse(expression)
+                    g = parse_res.graph if hasattr(parse_res, "graph") else parse_res
+                    sim = CounterfactualSimulator()
+                    
+                    interventions = []
+                    # Create some counterfactual interventions (e.g. "What if we didn't apply these transforms?")
+                    # For a rigid causal simulation, we modify the root node's type.
+                    iv = Intervention()
+                    iv.node_id = g.root()
+                    if iv.node_id != 0:
+                        iv.attribute = "type"
+                        iv.value = "causal_intervention_test"
+                        interventions.append(iv)
+                        
+                    results = sim.compare_interventions(g, interventions)
+                    
+                    causal_hypotheses = []
+                    for r in results:
+                        causal_hypotheses.append({
+                            "name": "Counterfactual: do(Node {} {}={})".format(r.intervention.node_id, r.intervention.attribute, r.intervention.value),
+                            "posterior": min(1.0, abs(r.delta) / 10.0), # normalize 
+                            "occam_score": r.delta,
+                            "domain": domain,
+                            "recommended_action": "accept" if r.delta < 0 else "verify"
+                        })
+                        
+                    if len(causal_hypotheses) > 0:
+                        best = causal_hypotheses[0]
+                        result = {
+                            "confidence_level": "mathematical_proof (Phase 5 Causal Engine)",
+                            "best_explanation": {
+                                "name": best["name"],
+                                "domain": domain,
+                                "posterior": best["posterior"],
+                                "recommended_action": best["recommended_action"],
+                                "reasoning_chain": [
+                                    f"Original Energy: {results[0].energy_original:.3f}",
+                                    f"Counterfactual Energy: {results[0].energy_counterfactual:.3f}",
+                                    f"Causal Delta (ΔE): {results[0].delta:.3f}",
+                                    f"Mathematical conclusion: Intervening on the graph yields ΔE={results[0].delta:.3f}."
+                                ]
+                            },
+                            "hypotheses": causal_hypotheses
+                        }
+                        if _attention_scorer:
+                            result["attention_scorer"] = _attention_scorer.summary()
+                        self._json_response(result)
+                        return
+                except ImportError as e:
+                    print(f"[sare] Causal Simulator ImportError: {e}")
+                except Exception as e:
+                    print(f"[sare] Causal Simulator failed: {e}")
+
+            # ── Fallback to AbductiveRanker ──
+            if not _abductive_ranker:
+                self._json_response({"error": "AbductiveRanker unavailable"}, 503)
+                return
+
+            # Lazily inject live ConceptRegistry into ranker
+            if _abductive_ranker.registry is None and concept_registry:
+                _abductive_ranker.registry = concept_registry
+
             result = _abductive_ranker.explain_to_dict(
                 observed_transforms=list(transforms),
                 observed_delta=float(delta),
@@ -1359,6 +1831,344 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._json_response({"error": "HippocampusDaemon unavailable"}, 503)
             return
         self._json_response(_hippocampus.status())
+
+    def _api_llm_status(self):
+        """GET /api/llm-status — LLM Bridge health and config."""
+        if llm_status:
+            self._json_response(llm_status())
+        else:
+            self._json_response({"available": False, "error": "LLMBridge not loaded"})
+
+    def _api_solve_nl(self, body: dict):
+        """POST /api/solve-nl — Accept free-form English, parse via LLM, then solve.
+
+        Body: {"text": "Simplify 3x + 0", "algorithm": "beam", ...}
+        Returns: same as /api/solve, plus 'parsed' showing what the LLM extracted.
+        """
+        nl_text = body.get("text", "").strip()
+        if not nl_text:
+            self._json_response({"error": "No text provided"}, 400)
+            return
+
+        if not parse_nl_problem:
+            self._json_response({"error": "LLMBridge unavailable — set GEMINI_API_KEY"}, 503)
+            return
+
+        # Step 1: Parse NL → structured problem
+        try:
+            parsed = parse_nl_problem(nl_text)
+        except Exception as e:
+            self._json_response({"error": f"LLM parsing failed: {e}"}, 500)
+            return
+
+        # Step 2: Solve the parsed expression via the existing /api/solve logic
+        solve_body = {
+            "expression": parsed.expression,
+            "algorithm":  body.get("algorithm", "beam"),
+            "beam_width": body.get("beam_width", 8),
+            "max_depth":  body.get("max_depth", 30),
+            "budget":     body.get("budget", 10.0),
+            "kappa":      body.get("kappa", 0.1),
+        }
+
+        # Capture the response by temporarily monkey-patching _json_response
+        _captured: list = []
+        _orig_jr = self._json_response
+
+        def _capture(data, status=200):
+            _captured.append((data, status))
+
+        self._json_response = _capture  # type: ignore
+        try:
+            self._api_solve(solve_body)
+        finally:
+            self._json_response = _orig_jr  # type: ignore
+
+        if not _captured:
+            self._json_response({"error": "Solve produced no response"}, 500)
+            return
+
+        result_data, status_code = _captured[0]
+        # Inject the parsed info so the UI can display it
+        result_data["parsed"] = parsed.to_dict()
+        result_data["raw_input"] = nl_text
+        self._json_response(result_data, status_code)
+
+    def _api_ground(self, body: dict):
+        """
+        POST /api/ground — World Grounding endpoint (AGI Gap #1).
+
+        Converts real-world data into a SARE-HX typed graph.
+        Accepts: { "kind": "csv"|"text"|"json"|"url", "payload": "..." }
+        Returns: { "graph": {...}, "node_count": N, "edge_count": M }
+        """
+        try:
+            from sare.perception.world_grounder import WorldGrounder, RawPercept
+            kind = body.get("kind", "text")
+            payload = body.get("payload", "")
+            source = body.get("source", "")
+
+            if not payload:
+                self._json_response({"error": "No payload provided"}, 400)
+                return
+
+            grounder = WorldGrounder()
+            percept = RawPercept(kind=kind, payload=payload, source=source)
+            graph_dict = grounder.ground(percept)
+            engine_graph = grounder.to_engine_graph(graph_dict)
+
+            self._json_response({
+                "status": "grounded",
+                "kind": kind,
+                "node_count": len(engine_graph.nodes),
+                "edge_count": len(engine_graph.edges),
+                "graph": graph_dict.to_engine_dict(),
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_solve_full(self, body: dict):
+        """
+        POST /api/solve-full — Full NL Hybrid Pipeline (Step 1).
+
+        Complete pipeline: Natural Language → LLM Parse → SARE-HX Solve →
+                           LLM Explain → Natural Language Answer
+
+        Accepts: { "question": "What is x if 2x + 1 = 5?" }
+        Returns: { "question", "expression", "answer_nl", "proof_trace", "energy" }
+        """
+        from sare.interface.llm_bridge import parse_nl_problem, explain_solve_trace, _call_llm
+
+        question = body.get("question", "").strip()
+        if not question:
+            self._json_response({"error": "No question provided"}, 400)
+            return
+
+        # Step 1: LLM parses NL into canonical expression
+        try:
+            parsed = parse_nl_problem(question)
+            expr_str = parsed.expression
+        except Exception as e:
+            self._json_response({"error": f"NL parsing failed: {e}"}, 500)
+            return
+
+        # Step 2: SARE-HX solves the structured expression
+        _captured = []
+        _orig_jr = self._json_response
+
+        def _capture(data, status=200):
+            _captured.append((data, status))
+        self._json_response = _capture  # type: ignore
+
+        try:
+            self._api_solve({"expression": expr_str, "budget": body.get("budget", 15.0)})
+        finally:
+            self._json_response = _orig_jr  # type: ignore
+
+        if not _captured:
+            self._json_response({"error": "Solve produced no response"}, 500)
+            return
+
+        result, _ = _captured[0]
+
+        # Step 3: LLM converts proof trace back to natural language
+        try:
+            transforms = result.get("transforms_applied", [])
+            initial_energy = result.get("initial", {}).get("energy", {}).get("total", 1.0)
+            final_energy = result.get("result", {}).get("energy", {}).get("total", 0.0)
+            
+            explanation = explain_solve_trace(
+                problem=question,
+                transforms_applied=transforms,
+                energy_before=initial_energy,
+                energy_after=final_energy,
+                final_expression=result.get("expression", expr_str)
+            )
+        except Exception as e:
+            print(f"Error generating explanation: {e}")
+            explanation = f"SARE-HX solved '{expr_str}' using {len(result.get('transforms_applied', []))} steps."
+
+        self._json_response({
+            "question": question,
+            "expression": expr_str,
+            "answer_nl": explanation,
+            "proof_trace": result.get("transforms_applied", []),
+            "energy": {
+                "initial": result.get("initial", {}).get("energy", {}).get("total", 1.0),
+                "final": result.get("result", {}).get("energy", {}).get("total", 0.0)
+            },
+            "transforms": result.get("transforms_applied", []),
+            "parsed": parsed.to_dict(),
+        })
+
+    def _api_commonsense(self, body: dict):
+        """
+        POST /api/commonsense — Query or augment the CommonSenseBase.
+
+        Actions:
+          { "action": "query", "concept": "fire" }
+          { "action": "augment", "concepts": ["fire", "water"] }
+          { "action": "stats" }
+        """
+        action = body.get("action", "query")
+        try:
+            if not common_sense:
+                self._json_response({"error": "CommonSenseBase not initialized"}, 503)
+                return
+
+            if action == "query":
+                concept = body.get("concept", "")
+                depth = int(body.get("depth", 1))
+                if not concept:
+                    self._json_response({"error": "concept required"}, 400)
+                    return
+                facts = common_sense.query(concept, depth=depth)
+                props = common_sense.get_properties(concept)
+                self._json_response({
+                    "concept": concept,
+                    "facts": facts,
+                    "properties": props,
+                    "total_matched": len(facts),
+                })
+            elif action == "augment":
+                concepts = body.get("concepts", [])
+                if concepts:
+                    common_sense.augment_from_conceptnet(concepts)
+                self._json_response({"status": "augmented", "total_facts": common_sense.total_facts()})
+            else:  # stats
+                self._json_response({
+                    "total_facts": common_sense.total_facts(),
+                    "status": "healthy",
+                })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_tom(self, body: dict):
+        """
+        POST /api/tom — Theory of Mind reasoning.
+
+        Actions:
+          { "action": "register", "agent_id": "alice", "description": "..." }
+          { "action": "add_belief", "agent_id": "bob", "belief": "the ball is in the basket" }
+          { "action": "false_belief", "agent_id": "bob", "reality": "ball is in box", "belief": "ball is in basket" }
+          { "action": "predict", "agent_id": "alice", "situation": "she sees smoke" }
+          { "action": "infer", "agent_id": "bob", "text": "Bob wants to win the race..." }
+          { "action": "summary" }
+        """
+        action = body.get("action", "summary")
+        try:
+            if not tom_engine:
+                self._json_response({"error": "TheoryOfMindEngine not initialized"}, 503)
+                return
+
+            if action == "register":
+                agent_id = body.get("agent_id", "")
+                desc = body.get("description", "")
+                ms = tom_engine.register_agent(agent_id, desc)
+                self._json_response({"registered": agent_id, "state": ms.to_dict()})
+
+            elif action == "add_belief":
+                agent_id = body.get("agent_id", "")
+                belief = body.get("belief", "")
+                truth = body.get("truth", True)
+                ms = tom_engine.register_agent(agent_id)
+                ms.add_belief(belief, truth=truth)
+                self._json_response({"agent": agent_id, "belief_added": belief})
+
+            elif action == "false_belief":
+                agent_id = body.get("agent_id", "")
+                reality = body.get("reality", "")
+                belief = body.get("belief", "")
+                result = tom_engine.false_belief_test(agent_id, reality, belief)
+                self._json_response(result)
+
+            elif action == "predict":
+                agent_id = body.get("agent_id", "")
+                situation = body.get("situation", "")
+                prediction = tom_engine.predict_action_llm(agent_id, situation)
+                self._json_response({"agent": agent_id, "situation": situation, "predicted_action": prediction})
+
+            elif action == "infer":
+                agent_id = body.get("agent_id", "")
+                text = body.get("text", "")
+                tom_engine.infer_beliefs_from_text(agent_id, text)
+                ms = tom_engine.get_agent(agent_id)
+                self._json_response({"agent": agent_id, "state": ms.to_dict() if ms else {}})
+
+            else:  # summary
+                self._json_response(tom_engine.summary())
+
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_autolearn_status(self):
+        """GET /api/autolearn — AutoLearn daemon status and live stats."""
+        running = bool(
+            experiment_runner and
+            experiment_runner._daemon_thread and
+            experiment_runner._daemon_thread.is_alive()
+        )
+        stats = experiment_runner.stats() if experiment_runner else {}
+        recent = []
+        if experiment_runner:
+            for r in experiment_runner.history[-10:]:
+                recent.append({
+                    "id":       r.problem_id,
+                    "solved":   r.solved,
+                    "e_before": round(r.energy_before, 3),
+                    "e_after":  round(r.energy_after, 3),
+                    "rule":     r.rule_name,
+                    "promoted": r.rule_promoted,
+                    "ms":       round(r.elapsed_ms, 1),
+                })
+        self._json_response({
+            "running":    running,
+            "stats":      stats,
+            "recent":     recent,
+            "top_transforms": credit_assigner.get_top_transforms(5)
+                              if credit_assigner else [],
+        })
+
+    def _api_autolearn_control(self, body: dict):
+        """POST /api/autolearn — Start or stop the autonomous learning daemon.
+
+        Body:
+            {"action": "start", "interval": 20, "batch_size": 5}
+            {"action": "stop"}
+        """
+        action     = body.get("action", "start")
+        interval   = float(body.get("interval", 20))
+        batch_size = int(body.get("batch_size", 5))
+
+        if not experiment_runner:
+            self._json_response({"error": "ExperimentRunner unavailable"}, 503)
+            return
+
+        if action == "start":
+            # Build a hook that persists all learning state after every batch
+            def _autolearn_save_hook(results):
+                try:
+                    if credit_assigner: credit_assigner.save()
+                    if curriculum_gen:  curriculum_gen.save()
+                    if self_model:      self_model.save()
+                except Exception as _hook_e:
+                    pass  # don't interrupt the daemon
+
+            experiment_runner.start_daemon(
+                interval_seconds=interval,
+                batch_size=batch_size,
+                post_batch_hook=_autolearn_save_hook,
+            )
+            self._json_response({
+                "status":     "started",
+                "interval":   interval,
+                "batch_size": batch_size,
+            })
+        elif action == "stop":
+            experiment_runner.stop_daemon()
+            self._json_response({"status": "stopped"})
+        else:
+            self._json_response({"error": f"Unknown action: {action}"}, 400)
 
     def _api_teach(self, body: dict):
         """POST /api/teach — Human answers an ActiveQuestioner prompt."""
