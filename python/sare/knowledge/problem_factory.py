@@ -494,12 +494,13 @@ class ProblemFactory:
         rng = random.Random(seed if seed is not None else 0)
 
         # Proportional counts (sum to ~200 by default)
-        linear_n      = max(1, int(total * 0.25))  # 25% linear
+        linear_n      = max(1, int(total * 0.17))  # 17% linear (was 25%; freed 8% for trig)
         quad_n        = max(1, int(total * 0.15))  # 15% quadratic
         arith_n       = max(1, int(total * 0.25))  # 25% arithmetic
         simp_n        = max(1, int(total * 0.15))  # 15% simplification
         logic_n       = max(1, int(total * 0.10))  # 10% logic
         calc_n        = max(1, int(total * 0.10))  # 10% calculus
+        trig_n        = max(1, int(total * 0.08))  # 8% trigonometry (new explicit allocation)
 
         pool: List[dict] = []
         try:
@@ -516,6 +517,17 @@ class ProblemFactory:
             pass
         try:
             pool += self.generate_simplification(simp_n)
+        except Exception:
+            pass
+        try:
+            # Explicit trig allocation — filter simplification to trig-domain entries only
+            _trig_pool = self.generate_simplification(trig_n * 5)
+            _trig_only = [p for p in _trig_pool if p.get("domain") == "trigonometry"][:trig_n]
+            if len(_trig_only) < trig_n:
+                # Pad with any remaining simplification problems if not enough trig
+                _rest = [p for p in _trig_pool if p.get("domain") != "trigonometry"]
+                _trig_only += _rest[:trig_n - len(_trig_only)]
+            pool += _trig_only
         except Exception:
             pass
         try:

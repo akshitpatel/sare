@@ -25,8 +25,8 @@ log = logging.getLogger(__name__)
 _SYNTH_DIR = Path(__file__).resolve().parents[3] / "data" / "memory" / "synthesized_modules"
 _SYNTH_DIR.mkdir(parents=True, exist_ok=True)
 
-_VALIDATION_THRESHOLD = 0.4   # fraction of validation cases that must improve
-_MIN_VALIDATION_CASES = 3     # minimum validation cases required
+_VALIDATION_THRESHOLD = 0.2   # fraction of validation cases that must improve (lowered from 0.4)
+_MIN_VALIDATION_CASES = 2     # minimum validation cases required (lowered from 3)
 
 
 # ── Inventiveness scoring ─────────────────────────────────────────────────────

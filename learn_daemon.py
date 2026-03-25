@@ -400,6 +400,17 @@ def run_daemon(interval: float = 30.0, batch_size: int = 5, verbose: bool = Fals
     except Exception as exc:
         log.debug("ExperientialLearner unavailable: %s", exc)
 
+    # Wire dream consolidator to experiential learner as event source
+    try:
+        if _dream_consolidator is not None and _experiential_learner is not None:
+            _dream_consolidator.wire(
+                predictive_loop=_experiential_learner,
+                world_model=_dream_consolidator._world_model,
+            )
+            log.info("DreamConsolidator wired to ExperientialLearner as surprise event source")
+    except Exception as _wire_exc:
+        log.debug("DreamConsolidator wire error: %s", _wire_exc)
+
     # S32: EmbodiedAgent, CausalRollout, CounterfactualReasoner
     _embodied_agent = None
     try:
@@ -878,15 +889,38 @@ def run_daemon(interval: float = 30.0, batch_size: int = 5, verbose: bool = Fals
                     from sare.learning.llm_transform_synthesizer import get_llm_synthesizer
                     _synth = get_llm_synthesizer()
                     _existing = [t.name() for t in experiment_runner.transforms if hasattr(t, "name")]
-                    # Build validation graphs from recent solved problems in this domain
+                    # Build validation graphs from recent SOLVED problems in this domain
+                    # (not from stuck ones — a new transform shouldn't be validated against
+                    # the hardest unsolvable cases; solved cases provide a positive signal)
                     _val_graphs = []
                     try:
-                        from sare.engine import load_problem
-                        for _e in _stuck_exprs[:6]:
-                            try:
-                                _val_graphs.append(load_problem(_e))
-                            except Exception:
-                                pass
+                        from sare.engine import load_problem as _lp_val
+                        _hist = getattr(experiment_runner, '_history', []) or []
+                        for _hr in reversed(_hist[-80:]):
+                            if len(_val_graphs) >= 8:
+                                break
+                            if (getattr(_hr, 'domain', '') == _dom and
+                                    getattr(_hr, 'solved', False)):
+                                _hr_expr = (getattr(_hr, 'problem_id', '') or
+                                            getattr(_hr, 'expression', ''))
+                                if _hr_expr:
+                                    try:
+                                        _, _vg = _lp_val(_hr_expr)
+                                        if _vg is not None:
+                                            _val_graphs.append(_vg)
+                                    except Exception:
+                                        pass
+                        # Fallback: use stuck exprs unpacked correctly
+                        if len(_val_graphs) < 2:
+                            for _e in _stuck_exprs[:6]:
+                                if len(_val_graphs) >= 6:
+                                    break
+                                try:
+                                    _, _vg = _lp_val(_e)
+                                    if _vg is not None:
+                                        _val_graphs.append(_vg)
+                                except Exception:
+                                    pass
                     except Exception:
                         pass
                     log.info("[Synth] Triggering synthesis for domain=%s (%d stuck exprs)", _dom, len(_stuck_exprs))
@@ -1411,6 +1445,16 @@ def run_daemon(interval: float = 30.0, batch_size: int = 5, verbose: bool = Fals
                     log.info("[BeliefExpiry] Decayed %d stale beliefs (>24h old)", _decayed)
             except Exception as _exp_exc:
                 log.debug("BeliefExpiry error: %s", _exp_exc)
+
+        # Knowledge corpus refresh every 100 cycles — picks up new benchmark/doc files
+        if cycle % 100 == 0:
+            try:
+                from sare.knowledge.knowledge_ingester import KnowledgeIngester
+                _ki_refresh = KnowledgeIngester()
+                _ki_refresh.ingest_local_corpus()  # idempotent — skips already-seen files
+                log.debug("[KnowledgeIngester] Periodic corpus refresh at cycle %d", cycle)
+            except Exception as _ki_exc:
+                log.debug("KnowledgeIngester periodic refresh error: %s", _ki_exc)
 
         # Schema generalization: deduplicate similar proof patterns every 50 cycles
         if cycle % 50 == 0:
