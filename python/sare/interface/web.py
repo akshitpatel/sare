@@ -1060,6 +1060,14 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_physics()
         elif parsed.path == "/api/chemistry":
             self._api_chemistry()
+        elif parsed.path == "/api/science/hypothesis":
+            self._api_science_hypothesis()
+        elif parsed.path == "/api/science/theory":
+            self._api_science_theory()
+        elif parsed.path == "/api/benchmark/agi":
+            self._api_benchmark_agi()
+        elif parsed.path == "/api/learning/trend":
+            self._api_learning_trend()
         elif parsed.path == "/dashboard":
             self._serve_file("dashboard.html", "text/html")
         elif parsed.path in ("/evolve-chat", "/evolve-chat/"):
@@ -1371,10 +1379,6 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
             self._api_think(body)
-        elif parsed.path == "/api/science/hypothesis":
-            self._api_science_hypothesis()
-        elif parsed.path == "/api/science/theory":
-            self._api_science_theory()
         else:
             self.send_error(404)
 
@@ -4537,7 +4541,7 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._json_response({"error": str(e), "total": 0, "correct": 0, "accuracy": 0.0})
 
     def _api_benchmark_agi(self):
-        """GET /api/benchmark/agi — unified 5-category AGI benchmark."""
+        """GET /api/benchmark/agi — unified 10-category AGI benchmark."""
         try:
             from sare.benchmarks.agi_suite import AGISuite
             suite = AGISuite()
@@ -4547,8 +4551,115 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
                 "error": str(e),
                 "total_score": 0.0,
                 "categories": [],
-                "benchmark_version": "1.0",
+                "benchmark_version": "2.0",
             }, 500)
+
+    def _api_learning_trend(self):
+        """GET /api/learning/trend — historical benchmark scores + progress metrics for trend chart."""
+        import json as _json
+        from pathlib import Path as _Path
+        _data_dir = _Path(__file__).resolve().parents[3] / "data" / "memory"
+
+        # Benchmark history (timestamped runs)
+        benchmark_history = []
+        hist_path = _data_dir / "benchmark_history.json"
+        if hist_path.exists():
+            try:
+                raw = _json.loads(hist_path.read_text())
+                if isinstance(raw, list):
+                    benchmark_history = [
+                        {
+                            "timestamp": e.get("timestamp", ""),
+                            "total_score": e.get("total_score") or e.get("pass_rate", 0),
+                            "total_problems": e.get("total_problems") or e.get("total", 0),
+                            "by_category": e.get("by_category", {}),
+                            "version": e.get("version", "1.0"),
+                        }
+                        for e in raw
+                    ]
+            except Exception:
+                pass
+
+        # Progress cycles (solve rate / throughput per cycle)
+        progress_cycles = []
+        prog_path = _data_dir / "progress.json"
+        if prog_path.exists():
+            try:
+                raw = _json.loads(prog_path.read_text())
+                if isinstance(raw, list):
+                    progress_cycles = [
+                        {
+                            "cycle": e.get("cycle", i),
+                            "solve_rate": e.get("solve_rate", 0),
+                            "avg_energy": e.get("avg_energy", 0),
+                            "bridge_rate": e.get("bridge_rate", 0),
+                            "throughput": e.get("throughput", 0),
+                        }
+                        for i, e in enumerate(raw)
+                    ]
+            except Exception:
+                pass
+
+        # Transform stats (top transforms by utility)
+        top_transforms = []
+        ts_path = _data_dir / "transform_stats.json"
+        if ts_path.exists():
+            try:
+                raw = _json.loads(ts_path.read_text())
+                if isinstance(raw, dict):
+                    entries = [(k, v) for k, v in raw.items() if isinstance(v, (int, float))]
+                    entries.sort(key=lambda x: x[1], reverse=True)
+                    top_transforms = [{"name": k, "utility": round(v, 3)} for k, v in entries[:15]]
+            except Exception:
+                pass
+
+        # Rule promotion history (rules promoted over time)
+        promoted_rules = []
+        pr_path = _data_dir / "promoted_rules.json"
+        if pr_path.exists():
+            try:
+                raw = _json.loads(pr_path.read_text())
+                if isinstance(raw, list):
+                    promoted_rules = raw[-20:]
+                elif isinstance(raw, dict):
+                    promoted_rules = list(raw.keys())[-20:]
+            except Exception:
+                pass
+
+        # Self-improvement stats
+        si_stats = {}
+        si_path = _data_dir / "si_stats.json"
+        if si_path.exists():
+            try:
+                si_stats = _json.loads(si_path.read_text())
+            except Exception:
+                pass
+
+        # Synthesized transforms count
+        synth_count = 0
+        synth_dir = _Path(__file__).resolve().parents[3] / "data" / "memory" / "synthesized_modules"
+        if synth_dir.exists():
+            synth_count = len(list(synth_dir.glob("*.py")))
+
+        # Is learning? Compute if recent scores are rising
+        is_learning = False
+        score_delta = None
+        if len(benchmark_history) >= 2:
+            recent   = [e["total_score"] for e in benchmark_history[-5:] if e.get("total_score")]
+            if len(recent) >= 2:
+                score_delta  = round(recent[-1] - recent[0], 4)
+                is_learning  = score_delta > 0
+
+        self._json_response({
+            "benchmark_history":  benchmark_history[-50:],
+            "progress_cycles":    progress_cycles[-50:],
+            "top_transforms":     top_transforms,
+            "promoted_rules":     promoted_rules,
+            "si_stats":           si_stats,
+            "synthesized_count":  synth_count,
+            "is_learning":        is_learning,
+            "score_delta":        score_delta,
+        })
 
     def _api_benchmark_all(self):
         """GET /api/benchmark/all — Run all benchmark suites and combine results."""
