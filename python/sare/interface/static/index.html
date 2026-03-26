@@ -1400,6 +1400,37 @@
             <div id="arc-results" style="font-family:monospace;font-size:13px;color:#f0d0a0">Click to run...</div>
           </div>
         </div>
+
+        <!-- Self-Play Arena -->
+        <div class="panel">
+          <div class="panel-header">&#x2694;&#xfe0f; Self-Play Arena</div>
+          <div class="panel-body">
+            <div id="arena-stats" style="font-family:monospace;font-size:12px;color:#a0d0ff">Loading...</div>
+            <div style="margin-top:8px;display:flex;gap:6px">
+              <input id="arena-expr" type="text" value="x^2 - 5*x + 6" style="flex:1;font-size:11px" placeholder="Expression to race on" />
+              <button onclick="runArenaRace()" style="background:#1a3a5c;border:1px solid #2a5c8a;color:#7ab8ff;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px">Race</button>
+            </div>
+            <div id="arena-race-result" style="font-family:monospace;font-size:11px;color:#7ab8ff;margin-top:6px"></div>
+          </div>
+        </div>
+
+        <!-- Red Team -->
+        <div class="panel">
+          <div class="panel-header">&#x1f6a8; Red Team Adversary</div>
+          <div class="panel-body">
+            <div id="redteam-stats" style="font-family:monospace;font-size:12px;color:#ffb0a0">Loading...</div>
+            <button onclick="runRedTeamAttack()" style="margin-top:8px;background:#3a1a1a;border:1px solid #8a2a2a;color:#ff8080;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:11px">&#x26a1; Run Attack Round</button>
+            <div id="redteam-attack-result" style="font-family:monospace;font-size:11px;color:#ff8080;margin-top:6px"></div>
+          </div>
+        </div>
+
+        <!-- Autonomous Trainer Bandit -->
+        <div class="panel">
+          <div class="panel-header">&#x1f3b0; Autonomous Trainer (Bandit)</div>
+          <div class="panel-body">
+            <div id="trainer-stats" style="font-family:monospace;font-size:12px;color:#b0ffb0">Loading...</div>
+          </div>
+        </div>
       </div>
 
       <!-- ═══════════════════ AGI PROGRESS TAB ═══════════════════ -->
@@ -3526,19 +3557,103 @@ async function refreshCognition() {
 
 async function refreshWorkspace() {
   try {
-    const [gw, mc, gr] = await Promise.all([
+    const [gw, mc, gr, arena, rt, trainer] = await Promise.all([
       fetch('/api/consciousness').then(r=>r.json()).catch(()=>({})),
       fetch('/api/meta/controller').then(r=>r.json()).catch(()=>({})),
       fetch('/api/grounding').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/brain/arena').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/brain/redteam').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/brain/trainer').then(r=>r.json()).catch(()=>({})),
     ]);
     const e = id => document.getElementById(id);
+
     if(e('gw-stats')) e('gw-stats').innerHTML =
       `Broadcasts: ${gw.broadcasts||0}<br>Last winner: ${gw.last_winner||'none'}<br>Pending bids: ${gw.pending_bids||0}<br>Active: ${gw.active?'yes':'no'}`;
     if(e('meta-ctrl-stats')) e('meta-ctrl-stats').innerHTML =
       `Current epsilon: ${(mc.current_epsilon||0.1).toFixed(3)}<br>Performance samples: ${mc.performance_samples||0}<br>Epsilon history: ${(mc.epsilon_history||[]).slice(-5).map(v=>v.toFixed(3)).join(' \u2192 ')||'none'}`;
     if(e('grounding-stats')) { const s = gr.stats||{}; e('grounding-stats').innerHTML =
       `Grounded: ${s.grounded||0}/${s.total_concepts||64} (${((s.coverage||0)*100).toFixed(0)}%)<br>Verified: ${s.verified||0} via physics sim`; }
+
+    // Self-Play Arena
+    if(e('arena-stats')) {
+      if(arena.error && !arena.total_races) {
+        e('arena-stats').innerHTML = `<span style="color:#555">${arena.error}</span>`;
+      } else {
+        const agentRows = Object.entries(arena.agent_stats||{}).map(([id, st]) =>
+          `<span style="color:#7ab8ff">${id}</span>: `+
+          `wins=${arena.wins?.[id]||0} `+
+          `rate=${((st.success_rate||0)*100).toFixed(0)}% `+
+          `\u0394=${(st.mean_delta||0).toFixed(3)}`
+        ).join('<br>');
+        const last = (arena.recent_races||[]).slice(-1)[0];
+        e('arena-stats').innerHTML =
+          `Races: <b>${arena.total_races||0}</b> &nbsp; Agents: ${arena.n_agents||0} &nbsp; Shared transforms: ${arena.shared_transforms||0}<br><br>${agentRows||'No races yet'}` +
+          (last ? `<br><br>Last: <span style="color:#4caf50">${last.winner}</span> \u0394${(last.winner_delta||0).toFixed(3)} on <code>${(last.expression||'').slice(0,30)}</code>` : '');
+      }
+    }
+
+    // Red Team
+    if(e('redteam-stats')) {
+      if(rt.error && !rt.total_attacks) {
+        e('redteam-stats').innerHTML = `<span style="color:#555">${rt.error}</span>`;
+      } else {
+        e('redteam-stats').innerHTML =
+          `Total attacks: <b>${rt.total_attacks||0}</b><br>`+
+          `Falsifications: <b style="color:#ff6060">${rt.total_falsifications||0}</b> `+
+          `(${rt.total_attacks?((rt.total_falsifications/rt.total_attacks)*100).toFixed(0):0}% rate)<br>`+
+          `Rounds run: ${rt.round_count||0}`;
+      }
+    }
+
+    // Autonomous Trainer bandit
+    if(e('trainer-stats')) {
+      if(!trainer.running && !trainer.total_problems) {
+        e('trainer-stats').innerHTML = `<span style="color:#555">Trainer not running (daemon not active)</span>`;
+      } else {
+        const srcRows = Object.entries(trainer.source_stats||{}).map(([src, st]) => {
+          const rate = st.rate !== undefined ? st.rate : (st.problems ? (st.successes/st.problems) : 0);
+          const bar = '\u2588'.repeat(Math.round(rate*10)) + '\u2591'.repeat(10-Math.round(rate*10));
+          return `<span style="color:#888">${src.replace('_',' ').padEnd(22)}</span>`+
+                 `<span style="color:#4caf50;font-size:10px">${bar}</span> `+
+                 `${(rate*100).toFixed(0)}% (${st.problems||0})`;
+        }).join('<br>');
+        e('trainer-stats').innerHTML =
+          `Running: ${trainer.running?'<span style="color:#4caf50">yes</span>':'<span style="color:#f44">no</span>'} &nbsp;`+
+          `Total: <b>${trainer.total_problems||0}</b> &nbsp;`+
+          `Recent: <b>${((trainer.recent_rate||0)*100).toFixed(0)}%</b> solved<br><br>`+
+          `<span style="color:#888;font-size:10px">SOURCE BANDIT (EMA solve rate)</span><br>`+
+          `<code style="font-size:10px">${srcRows||'No data yet'}</code>`;
+      }
+    }
   } catch(e) { console.warn('workspace refresh error', e); }
+}
+
+async function runArenaRace() {
+  const expr = (document.getElementById('arena-expr')||{}).value || 'x + 0';
+  const el = document.getElementById('arena-race-result');
+  if(el) el.innerHTML = '\u23f3 Racing...';
+  try {
+    const r = await fetch('/api/brain/arena', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({expression: expr})}).then(x=>x.json());
+    if(r.error) { if(el) el.innerHTML = `<span style="color:#f44">${r.error}</span>`; return; }
+    const w = r.winner||{};
+    if(el) el.innerHTML = `Winner: <span style="color:#4caf50">${w.agent_id||'?'}</span> &nbsp;\u0394=${(w.delta||0).toFixed(3)} &nbsp;steps=${w.steps||0} &nbsp;${w.success?'\u2705':''}`;
+    refreshWorkspace();
+  } catch(e) { if(el) el.innerHTML = 'Error: '+e; }
+}
+
+async function runRedTeamAttack() {
+  const el = document.getElementById('redteam-attack-result');
+  if(el) el.innerHTML = '\u23f3 Attacking...';
+  try {
+    const r = await fetch('/api/brain/redteam', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({top_k: 3})}).then(x=>x.json());
+    const rd = r.round||{};
+    if(el) el.innerHTML = `Round ${rd.round||'?'}: ${rd.attacks||0} attacks, `+
+      `<span style="color:#ff6060">${rd.falsifications||0} falsified</span> `+
+      `(${rd.message||''})`;
+    refreshWorkspace();
+  } catch(e) { if(el) el.innerHTML = 'Error: '+e; }
 }
 
 async function runARC() {
