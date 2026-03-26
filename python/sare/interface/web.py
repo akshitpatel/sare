@@ -937,6 +937,10 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_brain_predictive()
         elif parsed.path == "/api/brain/trainer":
             self._api_brain_trainer()
+        elif parsed.path == "/api/brain/composite":
+            self._api_brain_composite()
+        elif parsed.path == "/api/brain/astar":
+            self._api_brain_astar_stats()
         elif parsed.path == "/api/brain/society":
             self._api_brain_society()
         elif parsed.path == "/api/brain/metacognition":
@@ -1271,6 +1275,10 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
             self._api_brain_trainer_control(body)
+        elif parsed.path in ("/api/config/beam_width", "/api/config/budget_seconds"):
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_config_update(parsed.path, body)
         elif parsed.path == "/api/brain/society":
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
@@ -5958,14 +5966,27 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
     # ── Gap 2: Autonomous Trainer ──────────────────────────────────────────────
     def _api_brain_trainer(self):
         """GET /api/brain/trainer — autonomous trainer summary + live stats."""
+        import json as _json
+        from pathlib import Path as _Path
+        _stats_path = _Path(__file__).resolve().parents[3] / "data" / "memory" / "autonomous_trainer_stats.json"
         try:
             from sare.brain import get_brain
             brain = get_brain()
-            if brain and brain.autonomous_trainer:
+            if brain and brain.autonomous_trainer and brain.autonomous_trainer._running:
                 self._json_response(brain.autonomous_trainer.summary())
-            else:
-                self._json_response({"running": False, "total_problems": 0,
-                                     "error": "AutonomousTrainer not loaded"})
+                return
+            # Fall back to last persisted stats written by the daemon process
+            if _stats_path.exists():
+                try:
+                    data = _json.loads(_stats_path.read_text(encoding="utf-8"))
+                    data["from_disk"] = True
+                    data["running"] = False
+                    self._json_response(data)
+                    return
+                except Exception:
+                    pass
+            self._json_response({"running": False, "total_problems": 0,
+                                 "error": "Trainer not running (daemon not active)"})
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
@@ -5992,6 +6013,51 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
                 self._json_response({"injected": expr, "domain": dom})
             else:
                 self._json_response(at.summary())
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_brain_composite(self):
+        """GET /api/brain/composite — CompositeRuleLearner stats."""
+        try:
+            from sare.learning.composite_rule_learner import get_composite_learner
+            cl = get_composite_learner()
+            self._json_response({
+                "total_traces": cl._total_traces,
+                "pair_count": len(cl._pair_counts),
+                "registered_composites": len(cl._registered),
+                "top_pairs": [{"pair": list(k), "count": v}
+                              for k, v in cl._pair_counts.most_common(10)],
+                "registered": list(cl._registered.values())[:20],
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_brain_astar_stats(self):
+        """GET /api/brain/astar — AStarSearch availability check."""
+        try:
+            from sare.search.astar_search import AStarSearch
+            self._json_response({"available": True, "max_open_set": 512})
+        except Exception as e:
+            self._json_response({"available": False, "error": str(e)})
+
+    def _api_config_update(self, path: str, body: dict):
+        """POST /api/config/beam_width or /api/config/budget_seconds — live param update."""
+        try:
+            from sare.brain import get_brain
+            brain = get_brain()
+            value = body.get("value")
+            if value is None:
+                self._json_response({"error": "missing value"}, 400)
+                return
+            if path == "/api/config/beam_width" and brain:
+                brain.beam_width = int(value)
+                self._json_response({"beam_width": int(value)})
+            elif path == "/api/config/budget_seconds" and brain:
+                if hasattr(brain, 'experiment_runner') and brain.experiment_runner:
+                    brain.experiment_runner.budget_seconds = float(value)
+                self._json_response({"budget_seconds": float(value)})
+            else:
+                self._json_response({"error": "not found"}, 404)
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 

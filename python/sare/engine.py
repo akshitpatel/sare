@@ -3667,6 +3667,7 @@ class BeamSearch:
                heuristic_fn: Optional[Callable[[Graph], float]] = None,
                attention_guided: bool = True,
                on_step: Optional[Callable] = None,
+               attention_scorer=None,
                **kwargs) -> SearchResult:
 
         def score(g: Graph, e: EnergyBreakdown) -> float:
@@ -3683,6 +3684,12 @@ class BeamSearch:
         trajectory = [initial_energy.total]
         expansions = 0
 
+        # P1-C: per-search expanded graph hash dedup set
+        _expanded_hashes: set = set()
+
+        # P1-B: early-exit tracking
+        _best_energy_history: list = []
+
         # Attention: focus transforms on high-priority nodes
         _attention_available = False
         if attention_guided:
@@ -3698,6 +3705,19 @@ class BeamSearch:
 
             candidates = []
             for g, e, trace, _ in beam:
+                # P1-C: skip expansion if this graph was already expanded
+                try:
+                    _g_hash = hash(tuple(sorted(
+                        (getattr(n, 'node_type', getattr(n, 'type', '')),
+                         str(getattr(n, 'value', '') or ''))
+                        for n in g.nodes
+                    )))
+                    if _g_hash in _expanded_hashes:
+                        continue
+                    _expanded_hashes.add(_g_hash)
+                except Exception:
+                    pass
+
                 # Attention-guided: score nodes, prioritize transforms
                 # that match high-attention nodes
                 attention_boost = {}
@@ -3750,12 +3770,43 @@ class BeamSearch:
 
             # Keep top-k by score, where lower is better.
             candidates.sort(key=lambda x: x[3])
-            beam = candidates[:beam_width]
+
+            # P1-A: AttentionBeamScorer rerank (optional)
+            if attention_scorer is not None:
+                try:
+                    _attn_pairs = [(c[0], c[1].total) for c in candidates[:beam_width * 2]]
+                    _attn_paths = [c[2] for c in candidates[:beam_width * 2]]
+                    _reranked = attention_scorer.rerank(_attn_pairs, beam_width, _attn_paths)
+                    # Rebuild beam from reranked BeamState objects
+                    _beam_new = []
+                    for _bs in _reranked:
+                        # Match back to full candidate tuple
+                        for c in candidates:
+                            if c[0] is _bs.graph:
+                                _beam_new.append(c)
+                                break
+                        if len(_beam_new) >= beam_width:
+                            break
+                    if _beam_new:
+                        beam = _beam_new
+                    else:
+                        beam = candidates[:beam_width]
+                except Exception:
+                    beam = candidates[:beam_width]
+            else:
+                beam = candidates[:beam_width]
 
             if beam[0][3] < best[3]:
                 best = beam[0]
 
             trajectory.append(best[1].total)
+
+            # P1-B: Early-exit if no improvement for 3 consecutive depths
+            _best_energy_history.append(best[1].total)
+            if len(_best_energy_history) >= 3:
+                _last3 = _best_energy_history[-3:]
+                if all(abs(_last3[i] - _last3[i+1]) < 0.001 for i in range(2)):
+                    break
 
         elapsed = time.time() - start_time
         return SearchResult(

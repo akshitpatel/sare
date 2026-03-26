@@ -56,6 +56,10 @@ class CausalInduction:
         self.ckb = get_ckb()
         self._rule_observations: dict = {}
 
+        # P1-D: Promotion hysteresis
+        self._promoted_at: dict = {}   # rule_name -> episode_count at promotion
+        self._episode_count: int = 0   # incremented on every induce() call
+
         self._pending_episodes: collections.deque = collections.deque()
         self._induction_thread: Optional[threading.Thread] = None
         self._start_induction_thread()
@@ -147,6 +151,9 @@ class CausalInduction:
             )
 
     def induce(self, problem: Any = None, result: Any = None, reflection: Any = None, surprise: float = 0.0) -> Optional[Any]:
+        # P1-D: track total episodes seen
+        self._episode_count += 1
+
         candidate = None
 
         # reflection may itself be the rule (AbstractRule returned directly by PyReflectionEngine)
@@ -462,6 +469,15 @@ class CausalInduction:
                     f"insufficient: pass_rate={pass_rate:.3f}, tests_passed={tests_passed}/{tests_total}, obs={observation_count}"
                 )
 
+        # P1-D: Demotion hysteresis — if rule was recently promoted, skip demotion
+        if not promoted:
+            episodes_since_promotion = self._episode_count - self._promoted_at.get(rule_id, 0)
+            if episodes_since_promotion < 50 and rule_id in self._promoted_at:
+                promoted = True
+                reasoning_parts.append(
+                    f"hysteresis: skipping demotion ({episodes_since_promotion} episodes since promotion < 50)"
+                )
+
         reasoning = "; ".join(reasoning_parts)
         result = InductionResult(
             promoted=promoted,
@@ -474,6 +490,8 @@ class CausalInduction:
 
         # If promoted, register in CKB with any available metadata.
         if promoted:
+            # P1-D: record promotion timestamp
+            self._promoted_at[rule_id] = self._episode_count
             try:
                 op = getattr(rule, "operator_involved", None)
                 desc = getattr(rule, "pattern_description", None) or getattr(rule, "name", None)

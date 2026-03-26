@@ -114,6 +114,13 @@ class ExperimentRunner:
         self._value_net = None  # lazy-loaded MLXValueNet (M1 GPU)
         self._last_wm_prediction = None  # world model prediction for current problem
 
+        # P2-G: per-transform uncertainty tracking (populated from credit assigner)
+        self._transform_uncertainty: dict = {}
+        self._solve_count: int = 0   # used for composite learner mine frequency
+
+        # P3-H: A* fallback for hard problems
+        self._use_astar_fallback: bool = True
+
         # Load synthesized transforms from data/memory/synthesized_modules/
         synth = self._load_synthesized_transforms()
         if synth:
@@ -185,12 +192,29 @@ class ExperimentRunner:
                     pass
         return 0.0
 
-    def _search(self, graph):
+    def _search(self, graph, transforms=None):
         kwargs = {
             "beam_width": self.beam_width,
             "budget_seconds": self.budget_seconds,
         }
-        transforms = self.transforms
+        if transforms is None:
+            transforms = self.transforms
+
+        # P1-A: pass attention scorer to BeamSearch
+        try:
+            from sare.search.attention_beam import get_default_scorer
+            kwargs["attention_scorer"] = get_default_scorer()
+        except Exception:
+            pass
+
+        # P2-F: pass heuristic_fn to BeamSearch
+        try:
+            from sare.brain import get_brain as _get_brain
+            _br = _get_brain()
+            if _br is not None and hasattr(_br, 'heuristic_model') and _br.heuristic_model is not None:
+                kwargs["heuristic_fn"] = _br.heuristic_model.predict_graph
+        except Exception:
+            pass
 
         if hasattr(self.searcher, "search"):
             try:
@@ -406,6 +430,29 @@ class ExperimentRunner:
                 _traj = [_e_start + i * _step for i in range(_n_steps + 1)]
                 _ca.assign_credit(result.proof_steps, _traj, domain=_ca_domain)
                 _ca.save()
+                # P2-G: update transform uncertainty from credit utilities
+                try:
+                    _utilities = _ca.get_all_utilities()
+                    for _tname, _util in _utilities.items():
+                        self._transform_uncertainty[_tname] = max(0.0, 1.0 - abs(float(_util)))
+                    # Push to attention scorer
+                    from sare.search.attention_beam import get_default_scorer
+                    get_default_scorer().set_transform_uncertainty(self._transform_uncertainty)
+                except Exception:
+                    pass
+            except Exception:
+                pass
+
+        # P3-I: CompositeRuleLearner observation and periodic mining
+        if result.solved and result.proof_steps:
+            try:
+                from sare.learning.composite_rule_learner import get_composite_learner
+                _cl = get_composite_learner()
+                _cl_domain = str(getattr(result, "domain", "general"))
+                _cl.observe_trace(result.proof_steps, _cl_domain)
+                self._solve_count += 1
+                if self._solve_count % 20 == 0:
+                    _cl.mine_composites()
             except Exception:
                 pass
 
@@ -746,8 +793,57 @@ class ExperimentRunner:
 
         if not _schema_hit:
             try:
-                outcome = self._search(graph)
+                # P2-E: Transform family routing — filter to domain-relevant transforms
+                _search_transforms = self.transforms
+                try:
+                    from sare.transforms.transform_families import get_family_transforms
+                    _search_transforms = get_family_transforms(domain, self.transforms)
+                except Exception:
+                    pass
+
+                # P3-I: CompositeRuleLearner — suggest transform order
+                try:
+                    from sare.learning.composite_rule_learner import get_composite_learner
+                    _search_transforms = get_composite_learner().suggest_transform_order(_search_transforms, domain)
+                except Exception:
+                    pass
+
+                outcome = self._search(graph, transforms=_search_transforms)
                 solved, final_graph, proof_steps, proof_nl = self._parse_search_outcome(outcome, graph, energy_before)
+
+                # P3-H: A* fallback for hard problems that BeamSearch failed on
+                if self._use_astar_fallback and not solved:
+                    _beam_steps = getattr(outcome, 'steps_taken', getattr(outcome, 'expansions', 0))
+                    _beam_delta = energy_before - self._evaluate_energy(
+                        getattr(outcome, 'graph', getattr(outcome, 'result_graph', graph))
+                    ) if outcome else 0.0
+                    if _beam_delta < 0.01 and _beam_steps > 50:
+                        try:
+                            from sare.search.astar_search import AStarSearch
+                            _astar = AStarSearch()
+                            _astar_result = _astar.search(
+                                graph, self.energy, _search_transforms,
+                                beam_width=self.beam_width,
+                                max_depth=30,
+                                budget_seconds=min(self.budget_seconds, 10.0),
+                            )
+                            if _astar_result.get("success") and _astar_result.get("delta", 0) > 0.01:
+                                # Rebuild a SearchResult-like object for _parse_search_outcome
+                                class _AStarOutcome:
+                                    pass
+                                _ao = _AStarOutcome()
+                                _ao.graph = _astar_result["result_graph"]
+                                _ao.result_graph = _ao.graph
+                                _ao.success = _astar_result["success"]
+                                _ao.solved = _astar_result["success"]
+                                _ao.transforms_applied = _astar_result.get("transforms_used", [])
+                                _ao.steps_taken = len(_ao.transforms_applied)
+                                outcome = _ao
+                                solved, final_graph, proof_steps, proof_nl = self._parse_search_outcome(outcome, graph, energy_before)
+                                log.debug("[ExperimentRunner] A* fallback succeeded for %s (delta=%.3f)", problem_id, _astar_result["delta"])
+                        except Exception as _astar_exc:
+                            log.debug("[ExperimentRunner] A* fallback error: %s", _astar_exc)
+
             except Exception as exc:
                 log.exception("Experiment failed for problem %s: %s", problem_id, exc)
                 solved, final_graph, proof_steps, proof_nl = False, graph, [], ""
