@@ -142,8 +142,8 @@ class CreditAssigner:
             "baseline_count": self.baseline_count,
             "baselines": self._baselines,
         }
-        import os as _os
-        _tmp = target.with_suffix(".tmp")
+        import os as _os, threading as _thr
+        _tmp = target.parent / f"{target.stem}.{_os.getpid()}.{_thr.get_ident()}.tmp"
         _tmp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         _os.replace(_tmp, target)
 
