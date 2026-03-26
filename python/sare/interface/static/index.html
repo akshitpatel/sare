@@ -340,24 +340,38 @@
       <div class="view-container grid-2col" id="tab-solve">
         <div class="flex-col" style="overflow:hidden">
           <div class="panel" style="flex-shrink:0">
-            <div class="panel-header display"><span class="panel-title">Hybrid Solver Input</span><span class="badge b-cyan">MCTS + BEAM</span></div>
+            <div class="panel-header display">
+              <span class="panel-title">Solve</span>
+              <span id="solve-mode-badge" class="badge b-cyan">SYMBOLIC</span>
+            </div>
             <div class="panel-body">
-              <div class="form-group">
-                <label>Mathematical / Logical Expression</label>
-                <input id="solve-expr" type="text" value="2*y + 1 = 2*x - 3" placeholder="e.g. 2*x + 1 = 5" />
+              <!-- Mode toggle -->
+              <div style="display:flex;gap:6px;margin-bottom:10px">
+                <button id="mode-sym-btn"  onclick="setSolveMode('sym')"  style="flex:1;padding:5px 0;border-radius:4px;border:none;cursor:pointer;background:#1565c0;color:#fff;font-size:11px;font-weight:600">&#x2211; Expression</button>
+                <button id="mode-nl-btn"   onclick="setSolveMode('nl')"   style="flex:1;padding:5px 0;border-radius:4px;border:1px solid #444;cursor:pointer;background:#1a1a1a;color:#888;font-size:11px">&#x1f4ac; Plain English</button>
+              </div>
+              <!-- Symbolic input -->
+              <div id="solve-sym-row" class="form-group">
+                <label style="font-size:10px;color:#666">e.g. &nbsp;<code>x^2 - 5*x + 6</code> &nbsp; or &nbsp; <code>not not x</code> &nbsp; or &nbsp; <code>F = m * a</code></label>
+                <input id="solve-expr" type="text" value="2*y + 1 = 2*x - 3" placeholder="Expression or equation" />
+              </div>
+              <!-- NL input (hidden by default) -->
+              <div id="solve-nl-row" class="form-group" style="display:none">
+                <label style="font-size:10px;color:#666">Describe in plain English — the system will parse and solve it</label>
+                <input id="solve-nl-text" type="text" placeholder="e.g. simplify x plus zero, or what is the derivative of x squared" />
               </div>
               <div class="flex-row">
                 <div class="form-group" style="flex:1;margin:0">
                   <label>Budget (sec)</label>
                   <input id="solve-budget" type="number" value="15" />
                 </div>
-                <button class="btn btn-cyan" onclick="doSolve()">Solve</button>
+                <button class="btn btn-cyan" id="solve-btn" onclick="doSolveUnified()">Solve</button>
                 <span class="badge b-amber" id="solve-status">IDLE</span>
               </div>
               <div class="data-grid" style="grid-template-columns:1fr 1fr 1fr;margin-top:12px;display:none" id="solve-stats">
-                <div class="data-block"><span class="data-val c-cyan" id="s-init">-</span><span class="data-lbl">Initial Energy</span></div>
+                <div class="data-block"><span class="data-val c-cyan"  id="s-init">-</span><span class="data-lbl">Initial Energy</span></div>
                 <div class="data-block"><span class="data-val c-green" id="s-final">-</span><span class="data-lbl">Final Energy</span></div>
-                <div class="data-block"><span class="data-val" id="s-steps">-</span><span class="data-lbl">Steps</span></div>
+                <div class="data-block"><span class="data-val"         id="s-steps">-</span><span class="data-lbl">Steps</span></div>
               </div>
               <div class="section-lbl" id="lbl-proof" style="display:none">Proof Trace</div>
               <div id="solve-energy-bar-wrap" class="energy-bar-wrap" style="display:none">
@@ -368,13 +382,13 @@
             </div>
           </div>
           <div class="panel" style="flex:1">
-            <div class="panel-header display"><span class="panel-title">NL Explanation</span></div>
-            <div class="panel-body terminal-out" id="solve-explain" style="border:0;border-radius:0"><span class="muted">Enter an expression and click Solve.</span></div>
+            <div class="panel-header display"><span class="panel-title">Explanation</span></div>
+            <div class="panel-body terminal-out" id="solve-explain" style="border:0;border-radius:0"><span class="muted">Enter an expression or question and click Solve.</span></div>
           </div>
         </div>
         <div class="flex-col" style="overflow:hidden">
           <div class="panel" style="flex:1">
-            <div class="panel-header display"><span class="panel-title">Memory-Augmented Search</span></div>
+            <div class="panel-header display"><span class="panel-title">&#x1f9e0; Memory-Augmented Search</span></div>
             <div class="panel-body terminal-out" id="solve-memory" style="border:0;border-radius:0"><span class="muted">Episodic memory will be queried on solve.</span></div>
           </div>
         </div>
@@ -1665,75 +1679,127 @@ async function doRunExperiments(n) {
 
 // ══════ SOLVER ══════
 
+// ── Solve tab mode toggle ─────────────────────────────────────────────────
+let _solveMode = 'sym';
+function setSolveMode(mode) {
+  _solveMode = mode;
+  $('solve-sym-row').style.display  = mode === 'sym' ? '' : 'none';
+  $('solve-nl-row').style.display   = mode === 'nl'  ? '' : 'none';
+  $('mode-sym-btn').style.background  = mode === 'sym' ? '#1565c0' : '#1a1a1a';
+  $('mode-sym-btn').style.color       = mode === 'sym' ? '#fff'    : '#888';
+  $('mode-sym-btn').style.border      = mode === 'sym' ? 'none'    : '1px solid #444';
+  $('mode-nl-btn').style.background   = mode === 'nl'  ? '#1565c0' : '#1a1a1a';
+  $('mode-nl-btn').style.color        = mode === 'nl'  ? '#fff'    : '#888';
+  $('mode-nl-btn').style.border       = mode === 'nl'  ? 'none'    : '1px solid #444';
+  $('solve-mode-badge').textContent   = mode === 'sym' ? 'SYMBOLIC' : 'NATURAL LANGUAGE';
+  $('solve-mode-badge').className     = mode === 'sym' ? 'badge b-cyan' : 'badge b-purple';
+}
+
+async function doSolveUnified() {
+  if(_solveMode === 'nl') { await doSolveNL(); return; }
+  await doSolve();
+}
+
+// NL path — calls /api/solve-full (parse + solve + explain in one shot)
+async function doSolveNL() {
+  const text = $('solve-nl-text').value.trim();
+  const b    = +$('solve-budget').value;
+  if(!text) return;
+  _solveResetUI();
+  $('solve-status').textContent = 'PARSING...'; $('solve-status').className = 'badge b-amber';
+  $('solve-explain').innerHTML = '<span class="muted">Parsing natural language...</span>';
+  try {
+    const d = await api('/api/solve-full', {question: text, budget: b});
+    if(d.error) { $('solve-status').textContent='ERROR'; $('solve-status').className='badge b-red'; $('solve-explain').innerHTML=`<span class="err">${d.error}</span>`; return; }
+    $('solve-status').textContent = d.solve_success === false ? 'PARTIAL' : 'SOLVED';
+    $('solve-status').className   = d.solve_success === false ? 'badge b-amber' : 'badge b-green';
+    $('solve-stats').style.display = 'grid';
+    $('s-init').textContent  = d.initial?.energy?.total?.toFixed(2) || '—';
+    $('s-final').textContent = d.result?.energy?.total?.toFixed(2)  || '—';
+    $('s-steps').textContent = d.steps_taken || '—';
+    const parsedExpr = d.expression || d.parsed || '';
+    $('solve-explain').innerHTML =
+      `<span class="c-amber">Parsed:</span> <span class="c-cyan">${parsedExpr}</span><br><br>` +
+      (d.answer_nl || d.nl_explanation || '<span class="muted">No explanation.</span>');
+    if(d.transforms_applied?.length) {
+      $('solve-proof').style.display = 'block'; $('lbl-proof').style.display = 'block';
+      $('solve-proof').innerHTML = d.transforms_applied.map((t,i)=>`[${i+1}] <span class="c-cyan">${t}</span>`).join('<br>');
+    }
+    $('solve-memory').innerHTML = '<span class="muted">Memory recall not available for NL mode.</span>';
+  } catch(ex) {
+    $('solve-status').textContent='ERROR'; $('solve-status').className='badge b-red';
+    $('solve-explain').innerHTML=`<span class="err">${ex.message}</span>`;
+  }
+}
+
+// Symbolic path — streams steps then fetches full result
+function _solveResetUI() {
+  $('solve-stats').style.display='none'; $('solve-proof').style.display='none';
+  $('lbl-proof').style.display='none'; $('solve-steps-list').style.display='none';
+  $('solve-steps-list').innerHTML=''; $('solve-energy-bar-wrap').style.display='none';
+  $('solve-memory').innerHTML='<span class="sys">&gt; Querying memory...</span>';
+  $('solve-explain').innerHTML='<span class="muted">Solving...</span>';
+}
+
 async function doSolve() {
   const e = $('solve-expr').value.trim();
   const b = +$('solve-budget').value;
   if(!e) return;
   $('solve-status').textContent = 'STREAMING...'; $('solve-status').className = 'badge b-amber';
-  $('solve-stats').style.display = 'none'; $('solve-proof').style.display = 'none'; $('lbl-proof').style.display = 'none';
-  $('solve-steps-list').style.display = 'none'; $('solve-steps-list').innerHTML = '';
-  $('solve-energy-bar-wrap').style.display = 'none';
-  $('solve-memory').innerHTML = '<span class="sys">&gt; Querying memory...</span>';
-  $('solve-explain').innerHTML = '<span class="muted">Solving...</span>';
+  _solveResetUI();
 
   // Phase 1: SSE stream for animated step trace
-  let initEnergy = null;
-  let stepCount = 0;
+  let initEnergy = null, stepCount = 0;
   await new Promise(resolve => {
     const es = new EventSource(`/api/solve/stream?expr=${encodeURIComponent(e)}&budget=${b}`);
     es.onmessage = ev => {
       try {
         const msg = JSON.parse(ev.data);
         if(msg.type === 'init') {
-          $('lbl-proof').style.display = 'block';
-          $('solve-steps-list').style.display = 'block';
-          $('solve-energy-bar-wrap').style.display = 'block';
+          $('lbl-proof').style.display='block'; $('solve-steps-list').style.display='block'; $('solve-energy-bar-wrap').style.display='block';
         } else if(msg.type === 'step') {
           stepCount++;
           if(initEnergy === null) initEnergy = msg.energy_before;
           const improved = msg.delta > 0;
           const item = document.createElement('div');
           item.className = `step-item ${improved ? 'step-improve' : 'step-worse'}`;
-          item.innerHTML = `<span>${msg.transform}</span><span>${improved ? '▼' : '▲'} ${Math.abs(msg.delta).toFixed(3)}</span>`;
+          item.innerHTML = `<span>${msg.transform}</span><span>${improved?'▼':'▲'} ${Math.abs(msg.delta).toFixed(3)}</span>`;
           $('solve-steps-list').appendChild(item);
           $('solve-steps-list').scrollTop = $('solve-steps-list').scrollHeight;
           if(initEnergy > 0) {
             const pct = Math.max(0, Math.min(100, (msg.energy_after / initEnergy) * 100));
             $('solve-energy-bar').style.width = pct + '%';
-            $('solve-energy-bar').style.background = pct < 30 ? 'var(--accent3)' : pct < 70 ? 'var(--accent3)' : 'var(--accent2)';
+            $('solve-energy-bar').style.background = pct < 30 ? 'var(--accent3)' : 'var(--accent2)';
           }
-        } else if(msg.type === 'done' || msg.type === 'error') {
-          es.close(); resolve();
-        }
+        } else if(msg.type === 'done' || msg.type === 'error') { es.close(); resolve(); }
       } catch(_) {}
     };
     es.onerror = () => { es.close(); resolve(); };
     setTimeout(() => { es.close(); resolve(); }, (b + 5) * 1000);
   });
 
-  // Phase 2: fetch full result (NL explanation + memory)
+  // Phase 2: full result with NL explanation + episodic memory
   const d = await api('/api/solve', {expression: e, budget: b, algorithm: 'hybrid'});
-  if(d.error) { $('solve-status').textContent = 'ERROR'; $('solve-status').className='badge b-red'; $('solve-explain').innerHTML=`<span class="err">${d.error}</span>`; return; }
+  if(d.error) { $('solve-status').textContent='ERROR'; $('solve-status').className='badge b-red'; $('solve-explain').innerHTML=`<span class="err">${d.error}</span>`; return; }
 
-  $('solve-status').textContent = d.solve_success === false ? 'AIDE-REQUIRED' : 'SOLVED';
-  $('solve-status').className = d.solve_success === false ? 'badge b-amber' : 'badge b-green';
-  $('solve-stats').style.display = 'grid';
-  $('s-init').textContent = d.initial?.energy?.total?.toFixed(2) || '0';
-  $('s-final').textContent = d.result?.energy?.total?.toFixed(2) || '0';
+  $('solve-status').textContent = d.solve_success === false ? 'UNSOLVED' : 'SOLVED';
+  $('solve-status').className   = d.solve_success === false ? 'badge b-amber' : 'badge b-green';
+  $('solve-stats').style.display='grid';
+  $('s-init').textContent  = d.initial?.energy?.total?.toFixed(2)  || '0';
+  $('s-final').textContent = d.result?.energy?.total?.toFixed(2)   || '0';
   $('s-steps').textContent = d.steps_taken || stepCount || '0';
 
   if(d.transforms_applied?.length) {
-    $('solve-proof').style.display = 'block';
-    $('solve-proof').innerHTML = d.transforms_applied.map((t,i) => `[${i+1}] <span class="c-cyan">${t}</span>`).join('<br>');
+    $('solve-proof').style.display='block';
+    $('solve-proof').innerHTML = d.transforms_applied.map((t,i)=>`[${i+1}] <span class="c-cyan">${t}</span>`).join('<br>');
   }
-
-  $('solve-explain').innerHTML = `<span class="c-cyan">${e}</span><br><br>${d.nl_explanation || '<span class="err">NL explanation unavailable.</span>'}`;
+  $('solve-explain').innerHTML = `<span class="c-cyan">${e}</span><br><br>${d.nl_explanation || '<span class="muted">No explanation available.</span>'}`;
 
   if(d.recalled_memory?.length) {
-    let html = `<span class="c-green">\u2713 ${d.recalled_memory.length} similar episodes</span><br><br>`;
-    d.recalled_memory.forEach((r,i) => { html += `[${i+1}] <span class="c-amber">Sim ${r.similarity.toFixed(2)}</span> | ${r.problem_id} \u2192 <span class="muted">${r.transforms.join(' \u2192 ')}</span><br>`; });
+    let html = `<span class="c-green">\u2713 ${d.recalled_memory.length} similar episodes recalled</span><br><br>`;
+    d.recalled_memory.forEach((r,i) => { html+=`[${i+1}] <span class="c-amber">Sim ${r.similarity.toFixed(2)}</span> | ${r.problem_id} \u2192 <span class="muted">${r.transforms.join(' \u2192 ')}</span><br>`; });
     $('solve-memory').innerHTML = html;
-  } else { $('solve-memory').innerHTML = '<span class="muted">No episodic matches.</span>'; }
+  } else { $('solve-memory').innerHTML = '<span class="muted">No similar episodes in memory.</span>'; }
 }
 
 // ══════ WORLD MODEL ══════
@@ -1854,6 +1920,18 @@ function _startWGSim() {
   }, 30);
   setTimeout(() => { if(_wgAnimTimer) { clearInterval(_wgAnimTimer); _wgAnimTimer = null; } }, 5000);
 }
+
+// Enter-key handlers for solve inputs
+document.addEventListener('DOMContentLoaded', () => {
+  const solveExpr = $('solve-expr');
+  if(solveExpr) solveExpr.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSolve(); }
+  });
+  const solveNL = $('solve-nl-text');
+  if(solveNL) solveNL.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSolveNL(); }
+  });
+});
 
 // Click handler for graph canvas
 document.addEventListener('DOMContentLoaded', () => {

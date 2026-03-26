@@ -1,0 +1,2422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>SARE-HX · Brain Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root{
+      --bg:#0a0e14;--surface:#111820;--panel:#161e29;--border:#1e2a3a;
+      --accent:#00e5ff;--accent2:#ff2a6d;--accent3:#05d59e;--accent4:#ffb800;
+      --accent5:#a78bfa;--accent6:#f97316;
+      --text:#d1d5db;--bright:#f3f4f6;--muted:#6b7280;
+      --glow:0 0 12px rgba(0,229,255,.35)
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
+    ::selection{background:rgba(0,229,255,.15);color:var(--accent)}
+    /* Header */
+    .header{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
+    .header h1{font-size:16px;font-weight:700;color:var(--bright)}
+    .header .badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase}
+    .badge.stage{background:linear-gradient(135deg,var(--accent),var(--accent5));color:#000}
+    .badge.auto{border:1px solid var(--accent3);color:var(--accent3);font-size:10px}
+    .badge.auto.off{border-color:var(--muted);color:var(--muted)}
+    .badge.agi{border:1px solid var(--accent4);color:var(--accent4);font-size:11px;font-family:'JetBrains Mono',monospace}
+    .header .nav{margin-left:auto;display:flex;gap:6px}
+    .header .nav a{color:var(--muted);text-decoration:none;padding:5px 10px;border-radius:6px;font-size:12px;transition:.2s}
+    .header .nav a:hover,.header .nav a.active{color:var(--accent);background:rgba(0,229,255,.08)}
+    /* Layout */
+    .main{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:12px}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;overflow:hidden}
+    .card h2{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+    .card h2 .cnt{background:var(--surface);padding:1px 6px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent)}
+    .card.span2{grid-column:span 2}.card.span3{grid-column:1/-1}
+    /* Stats bar */
+    .stats{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+    .stat{text-align:center;padding:10px 6px;background:var(--surface);border-radius:8px;border:1px solid var(--border)}
+    .stat .v{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace}
+    .stat .l{font-size:9px;color:var(--muted);margin-top:2px;text-transform:uppercase}
+    .c1 .v{color:var(--accent)}.c2 .v{color:var(--accent3)}.c3 .v{color:var(--accent4)}
+    .c4 .v{color:var(--accent2)}.c5 .v{color:var(--accent5)}.c6 .v{color:var(--accent6)}
+    /* Architecture diagram */
+    .arch{display:flex;align-items:stretch;gap:0;margin-bottom:4px}
+    .arch-layer{flex:1;text-align:center;padding:10px 6px;border-radius:0;border:1px solid var(--border);position:relative;cursor:default;transition:.2s}
+    .arch-layer:first-child{border-radius:10px 0 0 10px}
+    .arch-layer:last-child{border-radius:0 10px 10px 0}
+    .arch-layer .al-icon{font-size:18px;display:block;margin-bottom:4px}
+    .arch-layer .al-title{font-size:10px;font-weight:700;color:var(--bright);text-transform:uppercase;letter-spacing:.3px}
+    .arch-layer .al-sub{font-size:9px;color:var(--muted);margin-top:2px}
+    .arch-layer .al-cnt{font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:4px}
+    .arch-layer.l1{background:rgba(255,184,0,.07);border-color:rgba(255,184,0,.3)}.arch-layer.l1 .al-cnt{color:var(--accent4)}
+    .arch-layer.l2{background:rgba(167,139,250,.07);border-color:rgba(167,139,250,.3)}.arch-layer.l2 .al-cnt{color:var(--accent5)}
+    .arch-layer.l3{background:rgba(0,229,255,.07);border-color:rgba(0,229,255,.3)}.arch-layer.l3 .al-cnt{color:var(--accent)}
+    .arch-layer.l4{background:rgba(5,213,158,.07);border-color:rgba(5,213,158,.3)}.arch-layer.l4 .al-cnt{color:var(--accent3)}
+    .arch-layer.l5{background:rgba(249,115,22,.07);border-color:rgba(249,115,22,.3)}.arch-layer.l5 .al-cnt{color:var(--accent6)}
+    .arch-arrow{display:flex;align-items:center;padding:0 4px;color:var(--muted);font-size:14px}
+    /* Concept graph */
+    .concept-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:5px}
+    .concept-card{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 9px}
+    .concept-card.grounded{border-color:rgba(5,213,158,.35);background:rgba(5,213,158,.04)}
+    .concept-card.seeded{border-color:rgba(0,229,255,.2)}
+    .cc-name{font-size:11px;font-weight:700;color:var(--bright)}
+    .cc-sym{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);float:right}
+    .cc-meaning{font-size:9px;color:var(--muted);margin-top:2px;line-height:1.3}
+    .cc-examples{font-size:9px;color:var(--accent3);margin-top:3px}
+    .cc-rules{margin-top:3px}
+    .cc-rule{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--accent5);padding:1px 4px;background:rgba(167,139,250,.08);border-radius:3px;display:inline-block;margin:1px}
+    /* Environment simulator */
+    .env-obs{padding:5px 8px;background:var(--surface);border-radius:5px;border-left:2px solid var(--accent4);margin-bottom:4px;font-size:10px}
+    .env-obs .eo-desc{color:var(--bright)}
+    .env-obs .eo-sym{font-family:'JetBrains Mono',monospace;color:var(--accent5);font-size:9px;margin-top:1px}
+    .env-obs .eo-concept{color:var(--accent3);font-size:9px}
+    /* Goal planner */
+    .goal-tree{padding:0}
+    .goal-node{padding:5px 8px;margin-bottom:3px;border-radius:6px;font-size:10px;border:1px solid var(--border)}
+    .goal-node.pending{background:var(--surface)}
+    .goal-node.in_progress{background:rgba(0,229,255,.06);border-color:rgba(0,229,255,.3)}
+    .goal-node.completed{background:rgba(5,213,158,.05);border-color:rgba(5,213,158,.25);opacity:.7}
+    .goal-node.blocked{background:rgba(255,42,109,.04);border-color:rgba(255,42,109,.2);opacity:.5}
+    .gn-desc{color:var(--bright);font-weight:500}
+    .gn-meta{color:var(--muted);font-size:9px;margin-top:2px}
+    .gn-bar{height:2px;background:var(--border);border-radius:1px;margin-top:4px;overflow:hidden}
+    .gn-bar .f{height:100%;border-radius:1px;background:var(--accent3);transition:width .3s}
+    .gn-sub{margin-left:16px;margin-top:3px}
+    /* Domain curriculum */
+    .dg{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:6px}
+    .dom{padding:8px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface);position:relative}
+    .dom .n{font-size:11px;font-weight:600;color:var(--bright);margin-bottom:3px;padding-right:18px}
+    .dom .m{font-size:9px;color:var(--muted)}
+    .dom .bar{height:2px;background:var(--border);border-radius:1px;margin-top:4px;overflow:hidden}
+    .dom .bar .f{height:100%;border-radius:1px;transition:width .4s}
+    .dom.lk{opacity:.35}.dom.ma .bar .f{background:var(--accent3)}.dom.le .bar .f{background:var(--accent4)}.dom.un .bar .f{background:var(--accent)}
+    .dom.ma{border-color:rgba(5,213,158,.25)}.dom .ic{position:absolute;top:6px;right:6px;font-size:12px}
+    /* Modules */
+    .ml{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px}
+    .mod{display:flex;align-items:center;gap:6px;padding:4px 8px;font-size:11px;border-radius:5px;background:var(--surface)}
+    .mod .d{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+    .mod .d.ok{background:var(--accent3)}.mod .d.er{background:var(--accent2)}
+    /* Events */
+    .el{max-height:200px;overflow-y:auto}
+    .ev{display:flex;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.02);font-size:11px}
+    .ev .t{color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:9px;min-width:55px}
+    .ev .tp{color:var(--accent);font-weight:500;min-width:110px;font-size:10px}
+    /* Controls */
+    .controls{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+    .btn{padding:6px 14px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--bright);font-size:12px;font-weight:500;cursor:pointer;transition:.2s;font-family:inherit}
+    .btn:hover{border-color:var(--accent);box-shadow:var(--glow)}.btn.p{background:rgba(0,229,255,.1);border-color:var(--accent);color:var(--accent)}
+    .btn.g{background:rgba(5,213,158,.08);border-color:var(--accent3);color:var(--accent3)}
+    .btn.y{background:rgba(255,184,0,.08);border-color:var(--accent4);color:var(--accent4)}
+    .btn.r{background:rgba(255,42,109,.08);border-color:var(--accent2);color:var(--accent2)}
+    .btn.v{background:rgba(167,139,250,.08);border-color:var(--accent5);color:var(--accent5)}
+    .btn:disabled{opacity:.35;cursor:not-allowed}
+    input.expr{flex:1;min-width:120px;padding:6px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--bright);font-size:13px;font-family:'JetBrains Mono',monospace}
+    input.expr:focus{outline:none;border-color:var(--accent);box-shadow:var(--glow)}
+    input.expr::placeholder{color:var(--muted)}
+    .res{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:10px;margin-top:6px;display:none}
+    .res.show{display:block}
+    .res .tf{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent3);margin:4px 0}
+    .dv{font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace}
+    .dv.pos{color:var(--accent3)}.dv.neg{color:var(--accent2)}
+    /* WorldModel */
+    .wm-item{padding:6px 8px;background:var(--surface);border-radius:5px;border:1px solid var(--border);margin-bottom:4px;font-size:10px}
+    .wm-item .wt{color:var(--bright);font-weight:600;font-size:11px}
+    .wm-item .wd{color:var(--muted)}
+    /* Transfer */
+    .role-chip{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;margin:2px;border:1px solid var(--border)}
+    .role-chip.cross{border-color:var(--accent3);color:var(--accent3)}
+    .role-chip.single{color:var(--muted)}
+    /* Conjectures */
+    .conj{padding:6px 8px;background:var(--surface);border-radius:5px;border:1px solid var(--border);margin-bottom:4px;font-size:10px}
+    .conj .ch{color:var(--bright);font-size:11px}
+    .conj .cm{color:var(--muted);margin-top:2px}
+    /* Misc */
+    ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+    .ld{opacity:.5;animation:pu 1.5s infinite}@keyframes pu{0%,100%{opacity:.5}50%{opacity:1}}
+    .auto-panel{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:10px;margin-top:8px}
+    .ap-stat{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent3)}
+    .lr{margin-top:6px;max-height:150px;overflow-y:auto}
+    .lr-item{font-size:10px;padding:1px 0;font-family:'JetBrains Mono',monospace}
+    .divider{height:1px;background:var(--border);margin:8px 0}
+    .tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;margin-right:4px}
+    .tag.new{background:rgba(5,213,158,.15);color:var(--accent3)}
+    .tag.bio{background:rgba(167,139,250,.15);color:var(--accent5)}
+    .section-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;font-weight:600}
+  </style>
+</head>
+<body>
+<div class="header">
+  <h1>🧠 SARE-HX</h1>
+  <span class="badge stage" id="stage">...</span>
+  <span class="badge agi" id="agi-badge">AGI: 98%</span>
+  <span class="badge auto off" id="auto-badge">AUTO: OFF</span>
+  <div class="nav">
+    <a href="/">Classic UI</a>
+    <a href="/dashboard" class="active">Brain</a>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ── Architecture Diagram (full width) ─────────────────────────────────── -->
+  <div class="card span3">
+    <h2>🔬 Cognitive Architecture <span class="tag bio">biological</span><span class="cnt" id="arch-score">perception→concepts→symbols→reasoning→planning</span></h2>
+    <div class="arch">
+      <div class="arch-layer l1">
+        <span class="al-icon">👁</span>
+        <div class="al-title">Perception</div>
+        <div class="al-sub">NL Parser · Ingest · Robustness</div>
+        <div class="al-cnt" id="arch-perception">-</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer l2">
+        <span class="al-icon">💡</span>
+        <div class="al-title">Concepts</div>
+        <div class="al-sub">ConceptGraph · Env Sim · Grounding</div>
+        <div class="al-cnt" id="arch-concepts">-</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer l3">
+        <span class="al-icon">⚙️</span>
+        <div class="al-title">Symbolic Reasoning</div>
+        <div class="al-sub">Engine · Transforms · Transfer</div>
+        <div class="al-cnt" id="arch-symbolic">-</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer l4">
+        <span class="al-icon">🔗</span>
+        <div class="al-title">Memory &amp; Causal</div>
+        <div class="al-sub">WorldModel · CausalChains · Hippocampus</div>
+        <div class="al-cnt" id="arch-memory">-</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer l5">
+        <span class="al-icon">🎯</span>
+        <div class="al-title">Planning</div>
+        <div class="al-sub">GoalPlanner · Curriculum · Metacognition</div>
+        <div class="al-cnt" id="arch-planning">-</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer" style="border-color:var(--accent5)">
+        <span class="al-icon">🪞</span>
+        <div class="al-title">Self-Model</div>
+        <div class="al-sub">Skills · Weaknesses · Goals</div>
+        <div class="al-cnt" id="arch-selfmodel">-</div>
+      </div>
+      <div class="arch-arrow">↺</div>
+      <div class="arch-layer" style="border-color:var(--accent3)">
+        <span class="al-icon">⚗️</span>
+        <div class="al-title">Meta-Learning</div>
+        <div class="al-sub">Config Tuning · Strategy · Improve</div>
+        <div class="al-cnt" id="arch-metalearner">-</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Brain Status Stats ─────────────────────────────────────────────────── -->
+  <div class="card span3">
+    <h2>Brain Status</h2>
+    <div class="stats">
+      <div class="stat c1"><div class="v" id="s-mod">-</div><div class="l">Modules</div></div>
+      <div class="stat c2"><div class="v" id="s-sol">0</div><div class="l">Solves</div></div>
+      <div class="stat c3"><div class="v" id="s-rat">0%</div><div class="l">Solve Rate</div></div>
+      <div class="stat c5"><div class="v" id="s-rul">0</div><div class="l">Rules</div></div>
+      <div class="stat c2"><div class="v" id="s-cpt">0</div><div class="l">Concepts</div></div>
+      <div class="stat c6"><div class="v" id="s-gpl">0</div><div class="l">Goal Plans</div></div>
+      <div class="stat c1"><div class="v" id="s-up">0s</div><div class="l">Uptime</div></div>
+    </div>
+  </div>
+
+  <!-- ── Concept Graph ──────────────────────────────────────────────────────── -->
+  <div class="card span2">
+    <h2>💡 Concept Graph <span class="tag new">new</span><span class="cnt" id="cg-cnt">0 concepts</span></h2>
+    <div class="section-label" id="cg-summary-line">Loading concept layer...</div>
+    <div class="concept-grid" id="cg-grid"></div>
+  </div>
+
+  <!-- ── Environment Simulator ──────────────────────────────────────────────── -->
+  <div class="card">
+    <h2>🌍 Environment Simulator <span class="tag new">new</span><span class="cnt" id="env-cnt">0 obs</span></h2>
+    <div class="section-label" id="env-summary-line">Runs grounded experiments</div>
+    <div class="controls" style="margin-bottom:8px">
+      <button class="btn y" onclick="runExperiment('identity')">Identity</button>
+      <button class="btn v" onclick="runExperiment('annihilation')">Annihilation</button>
+      <button class="btn g" onclick="runExperiment('all')">Full Session</button>
+    </div>
+    <div id="env-obs-list" style="max-height:200px;overflow-y:auto"></div>
+  </div>
+
+  <!-- ── Auto-Learn Controls (Solve moved to main UI at /) ──────────────── -->
+  <div class="card">
+    <h2>Learning Controls</h2>
+    <div style="font-size:10px;color:#666;margin-bottom:8px">To solve expressions use the main UI at <a href="/" style="color:#888">localhost:8080</a></div>
+    <div class="controls" style="margin-bottom:8px">
+      <button class="btn g" onclick="brainLearn(5)">Learn ×5</button>
+      <button class="btn g" onclick="brainLearn(20)">Learn ×20</button>
+      <button class="btn y" id="btn-auto" onclick="toggleAutoLearn()">Auto-Learn</button>
+    </div>
+    <div class="res" id="solve-result">
+      <div style="display:flex;justify-content:space-between">
+        <div><div class="l">DELTA</div><div class="dv" id="r-d">0</div></div>
+        <div style="text-align:right"><div class="l">DOMAIN</div><div style="color:var(--bright);font-weight:600" id="r-dm">-</div></div>
+      </div>
+      <div class="res .tf" id="r-t" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent3);margin:4px 0">-</div>
+      <div style="font-size:10px;color:var(--muted)" id="r-m">-</div>
+      <div id="r-concept" style="margin-top:6px;font-size:10px;color:var(--accent5)"></div>
+    </div>
+    <div class="auto-panel" id="auto-panel" style="display:none">
+      <div style="font-size:10px;color:var(--muted)">AUTO-LEARN</div>
+      <div class="ap-stat" id="ap-stat">-</div>
+    </div>
+    <div class="lr" id="lr"></div>
+  </div>
+
+
+
+  <!-- ── Gap 1: Predictive World Loop ────────────────────────────────────────── -->
+  <div class="card">
+    <h2>🔮 Predictive Loop <span class="tag new">sensorimotor</span><span class="cnt" id="pl-cycles">0 cycles</span></h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+      <div>
+        <div class="section-label">Avg Prediction Error</div>
+        <div id="pl-error" style="font-size:18px;font-weight:700;color:var(--accent3)">—</div>
+      </div>
+      <div>
+        <div class="section-label">Domains tracked</div>
+        <div id="pl-domains" style="font-size:11px"></div>
+      </div>
+    </div>
+    <div class="section-label">Best transforms (by accuracy)</div>
+    <div id="pl-best" style="font-size:11px;margin-bottom:6px"></div>
+    <div class="section-label">Prediction Error Trend</div>
+    <div style="height:60px;margin-bottom:8px;background:var(--bg2);border-radius:4px;padding:4px"><canvas id="pl-chart"></canvas></div>
+    <div class="section-label">World Model Live Action Log</div>
+    <div id="pl-surprises" style="font-size:11px;height:120px;overflow-y:auto;margin-bottom:8px;background:#0d1117;color:#c9d1d9;padding:6px;border-radius:6px;font-family:monospace;border:1px solid #30363d;white-space:pre-wrap;display:flex;flex-direction:column-reverse;"></div>
+    <button class="btn g" onclick="predictiveCycle('x + 0 * y', 'arithmetic')">▶ Run Cycle</button>
+    <div id="pl-result" style="font-size:11px;margin-top:6px;color:var(--accent3)"></div>
+  </div>
+
+  <!-- ── Gap 2: Autonomous Trainer ─────────────────────────────────────────── -->
+  <div class="card">
+    <h2>⚡ Autonomous Trainer <span class="tag bio">24/7</span><span class="cnt" id="at-total">0 problems</span></h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+      <div>
+        <div class="section-label">Status</div>
+        <div id="at-status" style="font-size:13px;font-weight:700"></div>
+      </div>
+      <div>
+        <div class="section-label">Solve Rate</div>
+        <div id="at-rate" style="font-size:18px;font-weight:700;color:var(--accent3)">—</div>
+      </div>
+    </div>
+    <div class="section-label">Source breakdown</div>
+    <div id="at-sources" style="font-size:11px;margin-bottom:6px"></div>
+    <div class="section-label">Solve Rate Trend</div>
+    <div style="height:60px;margin-bottom:8px;background:var(--bg2);border-radius:4px;padding:4px"><canvas id="at-chart"></canvas></div>
+    <div class="section-label">Autonomous Learner Live Action Log</div>
+    <div id="at-recent" style="font-size:11px;height:120px;overflow-y:auto;margin-bottom:8px;background:#0d1117;color:#c9d1d9;padding:6px;border-radius:6px;font-family:monospace;border:1px solid #30363d;white-space:pre-wrap;display:flex;flex-direction:column-reverse;"></div>
+    <div class="controls">
+      <button class="btn g" onclick="trainerControl('start')">▶ Start</button>
+      <button class="btn p" onclick="trainerControl('stop')">■ Stop</button>
+    </div>
+    <div id="at-result" style="font-size:11px;margin-top:6px;color:var(--accent3)"></div>
+  </div>
+
+  <!-- ── Multi-Agent Learning ──────────────────────────────────────────────── -->
+  <div class="card span3" id="ma-card" style="padding:16px">
+    <!-- Header row -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <h2 style="margin:0">🤖 Multi-Agent Learning</h2>
+      <span class="tag new">parallel</span>
+      <span class="cnt" id="ma-total-solved">0 solved</span>
+      <span class="cnt" id="ma-total-promoted" style="border-color:var(--accent3);color:var(--accent3)">0 rules</span>
+      <span id="ma-status-badge" style="margin-left:auto;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;border:1px solid var(--muted);color:var(--muted)">OFFLINE</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn g" id="ma-btn-3" onclick="startAgents(3)">▶ 3</button>
+        <button class="btn p" id="ma-btn-5" onclick="startAgents(5)">▶ 5</button>
+        <button class="btn p" id="ma-btn-7" onclick="startAgents(7)" style="border-color:#a78bfa;color:#a78bfa">▶ 7</button>
+        <button class="btn r" onclick="stopAgents()">■ Stop</button>
+      </div>
+    </div>
+
+    <!-- Agent cards -->
+    <div id="ma-agent-cards" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"></div>
+
+    <!-- Live feed -->
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:10px">
+      <div>
+        <div class="section-label" style="margin-bottom:5px">Live Event Feed <span id="ma-feed-live" style="color:var(--accent3);font-size:9px">●</span></div>
+        <div id="ma-live-feed" style="
+          height:260px;overflow-y:auto;
+          background:#0d1117;color:#c9d1d9;
+          padding:8px;border-radius:6px;
+          font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.6;
+          border:1px solid #30363d;
+          display:flex;flex-direction:column-reverse;
+        "></div>
+      </div>
+      <div>
+        <div class="section-label" style="margin-bottom:5px">Collective Stats</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div class="stat c2" style="padding:8px"><div class="v" id="ma-s-solved" style="font-size:18px">0</div><div class="l">Solved</div></div>
+          <div class="stat c5" style="padding:8px"><div class="v" id="ma-s-promoted" style="font-size:18px">0</div><div class="l">Promoted</div></div>
+          <div class="stat c3" style="padding:8px"><div class="v" id="ma-s-agents" style="font-size:18px">0</div><div class="l">Agents</div></div>
+          <div class="stat c6" style="padding:8px"><div class="v" id="ma-s-rate" style="font-size:18px">—</div><div class="l">Avg Rate</div></div>
+        </div>
+        <div class="section-label" style="margin:10px 0 5px">Agent Society</div>
+        <div id="as-agents" style="font-size:10px;line-height:1.8"></div>
+        <div style="margin-top:6px"><div class="section-label">Blackboard</div>
+          <div id="as-blackboard" style="font-size:10px"></div></div>
+        <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn g" style="font-size:11px;padding:4px 10px" onclick="societyDeliberate()">🗳 Deliberate</button>
+          <div id="as-result" style="font-size:10px;color:var(--accent3);align-self:center"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Unused Modules Pruned for Multi-Agent Autonomy Focus ──────────────── -->
+
+  <!-- ── 🧠 Metacognition ─────────────────────────────────────────────────── -->
+  <div class="card span3" id="meta-card" style="padding:16px">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <h2 style="margin:0">🧠 Metacognition</h2>
+      <span class="cnt" id="meta-conjecture-cnt">0 conjectures</span>
+      <span class="cnt" id="meta-focus-badge" style="border-color:var(--accent4);color:var(--accent4)">focus: —</span>
+      <button class="btn v" style="margin-left:auto;font-size:11px;padding:4px 12px" onclick="metaThink()">💭 Think</button>
+    </div>
+
+    <!-- Row 1: Drives + Identity + Self-awareness stats -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+
+      <!-- Drives -->
+      <div>
+        <div class="section-label" style="margin-bottom:6px">Cognitive Drives</div>
+        <div id="meta-drives"></div>
+        <div style="margin-top:8px">
+          <div class="section-label">Recommendation</div>
+          <div id="meta-recommendation" style="font-size:11px;color:var(--accent3);font-weight:600;margin-top:3px">—</div>
+        </div>
+      </div>
+
+      <!-- Identity / Personality -->
+      <div>
+        <div class="section-label" style="margin-bottom:6px">Personality Traits</div>
+        <div id="meta-traits"></div>
+        <div style="margin-top:8px">
+          <div class="section-label">Self Description</div>
+          <div id="meta-identity-desc" style="font-size:10px;color:var(--text);line-height:1.5;margin-top:3px">—</div>
+        </div>
+      </div>
+
+      <!-- Stats: WM accuracy, solves, calibration, focus -->
+      <div>
+        <div class="section-label" style="margin-bottom:6px">Self-Awareness Stats</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px" id="meta-stats-grid">
+          <div class="stat c2" style="padding:6px"><div class="v" id="meta-total-solves" style="font-size:16px">—</div><div class="l">Lifetime Solves</div></div>
+          <div class="stat c3" style="padding:6px"><div class="v" id="meta-wm-accuracy" style="font-size:16px">—</div><div class="l">WM Accuracy</div></div>
+          <div class="stat c5" style="padding:6px"><div class="v" id="meta-wm-links" style="font-size:16px">—</div><div class="l">Causal Links</div></div>
+          <div class="stat c6" style="padding:6px"><div class="v" id="meta-calibration" style="font-size:16px">—</div><div class="l">Calibration Err</div></div>
+        </div>
+        <div style="margin-top:8px">
+          <div class="section-label">Focus Reason</div>
+          <div id="meta-focus-reason" style="font-size:10px;color:var(--muted);margin-top:3px">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Conjectures + Top Transforms + Active Goals -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+
+      <!-- Conjectures -->
+      <div>
+        <div class="section-label" style="margin-bottom:6px">Active Conjectures</div>
+        <div id="meta-conjecture-list" style="max-height:160px;overflow-y:auto"></div>
+      </div>
+
+      <!-- Top Transforms (credit trail) -->
+      <div>
+        <div class="section-label" style="margin-bottom:6px">Top Transforms (by utility)</div>
+        <div id="meta-top-transforms" style="max-height:160px;overflow-y:auto"></div>
+      </div>
+
+      <!-- Active Goals + High Surprise Domains -->
+      <div>
+        <div class="section-label" style="margin-bottom:6px">Learning Goals</div>
+        <div id="meta-goals" style="max-height:80px;overflow-y:auto;margin-bottom:8px"></div>
+        <div class="section-label" style="margin-bottom:4px">High Surprise Domains</div>
+        <div id="meta-surprise-domains"></div>
+      </div>
+    </div>
+
+    <!-- Row 3: Domain Health bar chart -->
+    <div>
+      <div class="section-label" style="margin-bottom:6px">Domain Curriculum Health (MetaCurriculum)</div>
+      <div id="meta-domains" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+    </div>
+  </div>
+
+  <!-- ── Curriculum ─────────────────────────────────────────────────────────── -->
+  <div class="card span2">
+    <h2>Developmental Curriculum <span class="cnt" id="cur-cnt">0/0</span></h2>
+    <div class="dg" id="cur-map"></div>
+  </div>
+
+  <!-- ── WorldModel v3 ──────────────────────────────────────────────────────── -->
+  <div class="card">
+    <h2>World Model v3 <span class="cnt" id="wm-cnt">0</span></h2>
+    <div id="wm-content"></div>
+  </div>
+
+  <!-- ── Transfer Engine ────────────────────────────────────────────────────── -->
+  <div class="card">
+    <h2>Transfer Engine <span class="cnt" id="te-cnt">0</span></h2>
+    <div id="te-roles"></div>
+    <div id="te-hyps" style="margin-top:8px"></div>
+    <div id="te-synth" style="margin-top:8px"></div>
+  </div>
+
+  <!-- ── Conjectures ────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <h2>Conjectures &amp; Creativity <span class="cnt" id="conj-cnt">0</span></h2>
+    <div id="conj-list"></div>
+  </div>
+
+  <!-- ── Modules ────────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <h2>Modules <span class="cnt" id="mod-cnt">0</span></h2>
+    <div class="ml" id="mod-list"></div>
+  </div>
+
+  <!-- ── AGI Dimension Scores ─────────────────────────────────────────────── -->
+  <div class="card span3">
+    <h2>🧬 AGI Dimension Scores <span class="cnt">Session 29 · 24 dims</span></h2>
+    <div id="agi-dims" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px"></div>
+  </div>
+
+  <!-- ── Remaining Gaps ─────────────────────────────────────────────────────── -->
+  <div class="card span2">
+    <h2>📊 Remaining Gaps <span class="cnt">what's left</span></h2>
+    <div id="gaps-list"></div>
+  </div>
+
+  <!-- ── Events ─────────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <h2>Event Log</h2>
+    <div class="el" id="ev-list"></div>
+  </div>
+
+</div>
+
+<script>
+// ── Helpers ───────────────────────────────────────────────────────────────────
+async function F(u){try{return await(await fetch(u)).json()}catch(e){return{error:e.message}}}
+async function P(u,b){try{return await(await fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json()}catch(e){return{error:e.message}}}
+function fm(n){return typeof n==='number'?(n>999?(n/1000).toFixed(1)+'k':String(n)):String(n||0)}
+function ft(s){return s<60?Math.round(s)+'s':s<3600?Math.round(s/60)+'m':(s/3600).toFixed(1)+'h'}
+function pct(v){return Math.round((v||0)*100)+'%'}
+
+// ── Main refresh ──────────────────────────────────────────────────────────────
+async function refresh(){
+  const[st,cm,al,wm,te,cj,cg,gp]=await Promise.all([
+    F('/api/brain/status'),
+    F('/api/brain/curriculum'),
+    F('/api/brain/autolearn'),
+    F('/api/brain/world'),
+    F('/api/brain/transfer'),
+    F('/api/brain/conjectures'),
+    F('/api/brain/concepts'),
+    F('/api/brain/goals'),
+  ]);
+
+  // ── Status ────────────────────────────────────────────────────────────────
+  if(!st.error){
+    const s=st.stats||{};
+    document.getElementById('stage').textContent=(st.stage||'?').toUpperCase();
+    document.getElementById('s-mod').textContent=(st.modules_loaded||0)+'/'+(st.modules_total||0);
+    document.getElementById('mod-cnt').textContent=(st.modules_loaded||0)+'/'+(st.modules_total||0);
+    document.getElementById('s-sol').textContent=fm(s.solves_attempted||0);
+    const rate=s.solves_attempted?Math.round((s.solves_succeeded||0)/(s.solves_attempted||1)*100):0;
+    document.getElementById('s-rat').textContent=rate+'%';
+    document.getElementById('s-rul').textContent=fm((s.rules_discovered||0)+(s.rules_promoted||0));
+    document.getElementById('s-up').textContent=ft(st.uptime_seconds||0);
+    // Modules
+    const ml=document.getElementById('mod-list');ml.innerHTML='';
+    for(const[n,v]of Object.entries(st.modules||{})){
+      ml.innerHTML+=`<div class="mod"><div class="d ${v.startsWith('\u2705')?'ok':'er'}"></div>${n}</div>`;
+    }
+    // Events
+    const el=document.getElementById('ev-list');el.innerHTML='';
+    for(const ev of(st.recent_events||[]).reverse().slice(0,25)){
+      const t=new Date((ev.time||0)*1000).toLocaleTimeString();
+      el.innerHTML+=`<div class="ev"><span class="t">${t}</span><span class="tp">${ev.event||''}</span><span style="color:var(--muted);font-size:10px;margin-left:auto">${ev.source||''}</span></div>`;
+    }
+  }
+
+  // ── Curriculum ───────────────────────────────────────────────────────────
+  if(!cm.error&&cm.domains){
+    document.getElementById('cur-cnt').textContent=(cm.mastered||0)+'/'+(cm.total_domains||0);
+    const cg2=document.getElementById('cur-map');cg2.innerHTML='';
+    const ds=Object.values(cm.domains).sort((a,b)=>a.mastered===b.mastered?(a.unlocked===b.unlocked?0:(a.unlocked?-1:1)):(a.mastered?-1:1));
+    for(const d of ds){
+      const cls=d.mastered?'ma':d.unlocked?(d.attempts>0?'le':'un'):'lk';
+      const p=d.mastered?100:Math.round((d.solve_rate||0)*100);
+      const ic=d.mastered?'\u2705':d.unlocked?'\ud83d\udcd6':'\ud83d\udd12';
+      cg2.innerHTML+=`<div class="dom ${cls}"><div class="ic">${ic}</div><div class="n">${d.display_name||d.name||''}</div><div class="m">${d.attempts||0} att \u00b7 ${pct(d.solve_rate)}</div><div class="bar"><div class="f" style="width:${p}%"></div></div></div>`;
+    }
+  }
+
+  // ── Auto-learn ───────────────────────────────────────────────────────────
+  if(!al.error){
+    const ab=document.getElementById('auto-badge'),ap=document.getElementById('auto-panel'),btn=document.getElementById('btn-auto');
+    if(al.running){
+      ab.textContent='AUTO: ON';ab.classList.remove('off');ap.style.display='block';
+      document.getElementById('ap-stat').textContent='Cycle '+al.cycles+' \u00b7 '+(al.total_solved||0)+'/'+(al.total_attempted||0)+' solved';
+      btn.textContent='Stop Auto';btn.className='btn r';
+    }else{
+      ab.textContent='AUTO: OFF';ab.classList.add('off');ap.style.display='none';
+      btn.textContent='Auto-Learn';btn.className='btn y';
+    }
+  }
+
+  // ── WorldModel v3 ────────────────────────────────────────────────────────
+  if(!wm.error){
+    document.getElementById('wm-cnt').textContent=(wm.causal_links||0)+' links';
+    const wc=document.getElementById('wm-content');
+    let h=`<div class="wm-item"><span class="wt">${wm.causal_links||0}</span> causal links \u00b7 <span class="wt">${wm.schemas||0}</span> schemas \u00b7 <span class="wt">${wm.beliefs||0}</span> beliefs \u00b7 <span class="wt">${wm.analogies||0}</span> analogies</div>`;
+    for(const b of(wm.top_beliefs||[]).slice(0,4)){
+      h+=`<div class="wm-item"><span class="wt">${b.subject||''}</span> <span class="wd">${b.predicate||''} (${b.strength||''}, ${pct(b.confidence)})</span></div>`;
+    }
+    wc.innerHTML=h;
+    // Architecture: memory layer
+    document.getElementById('arch-memory').textContent=(wm.causal_links||0)+' links \u00b7 '+(wm.beliefs||0)+' beliefs';
+  }
+
+  // ── Transfer Engine ──────────────────────────────────────────────────────
+  if(!te.error){
+    const s=te.summary||{};
+    document.getElementById('te-cnt').textContent=(s.roles||0)+' roles';
+    const tr=document.getElementById('te-roles');let h='';
+    for(const[name,role]of Object.entries(te.cross_domain_roles||{})){
+      h+=`<span class="role-chip cross">${name} (${(role.domains||[]).join(', ')})</span>`;
+    }
+    tr.innerHTML=h||'<span style="color:var(--muted);font-size:10px">Learn more to discover roles</span>';
+    document.getElementById('te-hyps').innerHTML=`<div style="font-size:10px;color:var(--muted)">${(te.hypotheses||{}).total||0} hypotheses \u00b7 ${(te.hypotheses||{}).verified||0} verified</div>`;
+    const ts=document.getElementById('te-synth');
+    const synth=te.synthesized_transforms;
+    if(synth){
+      let sh=`<div style="font-size:10px;color:var(--muted);margin-bottom:4px">${synth.promoted||0}/${synth.total||0} promoted</div>`;
+      for(const t of(synth.transforms||[]).slice(0,4)){
+        const ok=t.promoted;
+        sh+=`<div style="font-size:9px;padding:2px 4px;margin-bottom:2px;border-radius:3px;background:${ok?'rgba(5,213,158,0.1)':'rgba(255,255,255,0.05)'}">${ok?'\u2705':'\u23f3'} <b style="color:var(--bright)">${t.name||''}</b> <span style="color:var(--muted)">\u00b7 ${t.role||''} in ${t.domain||''}</span></div>`;
+      }
+      ts.innerHTML=sh;
+    }
+    // Architecture: symbolic layer
+    document.getElementById('arch-symbolic').textContent=(s.roles||0)+' roles \u00b7 '+(te.transforms_total||'?')+' transforms';
+  }
+
+  // ── Conjectures ──────────────────────────────────────────────────────────
+  if(!cj.error){
+    const conjs=cj.conjectures||[];
+    document.getElementById('conj-cnt').textContent=conjs.length;
+    const cl=document.getElementById('conj-list');let h='';
+    for(const c of conjs.slice(0,5)){
+      const col=(c.plausibility||0)>0.5?'var(--accent3)':(c.plausibility||0)>0.3?'var(--accent4)':'var(--muted)';
+      const src=c.source==='causal_chain_detector'?'\ud83d\udd17':(c.source==='world_model_beliefs'?'\ud83e\udde0':'');
+      h+=`<div class="conj"><div class="ch" style="color:${col}">${src} ${c.hypothesis||''}</div><div class="cm">${c.type||''} \u00b7 ${c.domain||''} \u00b7 ${Math.round((c.plausibility||0)*100)}%</div></div>`;
+    }
+    cl.innerHTML=h||'<span style="color:var(--muted);font-size:10px">Learn more to generate conjectures</span>';
+  }
+
+  // ── Concept Graph ─────────────────────────────────────────────────────────
+  renderConceptGraph(cg);
+
+  // ── Goal Planner ──────────────────────────────────────────────────────────
+  renderGoalPlanner(gp);
+
+  // ── Multi-Agent ───────────────────────────────────────────────────────────
+  refreshMultiAgent();
+}
+
+// ── Concept Graph renderer ────────────────────────────────────────────────────
+function renderConceptGraph(cg){
+  if(!cg||cg.error){return}
+  const summary=cg.summary||{};
+  document.getElementById('cg-cnt').textContent=(summary.total_concepts||0)+' concepts \u00b7 '+(summary.well_grounded||0)+' grounded \u00b7 '+(summary.total_examples||0)+' examples';
+  document.getElementById('s-cpt').textContent=summary.total_concepts||0;
+  const domSummary=Object.entries(summary.domains||{}).map(([d,n])=>d+': '+n).join(' \u00b7 ');
+  document.getElementById('cg-summary-line').textContent=domSummary||'Seeding concepts from environment...';
+  // Architecture: concept layer
+  document.getElementById('arch-concepts').textContent=(summary.total_concepts||0)+' concepts \u00b7 '+(summary.total_examples||0)+' grounded';
+  // Grid
+  const grid=document.getElementById('cg-grid');grid.innerHTML='';
+  for(const c of(cg.concepts||[]).slice(0,12)){
+    const grounded=c.well_grounded?'grounded':'seeded';
+    const examples=c.examples_count||0;
+    const rules=(c.symbolic_rules||[]).slice(0,2).map(r=>`<span class="cc-rule">${r}</span>`).join('');
+    let is_llm = (c.name||'').toLowerCase() !== 'unknown' && c.name && c.meaning;
+    grid.innerHTML+=`<div class="concept-card ${grounded}" style="${is_llm ? 'border-color:var(--accent5);box-shadow:0 0 5px rgba(167,139,250,0.2)' : ''}"><span class="cc-sym" style="${is_llm ? 'color:var(--accent5)' : ''}">${c.symbol||''}</span><div class="cc-name" style="${is_llm ? 'color:var(--accent5)' : ''}">${is_llm ? '\ud83e\udde0 ' : ''}${c.name||''}</div><div class="cc-meaning">${c.meaning||''}</div>${examples>0?`<div class="cc-examples">\u2022 ${examples} grounded example${examples>1?'s':''}</div>`:'<div class="cc-examples" style="color:var(--muted)">No examples yet</div>'}<div class="cc-rules">${rules}</div></div>`;
+  }
+}
+
+// ── Goal Planner renderer ─────────────────────────────────────────────────────
+function renderGoalPlanner(gp){
+  if(!gp||gp.error){
+    document.getElementById('goal-tree').innerHTML='<span style="color:var(--muted);font-size:10px">Goal planner loading...</span>';
+    return;
+  }
+  const summary=gp.summary||{};
+  document.getElementById('gp-cnt').textContent=(summary.active_plans||0)+' active \u00b7 '+(summary.total_nodes||0)+' nodes';
+  document.getElementById('s-gpl').textContent=summary.active_plans||0;
+  // Architecture: planning layer
+  document.getElementById('arch-planning').textContent=(summary.total_plans||0)+' plans \u00b7 '+(summary.total_nodes||0)+' nodes';
+  const gt=document.getElementById('goal-tree');
+  if(!summary.plans||summary.plans.length===0){
+    gt.innerHTML='<span style="color:var(--muted);font-size:10px">No active plans — click a plan button above</span>';
+    if(summary.next_actionable){
+      gt.innerHTML+=`<div style="margin-top:6px;font-size:10px;color:var(--accent3)">\u25b6 Next: ${summary.next_actionable}</div>`;
+    }
+    return;
+  }
+  let h='';
+  for(const plan of(summary.plans||[]).slice(0,3)){
+    h+=renderGoalNode(plan,0);
+  }
+  gt.innerHTML=h;
+}
+
+function renderGoalNode(node,depth){
+  const statusColor={'pending':'var(--muted)','in_progress':'var(--accent)','completed':'var(--accent3)','failed':'var(--accent2)','blocked':'rgba(255,42,109,0.5)'};
+  const statusIcon={'pending':'\u25cb','in_progress':'\u25cf','completed':'\u2713','failed':'\u2717','blocked':'\u23f8'};
+  const col=statusColor[node.status]||'var(--muted)';
+  const ic=statusIcon[node.status]||'\u25cb';
+  const pct=Math.round((node.completion||0)*100);
+  let h=`<div class="goal-node ${node.status}" style="margin-left:${depth*12}px"><div class="gn-desc"><span style="color:${col};font-weight:700">${ic}</span> ${node.description||''}</div><div class="gn-meta">${node.type||''} \u00b7 ${node.domain||''} \u00b7 ${node.is_leaf?'leaf':''+((node.subgoals||[]).length)+' subgoals'}</div>`;
+  if(pct>0){h+=`<div class="gn-bar"><div class="f" style="width:${pct}%"></div></div>`;}
+  h+='</div>';
+  if(depth<2){for(const sg of(node.subgoals||[]).slice(0,3)){h+=renderGoalNode(sg,depth+1);}}
+  return h;
+}
+
+// ── Solve ─────────────────────────────────────────────────────────────────────
+async function brainSolve(){
+  const expr=document.getElementById('expr-input').value.trim();if(!expr)return;
+  const r=await P('/api/brain/solve',{expression:expr});
+  const el=document.getElementById('solve-result');el.classList.add('show');
+  if(r.error){document.getElementById('r-d').textContent='ERR';document.getElementById('r-d').className='dv neg';return;}
+  const d=r.delta||0;
+  document.getElementById('r-d').textContent=(d>0?'+':'')+d.toFixed(2);
+  document.getElementById('r-d').className='dv '+(d>0.01?'pos':'neg');
+  document.getElementById('r-t').textContent=(r.transforms||[]).join(' \u2192 ')||'-';
+  document.getElementById('r-dm').textContent=r.domain||'-';
+  document.getElementById('r-m').textContent=(r.steps||0)+' steps \u00b7 '+(r.expansions||0)+' exp \u00b7 '+(r.elapsed||0).toFixed(2)+'s';
+  // Show concept grounding if available
+  const conceptEl=document.getElementById('r-concept');
+  if(r.concepts_grounded&&r.concepts_grounded.length>0){
+    conceptEl.innerHTML='\ud83d\udca1 Grounded: '+r.concepts_grounded.map(c=>`<span style="color:var(--accent5)">${c}</span>`).join(', ');
+  }else{conceptEl.innerHTML='';}
+  refresh();
+}
+
+// ── Learn ─────────────────────────────────────────────────────────────────────
+async function brainLearn(n){
+  document.querySelectorAll('.btn.g').forEach(b=>{b.disabled=true;b.classList.add('ld')});
+  const r=await P('/api/brain/learn',{cycles:n});
+  document.querySelectorAll('.btn.g').forEach(b=>{b.disabled=false;b.classList.remove('ld')});
+  const el=document.getElementById('lr');
+  if(r.error){el.innerHTML=`<div style="color:var(--accent2);font-size:10px">${r.error}</div>`;return;}
+  let h=`<div style="font-size:10px;color:var(--muted)">${r.successes||0}/${r.cycles||0} solved \u00b7 Stage: ${r.stage||'?'}</div>`;
+  for(const x of(r.results||[]).slice(0,8)){
+    const ic=x.success?'\u2713':'\u2717',c=x.success?'var(--accent3)':'var(--accent2)';
+    h+=`<div class="lr-item"><span style="color:${c};font-weight:700">${ic}</span> ${x.expression||''} <span style="color:var(--muted)">${(x.transforms||[]).join('\u2192')}</span></div>`;
+  }
+  if(r.concepts_grounded>0){
+    h+=`<div style="font-size:10px;color:var(--accent5);margin-top:4px">\ud83d\udca1 ${r.concepts_grounded} concept groundings</div>`;
+  }
+  if((r.transfer_hypotheses||[]).length>0){
+    h+=`<div style="font-size:10px;color:var(--accent5);margin-top:2px">\ud83d\udd00 ${r.transfer_hypotheses.length} transfer hypotheses</div>`;
+  }
+  el.innerHTML=h;refresh();
+}
+
+// ── Auto-learn toggle ─────────────────────────────────────────────────────────
+async function toggleAutoLearn(){
+  const al=await F('/api/brain/autolearn');
+  if(al.running){await P('/api/brain/autolearn',{action:'stop'});}
+  else{await P('/api/brain/autolearn',{action:'start',interval:5,problems:3});}
+  setTimeout(refresh,500);
+}
+
+// ── Environment experiments ───────────────────────────────────────────────────
+async function runExperiment(type){
+  const r=await P('/api/brain/environment',{type:type});
+  if(r.error){alert('Environment error: '+r.error);return;}
+  const list=document.getElementById('env-obs-list');
+  let h='';
+  for(const obs of(r.observations||[]).slice(0,6)){
+    h+=`<div class="env-obs"><div class="eo-concept">\ud83d\udca1 ${obs.concept_hint||''}</div><div class="eo-desc">${obs.description||''}</div><div class="eo-sym">${obs.symbolic||''}</div></div>`;
+  }
+  document.getElementById('env-cnt').textContent=(r.total||0)+' obs';
+  document.getElementById('env-summary-line').textContent=(r.concepts_discovered||0)+' concepts discovered from observations';
+  list.innerHTML=h+(list.innerHTML);
+  refresh();
+}
+
+// ── Goal planner actions ──────────────────────────────────────────────────────
+async function planConcept(concept,domain){
+  const r=await P('/api/brain/goals',{action:'plan_concept',concept:concept,domain:domain});
+  if(!r.error)refresh();
+}
+async function planDomain(domain){
+  const r=await P('/api/brain/goals',{action:'plan_domain',domain:domain});
+  if(!r.error)refresh();
+}
+
+// ── Architecture layer update (perception) ─────────────────────────────────
+function updatePercLayer(){
+  document.getElementById('arch-perception').textContent='24/24 NL \u00b7 22/22 robust';
+}
+
+// ── AGI Dimensions (static per-session data) ──────────────────────────────
+const AGI_DIMS=[
+  {name:'Problem Solving',   score:99, ceiling:100, layer:'symbolic',  status:'strong'},
+  {name:'Memory & Recall',   score:85, ceiling:90,  layer:'memory',    status:'strong'},
+  {name:'Metacognition',     score:82, ceiling:90,  layer:'planning',  status:'strong'}, // Session 22: SelfModel+MetaLearn
+  {name:'Self-Supervised',   score:77, ceiling:85,  layer:'symbolic',  status:'good'},
+  {name:'Causal Reasoning',  score:70, ceiling:80,  layer:'memory',    status:'good'},
+  {name:'Comp. Generalize',  score:75, ceiling:82,  layer:'symbolic',  status:'good'},
+  {name:'Transfer Learning', score:70, ceiling:78,  layer:'symbolic',  status:'work'},
+  {name:'Language Underst.', score:70, ceiling:72,  layer:'perception',status:'work'},  // Session 25: +5% DialogueContext
+  {name:'Creativity',        score:68, ceiling:70,  layer:'memory',    status:'work'},  // Session 26: +5% TransformGen self-modify
+  {name:'Robustness',        score:82, ceiling:88,  layer:'perception',status:'good'},  // Session 28: +7% RobustnessHardener systematic stress
+  {name:'Open-Ended Learn.', score:72, ceiling:75,  layer:'planning',  status:'work'},  // Session 29: +10% MetaCurriculumEngine domain discovery
+  {name:'Concept Formation', score:78, ceiling:80,  layer:'concept',   status:'work'},   // Session 26: +2% GenerativeWorldModel curiosity
+  {name:'Hierarchical Plan', score:72, ceiling:85,  layer:'planning',  status:'work'},
+  {name:'Self-Modeling',     score:75, ceiling:90,  layer:'planning',  status:'work'},
+  {name:'Meta-Learning',     score:70, ceiling:88,  layer:'planning',  status:'work'},
+  {name:'Perception',        score:63, ceiling:65,  layer:'perception',status:'work'},   // Session 29: +8% PerceptionBridge scene→symbolic
+  {name:'Social Intelligence',score:52,ceiling:55,  layer:'general',   status:'work'},  // Session 28: +10% RecursiveToM depth-3
+  {name:'Embodiment',        score:0,  ceiling:15,  layer:'general',   status:'gap'},
+  {name:'World Simulation',  score:68, ceiling:80,  layer:'concept',   status:'work'},   // Session 24: +8% predictive loop feedback
+  {name:'Multi-Agent Collab',score:68, ceiling:80,  layer:'general',   status:'work'},   // Session 24: +13% AgentSociety beliefs+debate
+  {name:'Global Workspace',  score:82, ceiling:85,  layer:'memory',    status:'good'},   // Session 28: +6% AttentionRouter spotlight+routing
+  {name:'Sensorimotor Loop', score:72, ceiling:75,  layer:'concept',   status:'work'},   // Session 29: +7% ActionPhysicsSession multi-step
+  {name:'Continuous Learning',score:78,ceiling:80,  layer:'planning',  status:'work'},   // Session 29: +5% StreamBridge cross-stream pipeline
+  {name:'Collective Intel.', score:70, ceiling:78,  layer:'general',   status:'work'},   // Session 28: +8% AgentMemoryBank persistent cross-session
+];
+
+const STATUS_COLOR={strong:'var(--accent3)',good:'var(--accent)',work:'var(--accent4)',gap:'var(--accent2)'};
+const LAYER_COLOR={perception:'var(--accent4)',concept:'var(--accent5)',symbolic:'var(--accent)',memory:'var(--accent3)',planning:'var(--accent6)',general:'var(--muted)'};
+
+function renderAGIDims(){
+  const container=document.getElementById('agi-dims');
+  if(!container)return;
+  let h='';
+  let total=0;
+  for(const d of AGI_DIMS){
+    total+=d.score;
+    const col=STATUS_COLOR[d.status]||'var(--muted)';
+    const lcol=LAYER_COLOR[d.layer]||'var(--muted)';
+    const gap=d.ceiling-d.score;
+    h+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 10px">`;
+    h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">`;
+    h+=`<span style="font-size:10px;font-weight:600;color:var(--bright)">${d.name}</span>`;
+    h+=`<span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:${col}">${d.score}%</span>`;
+    h+=`</div>`;
+    h+=`<div style="height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:4px">`;
+    h+=`<div style="height:100%;width:${d.score}%;background:${col};border-radius:2px;transition:width .4s"></div>`;
+    h+=`</div>`;
+    h+=`<div style="font-size:8px;color:var(--muted)"><span style="color:${lcol}">${d.layer}</span> \u00b7 ceil ${d.ceiling}% \u00b7 gap <span style="color:${gap>20?'var(--accent2)':'var(--muted)'}">-${gap}%</span></div>`;
+    h+=`</div>`;
+  }
+  const avg=Math.round(total/AGI_DIMS.length);
+  container.innerHTML=h;
+  document.getElementById('agi-badge').textContent=`AGI: ${avg}% \u00b7 ${AGI_DIMS.length} dims`;
+}
+
+function renderGaps(){
+  const gaps=AGI_DIMS.filter(d=>d.status==='gap'||d.status==='work')
+                      .sort((a,b)=>(b.ceiling-b.score)-(a.ceiling-a.score));
+  const container=document.getElementById('gaps-list');if(!container)return;
+  let h='';
+  for(const d of gaps.slice(0,8)){
+    const gap=d.ceiling-d.score;
+    const col=d.status==='gap'?'var(--accent2)':'var(--accent4)';
+    const lcol=LAYER_COLOR[d.layer]||'var(--muted)';
+    h+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.03)">`;
+    h+=`<div style="min-width:130px;font-size:10px;font-weight:600;color:var(--bright)">${d.name}</div>`;
+    h+=`<div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden">`;
+    h+=`<div style="height:100%;width:${d.score}%;background:${col};border-radius:2px"></div>`;
+    h+=`</div>`;
+    h+=`<div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:${col};min-width:36px;text-align:right">${d.score}%</div>`;
+    h+=`<div style="font-size:9px;color:var(--muted);min-width:50px">\u2192 ${d.ceiling}%</div>`;
+    h+=`<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:rgba(255,255,255,.05);color:${lcol}">${d.layer}</span>`;
+    h+=`</div>`;
+  }
+  container.innerHTML=h;
+}
+
+// ── Self-Model renderer ────────────────────────────────────────────────────────
+async function refreshSelfModel(){
+  const r=await F('/api/brain/selfmodel');
+  if(r.error)return;
+
+  document.getElementById('sm-solves').textContent=(r.total_solves||0)+' solves';
+  document.getElementById('arch-selfmodel').textContent=
+    Object.keys(r.skill_snapshot||{}).length+' domains';
+
+  // Skills
+  const skills=r.skill_snapshot||{};
+  let sh='';
+  for(const [d,rate] of Object.entries(skills).sort((a,b)=>b[1]-a[1]).slice(0,8)){
+    const pct=Math.round(rate*100);
+    const col=pct>=80?'var(--accent3)':pct>=50?'var(--accent)':'var(--accent2)';
+    sh+=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">`;
+    sh+=`<span style="min-width:100px;font-size:10px;color:var(--bright)">${d}</span>`;
+    sh+=`<div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden">`;
+    sh+=`<div style="height:100%;width:${pct}%;background:${col};border-radius:2px"></div></div>`;
+    sh+=`<span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:${col};min-width:32px">${pct}%</span>`;
+    sh+=`</div>`;
+  }
+  document.getElementById('sm-skills').innerHTML=sh||'<span style="color:var(--muted)">no data yet</span>';
+
+  // Strategies
+  const strats=r.strategies||{};
+  let st='';
+  for(const [name,s] of Object.entries(strats)){
+    const isBest=name===r.best_strategy;
+    const col=isBest?'var(--accent3)':'var(--muted)';
+    st+=`<div style="margin-bottom:4px;padding:4px 6px;background:var(--surface);border-radius:5px;border:1px solid ${isBest?'var(--accent3)':'var(--border)'}">`;
+    st+=`<div style="display:flex;justify-content:space-between">`;
+    st+=`<span style="font-size:10px;font-weight:700;color:${col}">${name}${isBest?' ★':''}</span>`;
+    st+=`<span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:${col}">${Math.round((s.success_rate||0)*100)}%</span>`;
+    st+=`</div>`;
+    st+=`<div style="font-size:9px;color:var(--muted)">${s.attempts||0} attempts · avg Δ${(s.avg_delta||0).toFixed(3)} · ${(s.avg_time_ms||0).toFixed(0)}ms</div>`;
+    st+=`</div>`;
+  }
+  document.getElementById('sm-strategies').innerHTML=st||'<span style="color:var(--muted)">no data yet</span>';
+
+  // Learning goals
+  const goals=r.learning_goals||[];
+  let gh='';
+  for(const g of goals.filter(g=>g.status==='active').slice(0,5)){
+    const pri=Math.round(g.priority*100);
+    const col=pri>=80?'var(--accent2)':pri>=50?'var(--accent4)':'var(--accent)';
+    gh+=`<div style="margin-bottom:5px;padding:5px 7px;background:var(--surface);border-radius:5px;border-left:2px solid ${col}">`;
+    gh+=`<div style="display:flex;justify-content:space-between;margin-bottom:2px">`;
+    gh+=`<span style="font-size:10px;font-weight:700;color:var(--bright)">${g.domain}</span>`;
+    gh+=`<span style="font-size:9px;padding:1px 5px;background:rgba(255,255,255,.05);border-radius:3px;color:${col}">${g.reason}</span>`;
+    gh+=`</div>`;
+    gh+=`<div style="font-size:9px;color:var(--muted)">${g.description.slice(0,90)}${g.description.length>90?'…':''}</div>`;
+    gh+=`</div>`;
+  }
+  document.getElementById('sm-goals').innerHTML=gh||'<span style="color:var(--muted)">none yet — practice more to detect weaknesses</span>';
+
+  // Weaknesses
+  const weak=r.weaknesses||[];
+  document.getElementById('sm-weak').textContent=
+    weak.length?weak.join(', '):'none detected';
+}
+
+// ── Meta-Learning Engine renderer ─────────────────────────────────────────────
+async function refreshMetaLearner(){
+  const r=await F('/api/brain/metalearner');
+  document.getElementById('ml-exps').textContent=(r.experiments_run||0)+' exps';
+
+  // Current config
+  const cfg=r.current_config||r.best_config||{};
+  const mc=document.getElementById('ml-config');
+  if(cfg.name){
+    mc.innerHTML=`<div style="padding:6px 8px;background:var(--surface);border-radius:5px;border:1px solid var(--accent3)">
+      <span style="font-weight:700;color:var(--accent3)">${cfg.name}</span>
+      <span style="font-size:9px;color:var(--muted);margin-left:8px">bw=${cfg.beam_width} · budget=${cfg.budget_seconds}s · depth=${cfg.max_depth} · ${cfg.strategy}</span>
+    </div>`;
+  } else {
+    mc.innerHTML='<span style="color:var(--muted)">default (not yet tuned)</span>';
+  }
+
+  // Improvement history
+  const hist=r.improvement_history||[];
+  let hh='';
+  for(const h of hist.slice().reverse().slice(0,4)){
+    const gain=h.gain>0?`+${h.gain.toFixed(4)}`:`${h.gain.toFixed(4)}`;
+    const col=h.gain>0?'var(--accent3)':'var(--accent2)';
+    hh+=`<div style="font-size:10px;margin-bottom:3px;font-family:'JetBrains Mono',monospace">`;
+    hh+=`<span style="color:var(--muted)">${h.from}</span> → `;
+    hh+=`<span style="color:var(--bright)">${h.to}</span> `;
+    hh+=`<span style="color:${col}">${gain}</span></div>`;
+  }
+  document.getElementById('ml-history').innerHTML=hh||'<span style="color:var(--muted)">no experiments yet</span>';
+  document.getElementById('arch-metalearner').textContent=
+    (r.experiments_run||0)+' exps · '+(r.best_config?.name||'default');
+}
+
+async function metaTune(action){
+  document.getElementById('ml-result').textContent='Running…';
+  const r=await P('/api/brain/metalearner',{action});
+  if(r.error){
+    document.getElementById('ml-result').textContent='Error: '+r.error;
+  } else {
+    const cfg=r.best_config||{};
+    document.getElementById('ml-result').textContent=
+      `✓ Best: ${cfg.name} (bw=${cfg.beam_width})`;
+    refreshMetaLearner();
+  }
+}
+
+// ── Physics Simulator ──────────────────────────────────────────────────────────
+async function refreshPhysics(){
+  const d=await F('/api/brain/physics');
+  if(d.error)return;
+  document.getElementById('ps-evts').textContent=d.total_events+' events';
+  document.getElementById('ps-domains').textContent=(d.domains||[]).join(' · ')||'—';
+  const evs=d.recent_events||[];
+  document.getElementById('ps-events').innerHTML=evs.map(e=>
+    `<div style="border-left:2px solid var(--accent3);padding-left:4px;margin-bottom:3px">
+      <b>${e.event_type}</b> <span style="color:var(--fg2)">${e.result||''}</span><br>
+      <span style="color:var(--accent2);font-size:10px">${e.symbolic_expr||''}</span>
+    </div>`
+  ).join('')||'<span style="color:var(--fg2)">No events yet</span>';
+}
+async function physicsRun(n){
+  document.getElementById('ps-result').textContent='Simulating…';
+  const r=await P('/api/brain/physics',{n_events:n});
+  if(r.error){document.getElementById('ps-result').textContent='Error: '+r.error;return;}
+  document.getElementById('ps-result').textContent=
+    `✓ ${r.events_generated} events → ${r.concepts_fed} concepts grounded`;
+  refreshPhysics();
+}
+
+// ── Knowledge Ingester ─────────────────────────────────────────────────────────
+async function refreshKnowledge(){
+  const d=await F('/api/brain/knowledge');
+  if(d.error)return;
+  document.getElementById('kb-cnt').textContent=d.titles_ingested+' titles';
+  document.getElementById('kb-concepts').innerHTML=
+    `<b>${d.concepts_extracted}</b> concepts · <b>${d.total_rules_found}</b> rules · domains: ${(d.domains||[]).join(', ')}`;
+  const rc=d.recent_concepts||[];
+  document.getElementById('kb-recent').innerHTML=rc.map(c=>
+    `<div style="margin-bottom:3px">
+      <b>${c.name}</b> <span style="color:var(--fg2);font-size:10px">[${c.domain}]</span><br>
+      <span style="color:var(--fg2);font-size:10px">${(c.meaning||'').slice(0,80)}</span>
+    </div>`
+  ).join('')||'<span style="color:var(--fg2)">No concepts yet</span>';
+}
+
+// ── Multi-Agent Arena ──────────────────────────────────────────────────────────
+async function refreshArena(){
+  const d=await F('/api/brain/arena');
+  if(d.error)return;
+  document.getElementById('ma-races').textContent=d.total_races+' races';
+  const agents=d.top_agents||[];
+  document.getElementById('ma-agents').innerHTML=agents.map((a,i)=>
+    `<span style="margin-right:8px">${i===0?'🥇':i===1?'🥈':'🥉'} <b>${a.agent_id}</b> ${(a.win_rate*100).toFixed(0)}% win</span>`
+  ).join('')||'—';
+  const hist=d.recent_races||[];
+  document.getElementById('ma-history').innerHTML=hist.map(r=>
+    `<div><span style="color:var(--accent3)">${r.winner}</span> won on <i>${(r.expression||'').slice(0,20)}</i> (Δ${(r.winner_delta||0).toFixed(2)})</div>`
+  ).join('')||'<span style="color:var(--fg2)">No races yet</span>';
+}
+async function arenaRace(expr){
+  document.getElementById('ma-result').textContent='Racing…';
+  const r=await P('/api/brain/arena',{expression:expr});
+  if(r.error){document.getElementById('ma-result').textContent='Error: '+r.error;return;}
+  const w=r.winner||{};
+  document.getElementById('ma-result').textContent=
+    `✓ ${w.agent_id} won: "${w.result}" (Δ${(w.delta||0).toFixed(2)}, ${w.elapsed_ms?.toFixed(0)||'?'}ms)`;
+  refreshArena();
+}
+
+// ── Global Workspace ───────────────────────────────────────────────────────────
+async function refreshWorkspace(){
+  const d=await F('/api/brain/workspace');
+  if(d.error)return;
+  document.getElementById('gw-bcast').textContent=d.total_broadcast+' broadcast';
+  const f=d.attention_focus;
+  document.getElementById('gw-focus').innerHTML=f
+    ? `<b>${f.type}</b> from <i>${f.source}</i> <span style="color:var(--accent3)">(salience ${f.salience})</span>`
+    : '<span style="color:var(--fg2)">No focus yet</span>';
+  const log=d.recent_broadcasts||[];
+  document.getElementById('gw-log').innerHTML=log.map(m=>
+    `<div style="border-left:2px solid var(--accent5);padding-left:4px;margin-bottom:3px">
+      <b>${m.type}</b> <span style="color:var(--fg2)">[${m.source}]</span>
+      <span style="color:var(--accent3);font-size:10px"> s=${m.salience}</span>
+    </div>`
+  ).join('')||'<span style="color:var(--fg2)">No broadcasts yet</span>';
+}
+
+// ── Multi-Modal Parser ─────────────────────────────────────────────────────────
+async function mmParse(){
+  const text=document.getElementById('mm-input').value;
+  const domain=document.getElementById('mm-domain').value;
+  document.getElementById('mm-result').innerHTML='Parsing…';
+  const r=await P('/api/brain/multimodal',{text,domain});
+  if(r.error){document.getElementById('mm-result').innerHTML='Error: '+r.error;return;}
+  const exprs=r.expressions||[];
+  document.getElementById('mm-result').innerHTML=
+    `<div style="margin-bottom:4px"><b>Modality:</b> <span style="color:var(--accent3)">${r.modality}</span>
+     · <b>Domain:</b> ${r.domain}
+     · <b>Confidence:</b> ${(r.confidence*100).toFixed(0)}%</div>`+
+    (exprs.length
+      ? exprs.map(e=>`<div style="background:var(--bg2);padding:3px 6px;border-radius:3px;margin-bottom:2px;font-family:monospace">${e}</div>`).join('')
+      : '<span style="color:var(--fg2)">No expressions extracted</span>');
+}
+
+// ── Predictive World Loop ──────────────────────────────────────────────────────
+async function refreshPredictive(){
+  const d=await F('/api/brain/predictive');
+  if(d.error)return;
+  document.getElementById('pl-cycles').textContent=d.total_cycles+' cycles';
+  const err=d.avg_prediction_error||0;
+  document.getElementById('pl-error').textContent=(err*100).toFixed(1)+'%';
+  document.getElementById('pl-error').style.color=err<0.2?'var(--accent3)':err<0.5?'var(--accent4)':'var(--accent2)';
+  const da=d.domain_accuracy||{};
+  document.getElementById('pl-domains').innerHTML=Object.entries(da).map(([dom,acc])=>
+    `<span style="margin-right:8px"><b>${dom}</b> ${(acc*100).toFixed(0)}%</span>`).join('')||'—';
+  const bt=d.best_transforms||[];
+  document.getElementById('pl-best').innerHTML=bt.map(t=>
+    `<span style="margin-right:6px;color:var(--accent3)">✓</span><b>${t.transform}</b> ${(t.accuracy*100).toFixed(0)}% (${t.uses}×)`
+  ).join('<br>')||'—';
+  const surp=d.recent_surprises||[];
+  let logHtml = '';
+  if (surp.length === 0) logHtml = '<div style="color:#8b949e">[Sys] World Model active, awaiting deviations...</div>';
+  else {
+    logHtml = surp.map(s=>
+      `<div style="margin-bottom:4px"><span style="color:#ff7b72">[⚡ ${s.transform}]</span> on "${(s.expression||'').slice(0,30)}" -> expected <span style="color:#79c0ff">${s.expected_delta?.toFixed(2)}</span> got <span style="color:#ff7b72">${s.actual_delta?.toFixed(2)}</span>. Updating beliefs...</div>`
+    ).join('');
+  }
+  document.getElementById('pl-surprises').innerHTML = logHtml;
+
+  // Chart
+  window.plHistory = window.plHistory || [];
+  window.plHistory.push(err);
+  if (window.plHistory.length > 20) window.plHistory.shift();
+  if(!window.plChartObj && window.Chart) {
+    const ctx = document.getElementById('pl-chart').getContext('2d');
+    window.plChartObj = new Chart(ctx, {
+      type: 'line',
+      data: { labels: Array(20).fill(''), datasets: [{ data: window.plHistory, borderColor: '#ff2a6d', backgroundColor: 'rgba(255,42,109,0.1)', fill: true, tension: 0.3, pointRadius: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false, min: 0 } } }
+    });
+  } else if (window.plChartObj) {
+    window.plChartObj.data.datasets[0].data = window.plHistory;
+    window.plChartObj.update();
+  }
+}
+async function predictiveCycle(expr, domain){
+  document.getElementById('pl-result').textContent='Running cycle…';
+  const r=await P('/api/brain/predictive',{expression:expr,domain});
+  if(r.error){document.getElementById('pl-result').textContent='Error: '+r.error;return;}
+  const c=r.cycle||{};
+  const err=c.error||{};
+  document.getElementById('pl-result').textContent=
+    `predict=${c.prediction?.predicted_transform} δ=${c.observation?.actual_delta?.toFixed(2)} err=${err.magnitude?.toFixed(3)} ${c.surprised?'⚡ SURPRISED':'✓'}`;
+  refreshPredictive();
+}
+
+// ── Autonomous Trainer ─────────────────────────────────────────────────────────
+async function refreshTrainer(){
+  const d=await F('/api/brain/trainer');
+  if(d.error)return;
+  document.getElementById('at-total').textContent=d.total_problems+' problems';
+  const running=d.running;
+  document.getElementById('at-status').innerHTML=running
+    ? '<span style="color:var(--accent3)">● RUNNING</span>'
+    : '<span style="color:var(--fg2)">○ Stopped</span>';
+  document.getElementById('at-rate').textContent=(d.recent_rate*100).toFixed(0)+'%';
+  const ss=d.source_stats||{};
+  document.getElementById('at-sources').innerHTML=Object.entries(ss).map(([src,st])=>{
+    if(st.problems<=0)return '';
+    let is_llm = src.includes('llm');
+    let color = is_llm ? 'var(--accent5)' : 'inherit';
+    let icon = is_llm ? '\ud83e\udde0 ' : '';
+    return `<span style="margin-right:6px;color:${color}"><b>${icon}${src.replace('_',' ')}</b> ${st.problems} (${(st.rate*100).toFixed(0)}%)</span>`;
+  }).join('')||'—';
+  const rec=d.recent_results||[];
+  let atLogHtml = '';
+  if (rec.length === 0) atLogHtml = '<div style="color:#8b949e">[Sys] Autonomous Learner idle. Awaiting problems...</div>';
+  else {
+    atLogHtml = rec.map(r=>{
+      let is_llm = (r.source||'').includes('llm');
+      let status = r.success ? '<span style="color:#3fb950">[✓]</span>' : '<span style="color:#f85149">[✗]</span>';
+      let srcTxt = is_llm ? `[🧠 Teacher]` : `[${r.source||'sys'}]`;
+      let srcStyle = is_llm ? `color:#a371f7;font-weight:bold;` : `color:#58a6ff;`;
+      return `<div style="margin-bottom:4px; ${is_llm ? 'background:rgba(163,113,247,0.1);padding:2px;border-left:2px solid #a371f7;' : ''}">${status} <span style="${srcStyle}">${srcTxt}</span> Attempted: "${(r.expression||'').slice(0,35)}" ... ${r.success ? 'Solved' : 'Failed'}</div>`;
+    }).join('');
+  }
+  document.getElementById('at-recent').innerHTML = atLogHtml;
+  
+  // Chart
+  window.atHistory = window.atHistory || [];
+  window.atHistory.push(parseFloat(d.recent_rate||0));
+  if (window.atHistory.length > 20) window.atHistory.shift();
+  if(!window.atChartObj && window.Chart) {
+    const ctx = document.getElementById('at-chart').getContext('2d');
+    window.atChartObj = new Chart(ctx, {
+      type: 'line',
+      data: { labels: Array(20).fill(''), datasets: [{ data: window.atHistory, borderColor: '#05d59e', backgroundColor: 'rgba(5,213,158,0.1)', fill: true, tension: 0.3, pointRadius: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false, min: 0, max: 1 } } }
+    });
+  } else if (window.atChartObj) {
+    window.atChartObj.data.datasets[0].data = window.atHistory;
+    window.atChartObj.update();
+  }
+}
+async function trainerControl(action){
+  document.getElementById('at-result').textContent=action==='start'?'Starting…':'Stopping…';
+  const r=await P('/api/brain/trainer',{action});
+  if(r.error){document.getElementById('at-result').textContent='Error: '+r.error;return;}
+  document.getElementById('at-result').textContent=
+    action==='start'?`✓ Trainer ${r.running?'running':'already running'}`:`✓ Trainer stopped`;
+  setTimeout(refreshTrainer,500);
+}
+
+// ── Agent Society ─────────────────────────────────────────────────────────────
+async function refreshSociety(){
+  const d=await F('/api/brain/society');
+  if(d.error)return;
+  document.getElementById('as-beliefs').textContent=d.accepted_beliefs+' accepted';
+  const agents=d.agents||[];
+  document.getElementById('as-agents').innerHTML=agents.map(a=>
+    `<div><b>${a.agent_id}</b> <span style="color:var(--fg2)">[${a.specialization}]</span> ${a.beliefs} beliefs · ${(a.solve_rate*100).toFixed(0)}% acc</div>`
+  ).join('')||'—';
+  const bb=d.blackboard_size||0;
+  const acc=d.accepted_beliefs||0;
+  document.getElementById('as-blackboard').innerHTML=
+    `<b>${bb}</b> total<br><b style="color:var(--accent3)">${acc}</b> accepted<br><b>${d.debate_rounds||0}</b> debates`;
+  const cov=d.knowledge_coverage||{};
+  document.getElementById('as-coverage').innerHTML=Object.entries(cov).map(([dom,n])=>
+    `<span style="margin-right:6px"><b>${dom}</b>: ${n}</span>`
+  ).join('<br>')||'—';
+  const debates=d.recent_debates||[];
+  document.getElementById('as-debates').innerHTML=debates.map(db=>
+    `<div style="border-left:2px solid ${db.verdict==='accepted'?'var(--accent3)':db.verdict==='rejected'?'var(--accent2)':'var(--fg2)'};padding-left:4px;margin-bottom:3px">
+      <b>${db.verdict.toUpperCase()}</b> "${(db.conjecture||'').slice(0,35)}" [${db.domain}] ${db.support_ratio?Math.round(db.support_ratio*100)+'%':''}</div>`
+  ).join('')||'<span style="color:var(--fg2)">No debates yet</span>';
+  
+  const truths=d.negotiated_truths||[];
+  document.getElementById('as-truths').innerHTML=truths.map(t=>
+    `<div style="border-left:2px solid var(--accent);padding-left:4px;margin-bottom:3px;background:var(--bg2);padding:4px;border-radius:0 4px 4px 0">
+      <b style="color:var(--bright)">${t.signature}</b><br>
+      <span style="color:var(--fg2)">Winner: <span style="color:var(--accent3)">${t.winner}</span></span><br>
+      <span style="color:var(--fg2)">Energy: <b style="color:var(--bright)">${t.cost}</b> · Rivals: ${t.competing}</span>
+    </div>`
+  ).join('')||'<span style="color:var(--fg2)">No truths negotiated yet</span>';
+}
+// ── Metacognition (ConjectureEngine + MetaCurriculum) ───────────────────────────
+async function refreshMetacognition(){
+  const d=await F('/api/brain/metacognition');
+  if(d.error)return;
+  const ce=d.conjecture_engine||{};
+  const mc=d.meta_curriculum||{};
+  const at=d.analogy_transfer||{};
+
+  // ── Header badges ──────────────────────────────────────────────────────────
+  const total=ce.total_conjectures||0;
+  document.getElementById('meta-conjecture-cnt').textContent=
+    total+' conjectures · '+(at.transfers_applied||0)+' transfers';
+  const fb=document.getElementById('meta-focus-badge');
+  if(fb){ fb.textContent='focus: '+(d.focus_domain||'—'); }
+  const fr=document.getElementById('meta-focus-reason');
+  if(fr){ fr.textContent=d.focus_reason||''; }
+
+  // ── Row 1 left: Drives ─────────────────────────────────────────────────────
+  const drives=d.drives||{};
+  const DRIVE_META={
+    mastery:       {label:'Mastery',       color:'#05d59e'},
+    curiosity:     {label:'Curiosity',     color:'#00e5ff'},
+    social:        {label:'Social',        color:'#a78bfa'},
+    rest:          {label:'Rest',          color:'#6b7280'},
+    autonomy:      {label:'Autonomy',      color:'#ffb800'},
+    exploration:   {label:'Exploration',   color:'#f97316'},
+    consolidation: {label:'Consolidation', color:'#60a5fa'},
+    competence:    {label:'Competence',    color:'#4ade80'},
+    focus:         {label:'Focus',         color:'#facc15'},
+  };
+  const driveEl=document.getElementById('meta-drives');
+  if(driveEl){
+    const keys=Object.keys(drives).length?Object.keys(drives):Object.keys(DRIVE_META);
+    driveEl.innerHTML=keys.map(k=>{
+      // drives[k] may be a float OR an object {level, urgency}
+      const raw=drives[k];
+      const val=typeof raw==='object'?(raw.level||0):raw||0;
+      const urgency=typeof raw==='object'?(raw.urgency||''):null;
+      const pct=Math.round(val*100);
+      const m=DRIVE_META[k]||{label:k,color:'#6b7280'};
+      const urg=urgency==='urgent'?' ⚡':urgency==='satisfied'?' ✓':'';
+      const barCol=pct>=80?'#ff2a6d':pct>=50?m.color:m.color+'80';
+      return `<div style="margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px">
+          <span style="color:${m.color};font-weight:600">${m.label}${urg}</span>
+          <span style="color:var(--muted)">${pct}%</span>
+        </div>
+        <div style="height:4px;border-radius:2px;background:rgba(255,255,255,.08)">
+          <div style="height:100%;border-radius:2px;width:${pct}%;background:${barCol};transition:width .4s"></div>
+        </div></div>`;
+    }).join('');
+  }
+  const rec=document.getElementById('meta-recommendation');
+  if(rec){ rec.textContent=d.behavior_recommendation||''; }
+
+  // ── Row 1 middle: Personality Traits ───────────────────────────────────────
+  // API returns traits as [{name, strength}] array
+  const traitsArr=Array.isArray(d.traits)?d.traits:[];
+  const traits=Object.fromEntries(traitsArr.map(t=>[t.name||t.trait, t.strength||0]));
+  const traitEl=document.getElementById('meta-traits');
+  if(traitEl){
+    const tkeys=Object.keys(traits);
+    traitEl.innerHTML=tkeys.length
+      ? tkeys.map(k=>{
+          const v=traits[k]||0;
+          const pct=Math.round(v*100);
+          const col=pct>=70?'#05d59e':pct>=40?'#ffb800':'#6b7280';
+          return `<div style="margin-bottom:4px">
+            <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px">
+              <span style="color:var(--text);text-transform:capitalize">${k}</span>
+              <span style="color:${col}">${pct}%</span>
+            </div>
+            <div style="height:3px;border-radius:2px;background:rgba(255,255,255,.08)">
+              <div style="height:100%;border-radius:2px;width:${pct}%;background:${col};transition:width .4s"></div>
+            </div></div>`;
+        }).join('')
+      : '<span style="color:var(--muted);font-size:11px">No traits learned yet</span>';
+  }
+  const idDesc=document.getElementById('meta-identity-desc');
+  if(idDesc){ idDesc.textContent=d.identity_description||'—'; }
+
+  // ── Row 1 right: Stats ─────────────────────────────────────────────────────
+  const ts=document.getElementById('meta-total-solves');
+  if(ts){ ts.textContent=d.total_solves!=null?d.total_solves.toLocaleString():'—'; }
+  const wa=document.getElementById('meta-wm-accuracy');
+  const acc=d.wm_accuracy!=null?Math.round(d.wm_accuracy*100)+'%':'—';
+  if(wa){ wa.textContent=acc; }
+  const wl=document.getElementById('meta-wm-links');
+  if(wl){ wl.textContent=d.wm_links!=null?(d.wm_links).toLocaleString():'—'; }
+  const cal=document.getElementById('meta-calibration');
+  if(cal){ cal.textContent=d.calibration_error!=null?(d.calibration_error*100).toFixed(1)+'%':'—'; }
+
+  // ── Row 2 left: Conjectures ────────────────────────────────────────────────
+  // API returns conjectures at top-level d.conjectures (not inside conjecture_engine)
+  const list=d.conjectures||ce.recent_conjectures||ce.active_conjectures||[];
+  const cjEl=document.getElementById('meta-conjecture-list');
+  if(cjEl){
+    cjEl.innerHTML=list.length
+      ? list.slice(0,12).map(c=>{
+          const text=c.hypothesis||c.statement||String(c);
+          const plaus=c.plausibility!=null?Math.round(c.plausibility*100):null;
+          const col=c.status==='proven'?'#05d59e':c.status==='disproven'?'#ff2a6d':'#a78bfa';
+          const icon=c.status==='proven'?'✅':c.status==='disproven'?'❌':'💡';
+          return `<div style="margin-bottom:5px;border-left:2px solid ${col};padding:3px 6px;background:rgba(255,255,255,.03);border-radius:0 4px 4px 0" title="${text}">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="color:${col};font-size:10px;font-weight:600">${icon} ${c.type||'conjecture'}</span>
+              <span style="color:var(--muted);font-size:9px">${plaus!=null?plaus+'% plaus':'—'}${c.domain?' · '+c.domain:''}</span>
+            </div>
+            <div style="color:var(--text);font-size:10px;margin-top:1px;opacity:.85">${text.slice(0,80)}${text.length>80?'…':''}</div>
+          </div>`;
+        }).join('')
+      : '<span style="color:var(--muted);font-size:11px">No conjectures generated yet</span>';
+  }
+
+  // ── Row 2 middle: Top Transforms ───────────────────────────────────────────
+  // Prefer self-model top_transforms, fall back to credit assigner top_credited
+  const rawTopT=d.top_transforms&&d.top_transforms.length?d.top_transforms
+    :( d.top_credited||[] ).map(c=>({name:c.name,utility:c.credit}));
+  const topT=rawTopT;
+  const ttEl=document.getElementById('meta-top-transforms');
+  if(ttEl){
+    ttEl.innerHTML=topT.length
+      ? topT.slice(0,10).map((t,i)=>{
+          const score=typeof t.utility==='number'?t.utility:typeof t.score==='number'?t.score:0;
+          const pct=Math.min(100,Math.round(score*100));
+          const name=t.name||t.transform||String(t);
+          const uses=t.uses||t.count||'';
+          return `<div style="display:flex;align-items:center;margin-bottom:4px;gap:6px">
+            <span style="color:var(--muted);font-size:10px;min-width:14px">#${i+1}</span>
+            <span style="color:var(--accent2,#fa0);font-size:11px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${name}">${name}</span>
+            <span style="color:var(--muted);font-size:10px;min-width:28px;text-align:right">${uses?uses+'×':pct+'%'}</span>
+            <div style="width:40px;height:3px;border-radius:2px;background:rgba(255,255,255,.08);flex-shrink:0">
+              <div style="height:100%;border-radius:2px;width:${pct}%;background:var(--accent2,#fa0)"></div>
+            </div></div>`;
+        }).join('')
+      : '<span style="color:var(--muted);font-size:11px">No transform usage data yet</span>';
+  }
+
+  // ── Row 2 right: Goals & Surprise Domains ──────────────────────────────────
+  const goals=d.active_goals||[];
+  const gEl=document.getElementById('meta-goals');
+  if(gEl){
+    gEl.innerHTML=goals.length
+      ? goals.slice(0,5).map(g=>{
+          const gname=g.desc||g.goal||g.name||String(g);
+          const gpri=g.priority!=null?g.priority:g.urgency;
+          const gcol=gpri>=0.8?'#ff2a6d':gpri>=0.5?'#ffb800':'#05d59e';
+          return `<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
+            <span style="color:${gcol};font-size:10px">▶</span>
+            <span style="color:var(--text);font-size:10px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${gname}">${gname}</span>
+            ${gpri!=null?`<span style="color:var(--muted);font-size:9px">${Math.round(gpri*100)}%</span>`:''}
+          </div>`;
+        }).join('')
+      : '<span style="color:var(--muted);font-size:11px">No active goals</span>';
+  }
+  const surpDoms=d.high_surprise_domains||[];
+  const sdEl=document.getElementById('meta-surprise-domains');
+  if(sdEl){
+    sdEl.innerHTML=surpDoms.length
+      ? surpDoms.slice(0,5).map(sd=>{
+          const name=typeof sd==='string'?sd:sd.domain||sd.name||String(sd);
+          const score=typeof sd==='object'&&sd.surprise!=null?sd.surprise:null;
+          return `<div style="display:inline-block;margin:2px 3px 2px 0;padding:2px 7px;background:rgba(255,43,109,.15);border:1px solid rgba(255,43,109,.3);border-radius:10px;font-size:10px;color:#ff2a6d">
+            ${name}${score!=null?' ('+score.toFixed(1)+')':''}
+          </div>`;
+        }).join('')
+      : '<span style="color:var(--muted);font-size:11px">No surprise detected</span>';
+  }
+
+  // ── Row 3: Domain Curriculum Health ───────────────────────────────────────
+  const doms=mc.domain_health||mc.domains||{};
+  const domKeys=Object.keys(doms);
+  const domEl=document.getElementById('meta-domains');
+  if(domEl){
+    domEl.innerHTML=domKeys.length
+      ? domKeys.map(k=>{
+          const raw=doms[k];
+          const h=typeof raw==='object'?raw.health||raw.score||raw.solve_rate||0:raw;
+          const pct=Math.round(h*100);
+          const col=pct>=70?'#05d59e':pct>=40?'#ffb800':'#ff2a6d';
+          const problems=typeof raw==='object'&&raw.total_problems?` · ${raw.total_problems}p`:'';
+          return `<div style="margin-bottom:4px">
+            <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px">
+              <span style="color:var(--text)">${k}${problems}</span>
+              <span style="color:${col};font-weight:600">${pct}%</span>
+            </div>
+            <div style="height:3px;border-radius:2px;background:rgba(255,255,255,.08)">
+              <div style="height:100%;border-radius:2px;width:${pct}%;background:${col};transition:width .4s"></div>
+            </div></div>`;
+        }).join('')
+      : '<span style="color:var(--muted);font-size:11px">No curriculum data yet</span>';
+  }
+}
+
+async function metaThink(){
+  const btn=document.querySelector('[onclick="metaThink()"]');
+  if(btn){ btn.disabled=true; btn.textContent='💭 Thinking…'; }
+  try {
+    const r=await P('/api/brain/metacognition',{action:'think'});
+    if(r.error){ console.warn('metaThink error:',r.error); }
+    else { await refreshMetacognition(); }
+  } finally {
+    if(btn){ btn.disabled=false; btn.textContent='💭 Think'; }
+  }
+}
+
+async function societyDeliberate(){
+  document.getElementById('as-result').textContent='Deliberating…';
+  const r=await P('/api/brain/society',{action:'deliberate'});
+  if(r.error){document.getElementById('as-result').textContent='Error: '+r.error;return;}
+  const del=r.deliberation||{};
+  document.getElementById('as-result').textContent=
+    `✓ ${del.debates_run} debates · ${del.newly_accepted} accepted · BB size: ${del.total_blackboard}`;
+  refreshSociety();
+}
+
+// ── Multi-Agent Learning ─────────────────────────────────────────────────────
+let _maEventSource = null;
+let _maLastEventId = 0;
+let _maFeedLines = [];
+const MA_MAX_LINES = 200;
+
+const MA_TYPE_STYLE = {
+  solve:   {icon:'✓', color:'#05d59e'},
+  fail:    {icon:'✗', color:'#6b7280'},
+  promote: {icon:'★', color:'#ffb800'},
+  reflect: {icon:'🔬', color:'#a78bfa'},
+  start:   {icon:'▶', color:'#00e5ff'},
+  error:   {icon:'⚠', color:'#ff2a6d'},
+  discover:{icon:'💡', color:'#f97316'},
+};
+
+function _maAppendEvent(ev){
+  const st = MA_TYPE_STYLE[ev.event_type] || {icon:'·', color:'#6b7280'};
+  const t  = new Date(ev.timestamp*1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const line = `<div style="margin-bottom:1px">` +
+    `<span style="color:#6b7280">${t}</span> ` +
+    `<span style="color:${ev.color};font-weight:700">[${ev.agent_id}]</span> ` +
+    `<span style="color:${st.color}">${st.icon} ${ev.message}</span>` +
+    `</div>`;
+  _maFeedLines.push(line);
+  if(_maFeedLines.length > MA_MAX_LINES) _maFeedLines.shift();
+  const feed = document.getElementById('ma-live-feed');
+  if(feed) feed.innerHTML = _maFeedLines.slice().reverse().join('');
+}
+
+function _maStartSSE(){
+  if(_maEventSource){ _maEventSource.close(); }
+  _maEventSource = new EventSource('/api/agents/stream');
+  _maEventSource.onmessage = e => {
+    const ev = JSON.parse(e.data);
+    _maLastEventId = ev.id;
+    _maAppendEvent(ev);
+  };
+  _maEventSource.onerror = () => {
+    document.getElementById('ma-feed-live').style.color = '#ff2a6d';
+  };
+  document.getElementById('ma-feed-live').style.color = '#05d59e';
+}
+
+function _maStopSSE(){
+  if(_maEventSource){ _maEventSource.close(); _maEventSource=null; }
+  document.getElementById('ma-feed-live').style.color = '#6b7280';
+}
+
+function _maRenderAgentCard(a){
+  const statusColor = {solving:'#00e5ff', waiting:'#6b7280', seeking:'#f97316',
+                       promoting:'#ffb800', ready:'#05d59e', error:'#ff2a6d',
+                       starting:'#a78bfa'}[a.status] || '#6b7280';
+  const rate = a.attempted > 0 ? Math.round(a.solve_rate*100) : 0;
+  // Honesty: warn if rate seems inflated (solved>5 but domain_refills==0 for non-math domains)
+  const mathDomains = ['arithmetic','algebra','logic','calculus'];
+  const isMath = mathDomains.includes(a.domain);
+  const refills = a.domain_refills || 0;
+  // Rate color: green if real domain problems are being generated
+  const rateColor = isMath ? '#05d59e' : (refills > 0 ? '#05d59e' : '#f97316');
+  const rateLabel = isMath ? 'RATE' : (refills > 0 ? 'REAL RATE' : 'RATE↩');
+  const rateTooltip = isMath ? '' : (refills > 0
+    ? `${refills} domain problem batches generated`
+    : 'No domain problems left — solving math mutations');
+
+  return `<div style="
+    flex:1;min-width:145px;max-width:185px;
+    background:#0d1117;border:1px solid ${a.color}44;
+    border-top:3px solid ${a.color};border-radius:8px;padding:10px">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+      <span style="font-size:15px">${a.icon}</span>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#f3f4f6">${a.agent_id}</div>
+        <div style="font-size:9px;color:${a.color};text-transform:uppercase">${a.domain}</div>
+      </div>
+      <span style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:${statusColor};flex-shrink:0" title="${a.status}"></span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;text-align:center;margin-bottom:5px">
+      <div style="background:#111820;border-radius:4px;padding:3px">
+        <div style="font-size:13px;font-weight:700;color:${a.color};font-family:'JetBrains Mono',monospace">${a.solved}</div>
+        <div style="font-size:7px;color:#6b7280">SOLVED</div>
+      </div>
+      <div style="background:#111820;border-radius:4px;padding:3px">
+        <div style="font-size:13px;font-weight:700;color:#ffb800;font-family:'JetBrains Mono',monospace">${a.promoted}</div>
+        <div style="font-size:7px;color:#6b7280">RULES</div>
+      </div>
+      <div style="background:#111820;border-radius:4px;padding:3px" title="${rateTooltip}">
+        <div style="font-size:13px;font-weight:700;color:${rateColor};font-family:'JetBrains Mono',monospace">${rate}%</div>
+        <div style="font-size:7px;color:#6b7280">${rateLabel}</div>
+      </div>
+    </div>
+    ${!isMath && refills > 0 ? `<div style="font-size:8px;color:#a78bfa;margin-bottom:3px">🔄 ${refills} domain refills</div>` : ''}
+    ${a.last_rule ? `<div style="font-size:8px;color:#ffb800;font-family:'JetBrains Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.last_rule}">★ ${a.last_rule}</div>` : ''}
+    <div style="font-size:8px;color:#6b7280;margin-top:3px">${a.status.toUpperCase()} · ${a.uptime}s</div>
+  </div>`;
+}
+
+async function refreshMultiAgent(){
+  const d = await F('/api/agents/status');
+  if(d.error) return;
+
+  const agents = d.agents || [];
+  const running = d.running;
+  const totalSolved = d.total_solved || 0;
+  const totalPromoted = d.total_promoted || 0;
+
+  // Badge
+  const badge = document.getElementById('ma-status-badge');
+  if(badge){
+    badge.textContent = running ? `● RUNNING (${agents.length})` : 'OFFLINE';
+    badge.style.borderColor = running ? '#05d59e' : '#6b7280';
+    badge.style.color = running ? '#05d59e' : '#6b7280';
+  }
+
+  // Header counts
+  const elSolved   = document.getElementById('ma-total-solved');
+  const elPromoted = document.getElementById('ma-total-promoted');
+  if(elSolved)   elSolved.textContent   = totalSolved + ' solved';
+  if(elPromoted) elPromoted.textContent = totalPromoted + ' rules';
+
+  // Stats grid
+  const avgRate = agents.length ? Math.round(agents.reduce((s,a)=>s+a.solve_rate,0)/agents.length*100) : 0;
+  const gs = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  gs('ma-s-solved',   totalSolved);
+  gs('ma-s-promoted', totalPromoted);
+  gs('ma-s-agents',   agents.length);
+  gs('ma-s-rate',     agents.length ? avgRate+'%' : '—');
+
+  // Agent cards
+  const cardsEl = document.getElementById('ma-agent-cards');
+  if(cardsEl){
+    if(agents.length){
+      cardsEl.innerHTML = agents.map(_maRenderAgentCard).join('');
+    } else {
+      cardsEl.innerHTML = '<div style="color:#6b7280;font-size:12px;padding:10px">No agents running. Click ▶ to start.</div>';
+    }
+  }
+}
+
+async function startAgents(n){
+  const r = await P('/api/agents/start', {n});
+  if(r.error){ alert('Error: '+r.error); return; }
+  _maStartSSE();
+  setTimeout(refreshMultiAgent, 800);
+}
+
+async function stopAgents(){
+  _maStopSSE();
+  await P('/api/agents/stop', {});
+  setTimeout(refreshMultiAgent, 400);
+}
+
+// ── S25-1: Global Buffer ───────────────────────────────────────────────────────
+async function refreshBuffer(){
+  const d=await F('/api/brain/buffer');
+  if(d.error)return;
+  document.getElementById('gb-items').textContent=(d.active_items||0)+'/'+d.capacity+' slots';
+  const f=d.attention_focus;
+  document.getElementById('gb-focus').innerHTML=f
+    ? `<b style="color:var(--accent3)">${f.msg_type}</b> from <i>${f.source}</i><br><span style="color:var(--fg2);font-size:10px">s=${f.salience} · ${f.age_s}s ago</span>`
+    : '<span style="color:var(--fg2)">empty</span>';
+  document.getElementById('gb-stats').innerHTML=
+    `<b>${d.total_received||0}</b> received<br><b>${d.total_evicted||0}</b> evicted<br><b>${d.tick_count||0}</b> ticks`;
+  const slots=d.slots||[];
+  document.getElementById('gb-slots').innerHTML=slots.map((s,i)=>
+    `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+      <div style="width:${Math.round((s.salience||0)*60)}px;height:4px;background:var(--accent3);border-radius:2px;min-width:2px"></div>
+      <span style="font-size:10px;color:var(--bright)">${s.msg_type}</span>
+      <span style="font-size:10px;color:var(--fg2)">[${s.source}] ${(s.salience||0).toFixed(2)}</span>
+    </div>`).join('')||'<span style="color:var(--fg2)">no items</span>';
+  const spots=d.recent_spotlights||[];
+  document.getElementById('gb-spotlights').innerHTML=spots.slice().reverse().slice(0,5).map(s=>
+    `<div style="font-size:10px;color:var(--fg2)">t${s.tick} <b>${s.focus}</b> [${s.source}] s=${s.salience}</div>`
+  ).join('')||'<span style="color:var(--fg2)">—</span>';
+}
+
+// ── S25-2: Concept Blender ─────────────────────────────────────────────────────
+async function refreshBlender(){
+  const d=await F('/api/brain/blender');
+  if(d.error)return;
+  document.getElementById('cb-total').textContent=(d.total_blends||0)+' blends';
+  document.getElementById('cb-accepted').textContent=d.accepted_blends||0;
+  document.getElementById('cb-domains').innerHTML=(d.domains_covered||[]).map(dom=>
+    `<span style="margin-right:5px;font-size:10px;padding:1px 4px;background:var(--surface);border-radius:3px">${dom}</span>`
+  ).join('')||'—';
+  const blends=d.top_blends||[];
+  document.getElementById('cb-blends').innerHTML=blends.map(b=>
+    `<div style="margin-bottom:5px;padding:4px 6px;background:var(--surface);border-radius:4px;border-left:2px solid var(--accent5)">
+      <div style="font-size:10px;font-weight:700;color:var(--bright)">${b.name}</div>
+      <div style="font-size:10px;color:var(--fg2)">${b.domain_a} ⊕ ${b.domain_b} · score ${b.mapping_score?.toFixed(2)} ${b.accepted?'✓':''}</div>
+      ${(b.novel_inferences||[]).slice(0,1).map(n=>`<div style="font-size:9px;color:var(--muted);margin-top:2px">${n.slice(0,80)}</div>`).join('')}
+    </div>`
+  ).join('')||'<span style="color:var(--fg2)">no blends yet</span>';
+}
+async function blenderDiscover(){
+  document.getElementById('cb-result').textContent='Discovering…';
+  const r=await P('/api/brain/blender',{action:'discover'});
+  if(r.error){document.getElementById('cb-result').textContent='Error: '+r.error;return;}
+  document.getElementById('cb-result').textContent=`✓ ${r.new_blends} new blends found`;
+  refreshBlender();
+}
+async function blenderPair(a,b){
+  document.getElementById('cb-result').textContent='Blending…';
+  const r=await P('/api/brain/blender',{action:'blend_pair',concept_a:a,concept_b:b});
+  if(r.error){document.getElementById('cb-result').textContent='Error: '+r.error;return;}
+  document.getElementById('cb-result').textContent=`✓ ${r.name}: score ${r.mapping_score?.toFixed(2)}`;
+  refreshBlender();
+}
+
+// ── S25-3: Dialogue Context ────────────────────────────────────────────────────
+async function refreshDialogue(){
+  const d=await F('/api/brain/dialogue');
+  if(d.error)return;
+  document.getElementById('dc-turns').textContent=d.total_turns+' turns';
+  document.getElementById('dc-domain').textContent=(d.current_domain||'—')+' / '+(d.last_intent||'—');
+  document.getElementById('dc-drifts').textContent=d.total_drifts||0;
+  const ents=d.context_entities||[];
+  document.getElementById('dc-entities').innerHTML=ents.map(e=>
+    `<span style="margin-right:5px;font-family:monospace;font-size:10px;padding:1px 4px;background:var(--surface);border-radius:3px">${e}</span>`
+  ).join('')||'<span style="color:var(--fg2)">none</span>';
+  const turns=d.recent_turns||[];
+  document.getElementById('dc-recent').innerHTML=turns.map(t=>
+    `<div style="margin-bottom:3px"><span style="color:${t.speaker==='user'?'var(--accent)':'var(--accent3)'}">${t.speaker}</span>: ${t.text}</div>`
+  ).join('')||'<span style="color:var(--fg2)">no turns yet</span>';
+}
+async function dialogueSend(){
+  const text=document.getElementById('dc-input').value.trim();
+  if(!text)return;
+  document.getElementById('dc-resolved').textContent='…';
+  const r=await P('/api/brain/dialogue',{speaker:'user',text});
+  if(r.error){document.getElementById('dc-resolved').textContent='Error: '+r.error;return;}
+  document.getElementById('dc-resolved').textContent=
+    r.resolved!==text?`Resolved: "${r.resolved}"`:r.context?.last_intent||'sent';
+  document.getElementById('dc-input').value='';
+  refreshDialogue();
+}
+
+// ── S25-4: Sensory Bridge ──────────────────────────────────────────────────────
+async function refreshSensory(){
+  const d=await F('/api/brain/sensory');
+  if(d.error)return;
+  document.getElementById('sb-grounded').textContent=(d.total_grounded||0)+' obs';
+  const err=d.avg_error_overall||0;
+  document.getElementById('sb-error').textContent=err.toFixed(4);
+  document.getElementById('sb-error').style.color=err<0.1?'var(--accent3)':err<0.5?'var(--accent4)':'var(--accent2)';
+  document.getElementById('sb-wired').innerHTML=d.wired
+    ? '<span style="color:var(--accent3)">● Wired</span>'
+    : '<span style="color:var(--accent2)">○ Not wired</span>';
+  const dc=d.domain_calibration||{};
+  document.getElementById('sb-domains').innerHTML=Object.entries(dc).map(([dom,c])=>
+    `<span style="margin-right:8px"><b>${dom}</b> ${c.observations} obs · err ${c.avg_error?.toFixed(3)}</span>`
+  ).join('')||'—';
+  const rc=d.recent_calibrations||[];
+  document.getElementById('sb-recent').innerHTML=rc.slice().reverse().slice(0,4).map(c=>
+    `<div style="font-size:10px"><b>${c.domain}</b> pred=${c.predicted_delta?.toFixed(3)} actual=${c.actual_delta?.toFixed(3)} err=<span style="color:${c.error<0.1?'var(--accent3)':'var(--accent2)'}">${c.error?.toFixed(3)}</span></div>`
+  ).join('')||'<span style="color:var(--fg2)">no calibrations yet</span>';
+}
+async function sensoryObserve(expr,domain){
+  document.getElementById('sb-result').textContent='Observing…';
+  const r=await P('/api/brain/sensory',{expression:expr,domain});
+  if(r.error){document.getElementById('sb-result').textContent='Error: '+r.error;return;}
+  const s=r.summary||{};
+  document.getElementById('sb-result').textContent=
+    `✓ grounded=${s.total_grounded} err=${s.avg_error_overall?.toFixed(4)}`;
+  refreshSensory();
+}
+
+// ── S26-1: Dream Consolidator ─────────────────────────────────────────────────
+async function refreshDream(){
+  const d=await F('/api/brain/dream');
+  if(d.error)return;
+  document.getElementById('dr-edges').textContent=(d.total_discovered||0)+' edges';
+  document.getElementById('dr-stats').innerHTML=
+    `<b>${d.total_replayed||0}</b> replayed<br><b>${d.tick_count||0}</b> dreams`;
+  const w=d.wired||{};
+  document.getElementById('dr-wired').innerHTML=
+    `<span style="color:${w.predictive_loop?'var(--accent3)':'var(--fg2)'}">PL</span>
+     <span style="color:${w.causal_graph?'var(--accent3)':'var(--fg2)'}"> CG</span>
+     <span style="color:${w.world_model?'var(--accent3)':'var(--fg2)'}"> WM</span>`;
+  const disc=d.recent_discoveries||[];
+  document.getElementById('dr-discoveries').innerHTML=disc.map(x=>
+    `<div style="border-left:2px solid var(--accent3);padding-left:4px;margin-bottom:3px;font-size:10px">
+      <b>${x.antecedent}</b> → <b>${x.consequent}</b>
+      <span style="color:var(--fg2)"> conf ${x.confidence}</span></div>`
+  ).join('')||'<span style="color:var(--fg2)">no discoveries yet</span>';
+}
+async function dreamCycle(){
+  document.getElementById('dr-result').textContent='Dreaming…';
+  const r=await P('/api/brain/dream',{max_events:20});
+  if(r.error){document.getElementById('dr-result').textContent='Error: '+r.error;return;}
+  const d=r.dream||{};
+  document.getElementById('dr-result').textContent=
+    `✓ replayed ${d.events_replayed} · found ${d.causal_edges_found} edges${d.top_pattern?' · '+d.top_pattern:''}`;
+  refreshDream();
+}
+
+// ── S26-2: Affective Energy ───────────────────────────────────────────────────
+async function refreshAffective(){
+  const d=await F('/api/brain/affective');
+  if(d.error)return;
+  document.getElementById('af-cnt').textContent=(d.total_computed||0)+' scored';
+  const rate=d.interest_rate||0;
+  document.getElementById('af-rate').textContent=Math.round(rate*100)+'%';
+  document.getElementById('af-rate').style.color=rate>0.5?'var(--accent3)':rate>0.25?'var(--accent4)':'var(--fg2)';
+  const bias=d.curiosity_bias||[];
+  document.getElementById('af-bias').innerHTML=bias.map(b=>
+    `<div style="font-size:10px"><b>${b.domain}</b>
+     <div style="width:${Math.round(b.avg_interest*60)}px;height:3px;background:var(--accent3);border-radius:1px;display:inline-block;vertical-align:middle;margin-left:4px"></div>
+     ${(b.avg_interest*100).toFixed(0)}%</div>`
+  ).join('')||'—';
+  const recent=d.recent_interesting||[];
+  document.getElementById('af-recent').innerHTML=recent.map(e=>
+    `<div style="margin-bottom:4px;padding:3px 6px;background:var(--surface);border-radius:3px;border-left:2px solid var(--accent4)">
+      <span style="font-family:monospace;font-size:10px">${e.expression}</span>
+      <span style="float:right;font-size:9px;color:var(--fg2)">
+        S:${e.e_surprise?.toFixed(2)} N:${e.e_novelty?.toFixed(2)} B:${e.e_beauty?.toFixed(2)}</span></div>`
+  ).join('')||'<span style="color:var(--fg2)">scoring in progress…</span>';
+}
+
+// ── S26-3: Transform Generator ────────────────────────────────────────────────
+async function refreshTransforms(){
+  const d=await F('/api/brain/transforms');
+  if(d.error)return;
+  document.getElementById('tg-promoted').textContent=(d.total_promoted||0)+' promoted';
+  document.getElementById('tg-stats').innerHTML=
+    `<b>${d.total_candidates||0}</b> candidates<br><b>${d.total_generated||0}</b> generated`;
+  document.getElementById('tg-wired').innerHTML=d.engine_wired
+    ?'<span style="color:var(--accent3)">● Wired</span>'
+    :'<span style="color:var(--fg2)">○ Not wired</span>';
+  const promoted=d.promoted||[];
+  document.getElementById('tg-list').innerHTML=promoted.map(t=>
+    `<div style="margin-bottom:3px;font-size:10px">
+      <b style="color:var(--accent3)">✓</b> <code>${t.pattern_desc}</code>
+      <span style="color:var(--fg2)"> ${t.test_passes}/${t.test_passes+t.test_fails} tests</span></div>`
+  ).join('')||'<span style="color:var(--fg2)">no promotions yet</span>';
+}
+async function tgGenerate(){
+  document.getElementById('tg-result').textContent='Generating…';
+  const r=await P('/api/brain/transforms',{action:'generate',n:5});
+  if(r.error){document.getElementById('tg-result').textContent='Error: '+r.error;return;}
+  document.getElementById('tg-result').textContent=
+    `✓ generated ${r.generated} · promoted ${r.promoted}`;
+  refreshTransforms();
+}
+async function tgApply(expr){
+  document.getElementById('tg-result').textContent='Applying…';
+  const r=await P('/api/brain/transforms',{action:'apply',expression:expr});
+  if(r.error){document.getElementById('tg-result').textContent='Error: '+r.error;return;}
+  document.getElementById('tg-result').textContent=
+    r.changed?`✓ "${r.original}" → "${r.result}"`:`= "${r.result}" (unchanged)`;
+}
+
+// ── S26-4: Generative World Model ─────────────────────────────────────────────
+async function refreshImagine(){
+  const d=await F('/api/brain/imagine');
+  if(d.error)return;
+  document.getElementById('gw-total').textContent=(d.total_imagined||0)+' imagined';
+  const rate=d.solve_rate||0;
+  document.getElementById('gw-rate').textContent=Math.round(rate*100)+'%';
+  document.getElementById('gw-rate').style.color=rate>0.6?'var(--accent3)':rate>0.3?'var(--accent4)':'var(--accent2)';
+  const bias=d.domain_bias||{};
+  document.getElementById('gw-bias').innerHTML=Object.entries(bias).slice(0,4).map(([dom,v])=>
+    `<span style="margin-right:6px;font-size:10px"><b>${dom}</b> ${(v*100).toFixed(0)}%</span>`
+  ).join('')||'—';
+  const recent=d.recent_imagined||[];
+  document.getElementById('gw-recent').innerHTML=recent.map(p=>
+    `<div style="margin-bottom:3px;font-size:10px;padding:2px 5px;background:var(--surface);border-radius:3px;
+      border-left:2px solid ${p.solved?'var(--accent3)':'var(--accent2)'}">
+      ${p.solved?'✓':'✗'} <code>${p.expression}</code>
+      <span style="color:var(--fg2)"> [${p.domain}·${p.origin}]</span></div>`
+  ).join('')||'<span style="color:var(--fg2)">no imaginations yet</span>';
+}
+async function gwExplore(){
+  document.getElementById('gw-result').textContent='Exploring…';
+  const r=await P('/api/brain/imagine',{action:'explore'});
+  if(r.error){document.getElementById('gw-result').textContent='Error: '+r.error;return;}
+  const c=r.cycle||{};
+  document.getElementById('gw-result').textContent=
+    `✓ imagined ${c.imagined} · solved ${c.solved} · failed ${c.failed}`;
+  refreshImagine();
+}
+async function gwImagine(domain){
+  document.getElementById('gw-result').textContent='Imagining…';
+  const r=await P('/api/brain/imagine',{action:'imagine',domain,n:4});
+  if(r.error){document.getElementById('gw-result').textContent='Error: '+r.error;return;}
+  document.getElementById('gw-result').textContent=
+    `✓ imagined ${(r.imagined||[]).length} ${domain} problems`;
+  refreshImagine();
+}
+
+// ── S26-5: Red Team Adversary ─────────────────────────────────────────────────
+async function refreshRedTeam(){
+  const d=await F('/api/brain/redteam');
+  if(d.error)return;
+  document.getElementById('rt-attacks').textContent=(d.total_attacks||0)+' attacks';
+  const rate=d.falsification_rate||0;
+  document.getElementById('rt-rate').textContent=Math.round(rate*100)+'%';
+  document.getElementById('rt-rate').style.color=rate>0.3?'var(--accent2)':rate>0.1?'var(--accent4)':'var(--accent3)';
+  document.getElementById('rt-stats').innerHTML=
+    `<b>${d.round_count||0}</b> rounds<br><b>${d.total_falsifications||0}</b> falsified`;
+  const attacks=d.recent_attacks||[];
+  document.getElementById('rt-recent').innerHTML=attacks.map(a=>
+    `<div style="margin-bottom:3px;font-size:10px;border-left:2px solid ${a.falsified?'var(--accent2)':'var(--fg2)'};padding-left:4px">
+      <span style="color:${a.falsified?'var(--accent2)':'var(--fg2)'}">${a.falsified?'✗ FALSIFIED':'• tested'}</span>
+      <span style="color:var(--muted)"> [${a.attack_type}]</span><br>
+      <span style="color:var(--fg2)">${a.attack_expression?.slice(0,50)}</span></div>`
+  ).join('')||'<span style="color:var(--fg2)">no attacks yet</span>';
+}
+async function rtAttack(topK){
+  document.getElementById('rt-result').textContent='Attacking…';
+  const r=await P('/api/brain/redteam',{top_k:topK});
+  if(r.error){document.getElementById('rt-result').textContent='Error: '+r.error;return;}
+  const rnd=r.round||{};
+  document.getElementById('rt-result').textContent=
+    `Round ${rnd.round}: ${rnd.attacks} attacks · ${rnd.falsifications} falsified (${Math.round((rnd.falsification_rate||0)*100)}%)`;
+  refreshRedTeam();
+}
+
+// ── S26-6: Temporal Identity ──────────────────────────────────────────────────
+async function refreshIdentity(){
+  const d=await F('/api/brain/identity');
+  if(d.error)return;
+  document.getElementById('ti-sessions').textContent=(d.session_count||0)+' sessions';
+  document.getElementById('ti-stats').innerHTML=
+    `<b>${d.total_solves||0}</b> total solves<br><b>${d.age_days||0}</b> days old`;
+  const pers=d.personality||{};
+  document.getElementById('ti-personality').innerHTML=Object.entries(pers).map(([k,p])=>{
+    const v=p.value||0;
+    return `<div style="font-size:10px;display:flex;align-items:center;gap:4px;margin-bottom:2px">
+      <span style="width:60px;color:var(--fg2)">${k}</span>
+      <div style="width:${Math.round(v*50)}px;height:3px;background:var(--accent3);border-radius:1px;min-width:1px"></div>
+      <span style="color:var(--bright)">${Math.round(v*100)}%</span></div>`;
+  }).join('')||'—';
+  const strengths=d.domain_strengths||{};
+  document.getElementById('ti-strengths').innerHTML=Object.entries(strengths).slice(0,6).map(([dom,v])=>
+    `<span style="margin-right:6px;font-size:10px"><b>${dom}</b> ${Math.round(v*100)}%</span>`
+  ).join('')||'<span style="color:var(--fg2)">no sessions yet</span>';
+  const disc=d.recent_discoveries||[];
+  document.getElementById('ti-discoveries').innerHTML=disc.map(d2=>
+    `<div style="font-size:10px;color:var(--fg2)">S${d2.session} [${d2.domain}] ${d2.description?.slice(0,60)}</div>`
+  ).join('')||'<span style="color:var(--fg2)">—</span>';
+}
+
+// ── Progress chart ────────────────────────────────────────────────────────────
+let _charts = {};
+const _CHART_DEFAULTS = {
+  responsive: true,
+  animation: false,
+  plugins: { legend: { labels: { color: '#8b949e', font: { size: 9 } }, boxWidth: 10 } },
+  scales: {
+    x: { ticks: { color: '#8b949e', font: { size: 8 }, maxTicksLimit: 8 },
+         grid:  { color: '#21262d' } },
+    y: { ticks: { color: '#8b949e', font: { size: 8 } },
+         grid:  { color: '#21262d' } },
+  }
+};
+function _mkChart(id, label, datasets) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return null;
+  const ctx = canvas.getContext('2d');
+  if (_charts[id]) { _charts[id].destroy(); }
+  _charts[id] = new Chart(ctx, {
+    type: 'line',
+    data: { labels: [], datasets: datasets.map(d => ({
+      label: d.label, data: [], borderColor: d.color,
+      backgroundColor: d.color + '22', borderWidth: 1.5,
+      pointRadius: 1.5, tension: 0.3, fill: d.fill || false,
+    }))},
+    options: { ..._CHART_DEFAULTS,
+      plugins: { ..._CHART_DEFAULTS.plugins,
+        title: { display: true, text: label, color: '#c9d1d9', font: { size: 10 }, padding: 4 }
+      }
+    }
+  });
+  return _charts[id];
+}
+function _fillChart(id, runs, keys) {
+  const ch = _charts[id];
+  if (!ch) return;
+  const labels = runs.map((r, i) => r.cycle || i+1);
+  ch.data.labels = labels;
+  keys.forEach((key, ki) => {
+    if (ch.data.datasets[ki]) {
+      ch.data.datasets[ki].data = runs.map(r => {
+        const v = r[key] || 0;
+        return key.endsWith('_rate') || key === 'solve_rate' || key === 'robustness' ||
+               key === 'meta_transfer' || key === 'bridge_rate'
+               ? Math.round(v * 1000) / 10
+               : Math.round(v * 1000) / 1000;
+      });
+    }
+  });
+  ch.update();
+}
+
+async function refreshProgress() {
+  const d = await F('/api/brain/progress');
+  if (d.error || !d.runs || d.runs.length === 0) return;
+  const runs = d.runs;
+  document.getElementById('prog-points').textContent = (d.total || runs.length) + ' data points';
+  const last = runs[runs.length - 1];
+  if (last && last.iso) {
+    document.getElementById('prog-last-run').textContent =
+      'Last: ' + new Date(last.iso).toLocaleTimeString();
+  }
+  if (runs.length < 2) {
+    document.getElementById('prog-no-data').style.display = '';
+    document.getElementById('prog-charts').style.display  = 'none';
+    return;
+  }
+  document.getElementById('prog-no-data').style.display = 'none';
+  document.getElementById('prog-charts').style.display  = '';
+  document.getElementById('prog-status').textContent =
+    `solve ${Math.round((last.solve_rate||0)*100)}%  energy ${(last.avg_energy||1).toFixed(3)}  `+
+    `concepts ${last.concept_count||0}  bridge ${last.bridge_promoted||0}`;
+
+  // Create / update charts
+  if (!_charts['chart-solve']) {
+    _mkChart('chart-solve',   'Solve & Energy',
+      [{label:'Solve Rate %', color:'#58a6ff'}, {label:'Avg Energy', color:'#f78166'}]);
+    _mkChart('chart-modules', 'Robustness & Streams',
+      [{label:'Robustness %', color:'#3fb950'}, {label:'Stream Throughput', color:'#d2a8ff'}]);
+    _mkChart('chart-know',    'Knowledge Growth',
+      [{label:'Concepts', color:'#ffa657'}, {label:'Transforms', color:'#58a6ff'}]);
+    _mkChart('chart-meta',    'Meta-Curriculum',
+      [{label:'LP ‰', color:'#f78166'}, {label:'Transfer %', color:'#3fb950'}]);
+    _mkChart('chart-bridge',  'Stream Bridge',
+      [{label:'Promoted', color:'#58a6ff'}, {label:'Rate %', color:'#ffa657'}]);
+    _mkChart('chart-percept', 'Perception & Physics',
+      [{label:'Relations', color:'#d2a8ff'}, {label:'Phys Concepts', color:'#3fb950'}]);
+  }
+
+  _fillChart('chart-solve',   runs, ['solve_rate', 'avg_energy']);
+  _fillChart('chart-modules', runs, ['robustness', 'stream_throughput']);
+  _fillChart('chart-know',    runs, ['concept_count', 'transform_count']);
+  _fillChart('chart-meta',    runs, ['meta_lp', 'meta_transfer']);
+  _fillChart('chart-bridge',  runs, ['bridge_promoted', 'bridge_rate']);
+  _fillChart('chart-percept', runs, ['percept_relations', 'phys_concepts']);
+}
+
+async function launchAutonomousRun(cycles) {
+  const btn20 = document.getElementById('btn-run20');
+  const btn50 = document.getElementById('btn-run50');
+  const out   = document.getElementById('prog-run-output');
+  btn20.disabled = btn50.disabled = true;
+  btn20.textContent = btn50.textContent = '⏳ Running…';
+  out.textContent = `Starting autonomous_run.py --cycles ${cycles}…\n`;
+  const r = await P('/api/brain/progress', {action:'run', cycles});
+  if (r && r.started) {
+    out.textContent += `✓ Background run started (PID ${r.pid||'?'}). Charts will update as data arrives.\n`;
+    document.getElementById('prog-status').textContent = `Running ${cycles} cycles…`;
+    // Poll until data arrives
+    let polls = 0;
+    const iv = setInterval(async () => {
+      polls++;
+      await refreshProgress();
+      const d = await F('/api/brain/progress');
+      if ((d.total||0) > 0 || polls > 30) {
+        clearInterval(iv);
+        btn20.disabled = btn50.disabled = false;
+        btn20.textContent = '▶ Run 20 cycles';
+        btn50.textContent = '▶ Run 50 cycles';
+      }
+    }, 3000);
+  } else {
+    out.textContent += `Error: ${r?.error||'unknown'}. Run manually:\n  python scripts/autonomous_run.py --cycles ${cycles}\n`;
+    btn20.disabled = btn50.disabled = false;
+    btn20.textContent = '▶ Run 20 cycles';
+    btn50.textContent = '▶ Run 50 cycles';
+  }
+}
+
+async function clearProgress() {
+  await P('/api/brain/progress', {action:'clear'});
+  Object.values(_charts).forEach(c => { try { c.destroy(); } catch(e){} });
+  _charts = {};
+  document.getElementById('prog-no-data').style.display = '';
+  document.getElementById('prog-charts').style.display  = 'none';
+  document.getElementById('prog-points').textContent = '0 data points';
+  document.getElementById('prog-status').textContent = '';
+}
+
+// ── S29-1: Meta-Curriculum Engine ────────────────────────────────────────────
+async function refreshMetaCurr(){
+  const d=await F('/api/brain/metacurr');
+  if(d.error&&!d.tick_count)return;
+  document.getElementById('mc-ticks').textContent=(d.tick_count||0)+' ticks';
+  const lp=d.learning_progress||0;
+  document.getElementById('mc-progress').textContent=(lp*1000).toFixed(1)+'‰';
+  document.getElementById('mc-transfer').innerHTML=
+    `<b>${Math.round((d.transfer_rate||0)*100)}%</b> transfer success<br>
+     ${d.total_transfers||0} tested · ${d.total_promotions||0} promoted`;
+  const domains=d.domains||{};
+  document.getElementById('mc-domains').innerHTML=Object.entries(domains).map(([dom,s])=>{
+    const skill=s.skill||0; const prog=s.progress||0;
+    return `<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">
+      <span style="width:65px;font-size:10px;${s.is_stalled?'color:var(--accent2)':s.is_unsolved?'color:var(--accent4)':'color:var(--fg2)'}">${dom}${s.is_stalled?' ⚠':''}${s.is_unsolved?' ?':''}</span>
+      <div style="width:${Math.round(skill*70)}px;height:4px;background:var(--accent);border-radius:2px;min-width:1px"></div>
+      <span style="font-size:10px">${Math.round(skill*100)}%</span>
+      <span style="font-size:9px;color:${prog>0?'var(--accent3)':'var(--fg2)'}"> Δ${prog>=0?'+':''}${(prog*1000).toFixed(1)}‰</span></div>`;
+  }).join('')||'<span style="color:var(--fg2)">initializing…</span>';
+  const transfers=d.recent_transfers||[];
+  document.getElementById('mc-transfers').innerHTML=transfers.map(t=>
+    `<div style="padding:1px 4px;background:var(--surface);border-radius:2px;
+      border-left:2px solid ${t.solved?'var(--accent3)':'var(--accent2)'}">
+      <span style="color:${t.solved?'var(--accent3)':'var(--accent2)'}">${t.solved?'✓':'✗'}</span>
+      <span style="font-size:9px;color:var(--muted)"> ${t.src}→${t.dst}: </span>
+      <code style="font-size:9px">${t.task?.slice(0,35)}</code></div>`
+  ).join('')||'<span style="color:var(--fg2)">no transfers yet</span>';
+}
+async function mcTick(){
+  document.getElementById('mc-result').textContent='Ticking…';
+  const r=await P('/api/brain/metacurr',{action:'tick'});
+  if(r.error){document.getElementById('mc-result').textContent='Error: '+r.error;return;}
+  const t=r.tick||{};
+  document.getElementById('mc-result').textContent=
+    `promoted:[${(t.promoted||[]).join(',')||'none'}] demoted:[${(t.demoted||[]).join(',')||'none'}] stalled:${(t.stalled||[]).length}`;
+  refreshMetaCurr();
+}
+async function mcTransfer(src,dst){
+  document.getElementById('mc-result').textContent='Testing transfer…';
+  const r=await P('/api/brain/metacurr',{action:'transfer',src,dst});
+  if(r.error){document.getElementById('mc-result').textContent='Error: '+r.error;return;}
+  const res=r.result||{};
+  document.getElementById('mc-result').textContent=
+    `${src}→${dst}: ${res.solved?'✓ PASSED':'✗ failed'} skill ${res.src}(${res.skill_before?.toFixed(2)})→${res.skill_after?.toFixed(2)}`;
+  refreshMetaCurr();
+}
+
+// ── S29-2: Action Physics Session ────────────────────────────────────────────
+async function refreshActionPhys(){
+  const d=await F('/api/brain/actionphys');
+  if(d.error&&!d.episodes_run)return;
+  document.getElementById('ap-episodes').textContent=(d.episodes_run||0)+' episodes';
+  document.getElementById('ap-concepts').textContent=d.n_unique_concepts||0;
+  document.getElementById('ap-wired').innerHTML=d.concept_graph_wired
+    ?'<span style="color:var(--accent3)">● ConceptGraph</span>'
+    :'<span style="color:var(--fg2)">○ standalone</span>';
+  const concepts=d.concepts_found||{};
+  document.getElementById('ap-concept-list').innerHTML=Object.entries(concepts).map(([c,n])=>
+    `<span style="display:inline-block;margin:1px 4px 1px 0;padding:1px 5px;
+      background:var(--surface);border-radius:3px;border-left:2px solid var(--accent4);
+      font-size:10px"><b>${c}</b> ×${n}</span>`
+  ).join('')||'<span style="color:var(--fg2)">no concepts yet</span>';
+  const episodes=d.recent_episodes||[];
+  document.getElementById('ap-recent').innerHTML=episodes.map(ep=>
+    `<div style="padding:1px 4px;background:var(--surface);border-radius:2px;margin-bottom:2px">
+      <span style="font-size:9px;color:var(--fg2)">ep${ep.episode_id} · ${ep.n_steps} steps</span>
+      <span style="font-size:9px;color:var(--accent3);margin-left:4px">${(ep.concepts_found||[]).join(' ')}</span></div>`
+  ).join('')||'<span style="color:var(--fg2)">no episodes yet</span>';
+}
+async function apRun(n){
+  document.getElementById('ap-result').textContent='Running…';
+  const r=await P('/api/brain/actionphys',{n_steps:n});
+  if(r.error){document.getElementById('ap-result').textContent='Error: '+r.error;return;}
+  const ep=r.episode||{};
+  document.getElementById('ap-result').textContent=
+    `ep${ep.episode_id}: ${ep.n_steps} steps, concepts: [${(ep.concepts_found||[]).join(', ')||'none'}]`;
+  refreshActionPhys();
+}
+
+// ── S29-3: Stream Bridge ──────────────────────────────────────────────────────
+async function refreshStreamBridge(){
+  const d=await F('/api/brain/streambridge');
+  if(d.error&&!d.total_submitted)return;
+  document.getElementById('sb-queue').textContent=(d.queue_depth||0)+' queued';
+  document.getElementById('sb-stats').innerHTML=
+    `<b>${d.total_promoted||0}</b> promoted<br><b>${d.total_submitted||0}</b> submitted`;
+  document.getElementById('sb-rate').textContent=Math.round((d.promotion_rate||0)*100)+'%';
+  const stages=d.pipeline_stages||{};
+  document.getElementById('sb-stages').innerHTML=
+    ['explore','imagine','exploit','curriculum','done','recycled'].map(s=>
+      `<span style="display:inline-block;margin:1px 4px 1px 0;padding:1px 5px;
+        background:var(--surface);border-radius:3px;font-size:10px">
+        <b>${s}</b> ${stages[s]||0}</span>`
+    ).join('');
+  const promoted=d.recent_promoted||[];
+  document.getElementById('sb-promoted').innerHTML=promoted.map(item=>
+    `<div style="padding:2px 4px;background:var(--surface);border-radius:2px;margin-bottom:2px;
+      border-left:3px solid var(--accent3)">
+      <b style="font-size:9px">[${item.source}→${item.stage}]</b>
+      <code style="font-size:9px"> ${item.content}</code>
+      <span style="float:right;font-size:8px;color:var(--fg2)">${item.lineage?.join(' ')}</span></div>`
+  ).join('')||'<span style="color:var(--fg2)">no promoted items yet</span>';
+}
+async function sbSubmit(content,source,domain){
+  document.getElementById('sb-result').textContent='Submitting…';
+  const r=await P('/api/brain/streambridge',{action:'submit',content,source,domain});
+  if(r.error){document.getElementById('sb-result').textContent='Error: '+r.error;return;}
+  document.getElementById('sb-result').textContent=`✓ submitted id=${r.item?.id} [${source}] "${content?.slice(0,30)}"`;
+  refreshStreamBridge();
+}
+async function sbTick(){
+  document.getElementById('sb-result').textContent='Ticking pipeline…';
+  const r=await P('/api/brain/streambridge',{action:'tick'});
+  if(r.error){document.getElementById('sb-result').textContent='Error: '+r.error;return;}
+  const t=r.tick||{};
+  document.getElementById('sb-result').textContent=
+    `tick ${t.tick}: queue=${t.queue} moved=${t.moved?.length||0} dropped=${t.dropped?.length||0}`;
+  refreshStreamBridge();
+}
+
+// ── S29-4: Perception Bridge ──────────────────────────────────────────────────
+async function refreshPercept(){
+  const d=await F('/api/brain/percept');
+  if(d.error&&!d.total_parsed)return;
+  document.getElementById('pb-parsed').textContent=(d.total_parsed||0)+' parsed';
+  document.getElementById('pb-stats').innerHTML=
+    `<b>${d.total_objects||0}</b> objects<br><b>${d.total_relations||0}</b> relations`;
+  document.getElementById('pb-unique').textContent=d.unique_relations||0;
+  const scenes=d.recent_scenes||[];
+  document.getElementById('pb-scenes').innerHTML=scenes.map(s=>
+    `<div style="padding:3px 6px;background:var(--surface);border-radius:3px;margin-bottom:3px">
+      <div style="font-size:10px;color:var(--fg2)">"${s.description}"</div>
+      <div style="font-size:9px;margin-top:2px">
+        ${(s.symbolic||[]).map(sym=>`<code style="margin-right:4px;color:var(--accent3)">${sym}</code>`).join('')}
+      </div></div>`
+  ).join('')||'<span style="color:var(--fg2)">no scenes yet</span>';
+}
+async function pbParse(description){
+  document.getElementById('pb-result').textContent='Parsing…';
+  const r=await P('/api/brain/percept',{description});
+  if(r.error){document.getElementById('pb-result').textContent='Error: '+r.error;return;}
+  const s=r.scene||{};
+  document.getElementById('pb-result').textContent=
+    `${s.n_objects||0} objects, ${s.n_relations||0} relations: ${(s.symbolic||[]).slice(0,3).join('; ')}`;
+  refreshPercept();
+}
+
+// ── S28-1: Robustness Hardener ────────────────────────────────────────────────
+async function refreshRobust(){
+  const d=await F('/api/brain/robust');
+  if(d.error&&!d.total_runs)return;
+  document.getElementById('rb-runs').textContent=(d.total_runs||0)+' runs';
+  const score=d.overall_robustness||0;
+  document.getElementById('rb-score').textContent=Math.round(score*100)+'%';
+  document.getElementById('rb-score').style.color=score>0.85?'var(--accent3)':score>0.65?'var(--accent4)':'var(--accent2)';
+  document.getElementById('rb-weak').textContent=d.weakest_domain||'—';
+  const domains=d.domains||{};
+  document.getElementById('rb-domains').innerHTML=Object.entries(domains).map(([dom,info])=>{
+    const r=info.robustness||0;
+    return `<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">
+      <span style="width:65px;font-size:10px;color:var(--fg2)">${dom}</span>
+      <div style="width:${Math.round(r*70)}px;height:4px;background:${r>0.8?'var(--accent3)':r>0.6?'var(--accent4)':'var(--accent2)'};border-radius:2px;min-width:1px"></div>
+      <span style="font-size:10px">${Math.round(r*100)}%</span>
+      <span style="font-size:9px;color:var(--fg2)"> ${info.passes}✓ ${info.fails}✗</span></div>`;
+  }).join('')||'<span style="color:var(--fg2)">warming up…</span>';
+  const recent=d.recent_stress||[];
+  document.getElementById('rb-recent').innerHTML=recent.slice(-10).map(r=>
+    `<div style="padding:1px 4px;background:var(--surface);border-radius:2px;
+      border-left:2px solid ${r.passed?'var(--accent3)':'var(--accent2)'}">
+      <span style="color:${r.passed?'var(--accent3)':'var(--accent2)'}">${r.passed?'✓':'✗'}</span>
+      <span style="font-size:9px;color:var(--muted)"> [${r.attack_type}·${r.domain}]</span>
+      <code style="font-size:9px"> ${r.perturbed?.slice(0,35)}</code></div>`
+  ).join('')||'<span style="color:var(--fg2)">no tests yet</span>';
+}
+async function rbStress(domain,n){
+  document.getElementById('rb-result').textContent='Stressing…';
+  const body={n};if(domain)body.domain=domain;
+  const r=await P('/api/brain/robust',body);
+  if(r.error){document.getElementById('rb-result').textContent='Error: '+r.error;return;}
+  const s=r.summary||{};
+  document.getElementById('rb-result').textContent=
+    `✓ ran ${r.ran} · passed ${r.passed} (${Math.round(r.passed/Math.max(1,r.ran)*100)}%) · overall ${Math.round((s.overall_robustness||0)*100)}%`;
+  refreshRobust();
+}
+
+// ── S28-2: Attention Router ───────────────────────────────────────────────────
+async function refreshAttention(){
+  const d=await F('/api/brain/attention');
+  if(d.error)return;
+  document.getElementById('ar-routed').textContent=(d.total_routed||0)+' routed';
+  document.getElementById('ar-stats').innerHTML=
+    `<b>${d.total_received||0}</b> received<br><b>${d.total_routed||0}</b> routed`;
+  document.getElementById('ar-focus').innerHTML=
+    `<b>${d.n_registered_targets||0}</b> targets<br>
+     focus: <span style="color:var(--accent3)">${(d.current_focus||[]).join(' ')||'—'}</span>`;
+  const spotlight=d.current_spotlight||[];
+  document.getElementById('ar-spotlight').innerHTML=spotlight.map((e,i)=>
+    `<div style="margin-bottom:3px;padding:2px 5px;background:var(--surface);border-radius:3px;
+      border-left:3px solid ${i===0?'var(--accent3)':'var(--fg2)'}">
+      <b style="font-size:10px">${e.event_type}</b>
+      <span style="float:right;font-size:9px;color:var(--fg2)">sal:${e.salience} ${e.age_s}s ago</span>
+      <div style="font-size:9px;color:var(--muted)">[${e.source}] → ${(e.routed_to||[]).join(', ')||'pending'}</div></div>`
+  ).join('')||'<span style="color:var(--fg2)">no events yet</span>';
+  const freq=d.event_freq||{};
+  document.getElementById('ar-freq').innerHTML=Object.entries(freq).slice(0,6).map(([k,v])=>
+    `<span style="margin-right:8px;font-size:9px"><b>${k}</b>×${v}</span>`
+  ).join('')||'—';
+}
+
+// ── S28-3: Recursive ToM ──────────────────────────────────────────────────────
+async function refreshToM(){
+  const d=await F('/api/brain/tom');
+  if(d.error)return;
+  document.getElementById('tom-agents').textContent=(d.total_agents||0)+' agents';
+  document.getElementById('tom-stats').innerHTML=
+    `<b>${d.total_updates||0}</b> updates<br><b>${d.total_predictions||0}</b> predictions`;
+  document.getElementById('tom-resolutions').innerHTML=
+    `<b>${d.total_resolutions||0}</b> resolved<br>max depth: <b>${d.max_depth||3}</b>`;
+  const agents=d.agents||{};
+  document.getElementById('tom-agents-list').innerHTML=Object.entries(agents).map(([aid,models])=>
+    `<div style="margin-bottom:4px;padding:3px 6px;background:var(--surface);border-radius:3px">
+      <b style="font-size:11px">${aid}</b>
+      ${models.map(m=>`<span style="font-size:9px;color:var(--fg2);margin-left:6px">
+        D${m.depth}: ${m.n_beliefs} beliefs</span>`).join('')}
+      ${models[0]&&models[0].top_beliefs[0]?`<div style="font-size:9px;color:var(--muted);margin-top:1px">
+        "${models[0].top_beliefs[0].claim?.slice(0,45)}" (${models[0].top_beliefs[0].confidence})</div>`:''}
+    </div>`
+  ).join('')||'<span style="color:var(--fg2)">no agent models yet</span>';
+}
+async function tomPredict(aid,ctx,depth){
+  document.getElementById('tom-result').textContent='Predicting…';
+  const r=await P('/api/brain/tom',{action:'predict',agent_id:aid,context:ctx,depth});
+  if(r.error){document.getElementById('tom-result').textContent='Error: '+r.error;return;}
+  document.getElementById('tom-result').textContent=
+    `D${r.depth} ${aid}: "${r.action}" (conf ${r.confidence}) — ${r.rationale?.slice(0,60)}`;
+  refreshToM();
+}
+async function tomResolve(a,b,topic){
+  document.getElementById('tom-result').textContent='Resolving…';
+  const r=await P('/api/brain/tom',{action:'resolve',agent_id:a,agent_b:b,context:topic});
+  if(r.error){document.getElementById('tom-result').textContent='Error: '+r.error;return;}
+  document.getElementById('tom-result').textContent=
+    `Strategy: ${r.strategy} (${a}:${r.a_predicts} vs ${b}:${r.b_predicts})`;
+  refreshToM();
+}
+
+// ── S28-4: Agent Memory Bank ──────────────────────────────────────────────────
+async function refreshAgentMem(){
+  const d=await F('/api/brain/agentmem');
+  if(d.error)return;
+  document.getElementById('amb-agents').textContent=(d.n_agents||0)+' agents';
+  const total=Object.values(d.agents||{}).reduce((s,p)=>s+(p.total_interactions||0),0);
+  document.getElementById('amb-total').textContent=total;
+  document.getElementById('amb-wired').innerHTML=d.society_wired
+    ?'<span style="color:var(--accent3)">● Society</span>'
+    :'<span style="color:var(--fg2)">○ standalone</span>';
+  const agents=d.agents||{};
+  document.getElementById('amb-profiles').innerHTML=Object.entries(agents).map(([aid,p])=>
+    `<div style="margin-bottom:4px;padding:3px 6px;background:var(--surface);border-radius:3px;
+      border-left:3px solid var(--accent3)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <b style="font-size:11px">${aid}</b>
+        <span style="font-size:9px;color:var(--fg2)">${p.episodic_count}ep ${p.semantic_count}sem</span>
+        <span style="font-size:10px">trust:${Math.round((p.trust_score||0)*100)}%</span></div>
+      <div style="font-size:9px;margin-top:2px;color:var(--muted)">
+        ${(p.top_skills||[]).map(([d,v])=>`${d}:${Math.round(v*100)}%`).join(' · ')||'no skills yet'}
+      </div>
+      <div style="font-size:9px;color:var(--fg2)">
+        ${Object.entries(p.personality||{}).map(([k,v])=>`${k[0]}:${Math.round(v*100)}%`).join(' ')}</div></div>`
+  ).join('')||'<span style="color:var(--fg2)">no agents yet</span>';
+}
+async function ambRecall(aid,query){
+  document.getElementById('amb-result').textContent='Recalling…';
+  const r=await P('/api/brain/agentmem',{action:'recall',agent_id:aid,query,n:5});
+  if(r.error){document.getElementById('amb-result').textContent='Error: '+r.error;return;}
+  const facts=r.facts||[];
+  document.getElementById('amb-result').textContent=
+    facts.length?`${facts.length} facts: ${facts.map(f=>f.claim?.slice(0,25)).join('; ')}`:'no facts recalled';
+}
+async function ambLearn(aid,claim,conf){
+  document.getElementById('amb-result').textContent='Learning…';
+  const r=await P('/api/brain/agentmem',{action:'learn',agent_id:aid,claim,confidence:conf,domain:'arithmetic'});
+  if(r.error){document.getElementById('amb-result').textContent='Error: '+r.error;return;}
+  document.getElementById('amb-result').textContent=`✓ learned "${claim}" for ${aid}`;
+  refreshAgentMem();
+}
+
+// ── S27-1: Continuous Stream Learner ──────────────────────────────────────────
+async function refreshStream(){
+  const d=await F('/api/brain/stream');
+  if(d.error&&!d.running)return;
+  document.getElementById('cs-total').textContent=(d.total_solved||0)+' solved';
+  const running=d.running;
+  document.getElementById('cs-status').innerHTML=running
+    ?'<span style="color:var(--accent3)">● RUNNING</span>'
+    :'<span style="color:var(--fg2)">○ stopped</span>';
+  document.getElementById('cs-throughput').textContent=(d.throughput_per_min||0)+'/min';
+  const rate=d.solve_rate||0;
+  document.getElementById('cs-rate').textContent=Math.round(rate*100)+'%';
+  document.getElementById('cs-rate').style.color=rate>0.7?'var(--accent3)':rate>0.4?'var(--accent4)':'var(--accent2)';
+  document.getElementById('cs-pauses').textContent=(d.interference_pauses||0);
+  const streams=d.streams||[];
+  document.getElementById('cs-streams').innerHTML=streams.map(s=>
+    `<div style="margin-bottom:3px;padding:2px 6px;background:var(--surface);border-radius:3px;
+      border-left:3px solid ${s.active?'var(--accent3)':'var(--fg2)'}">
+      <span style="font-size:10px;font-weight:700">${s.type}</span>
+      ${s.domain?`<span style="color:var(--fg2);font-size:9px"> [${s.domain}]</span>`:''}
+      <span style="float:right;font-size:10px">${Math.round((s.solve_rate||0)*100)}%
+        ${s.interference_count>0?`<span style="color:var(--accent2)"> ⚡${s.interference_count}</span>`:''}</span>
+      <div style="font-size:9px;color:var(--muted)">${s.solved}✓ ${s.failed}✗ ${s.uptime_s}s</div></div>`
+  ).join('')||'<span style="color:var(--fg2)">no streams</span>';
+  const rates=(d.interference&&d.interference.domain_rates)||{};
+  document.getElementById('cs-domain-rates').innerHTML=Object.entries(rates).map(([dom,v])=>
+    `<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">
+      <span style="width:60px;font-size:10px;color:var(--fg2)">${dom}</span>
+      <div style="width:${Math.round(v*60)}px;height:3px;background:${v>0.7?'var(--accent3)':v>0.4?'var(--accent4)':'var(--accent2)'};border-radius:1px;min-width:1px"></div>
+      <span style="font-size:10px">${Math.round(v*100)}%</span></div>`
+  ).join('')||'<span style="color:var(--fg2)">warming up…</span>';
+  const recent=d.recent_results||[];
+  document.getElementById('cs-recent').innerHTML=recent.slice(-12).map(r=>
+    `<div style="padding:1px 4px;background:var(--surface);border-radius:2px;
+      border-left:2px solid ${r.solved?'var(--accent3)':'var(--accent2)'}">
+      <span style="color:var(--fg2)">${r.solved?'✓':'✗'}</span>
+      <span style="font-family:monospace"> ${r.expr}</span>
+      <span style="color:var(--muted);font-size:9px"> [${r.domain}]</span></div>`
+  ).join('')||'<span style="color:var(--fg2)">no results yet</span>';
+}
+async function csAction(action,n){
+  document.getElementById('cs-result').textContent=action+'ing…';
+  const body={action};
+  if(n)body.n_streams=n;
+  const r=await P('/api/brain/stream',body);
+  if(r.error){document.getElementById('cs-result').textContent='Error: '+r.error;return;}
+  document.getElementById('cs-result').textContent=
+    `${action}: ${r.n_streams} streams · ${r.total_solved} solved · ${r.throughput_per_min}/min`;
+  refreshStream();
+}
+
+document.getElementById('expr-input').addEventListener('keydown',e=>{if(e.key==='Enter')brainSolve()});
+updatePercLayer();
+renderAGIDims();
+renderGaps();
+refreshSelfModel();
+refreshMetaLearner();
+refreshPhysics();
+refreshKnowledge();
+refreshArena();
+refreshWorkspace();
+refreshPredictive();
+refreshTrainer();
+refreshSociety();
+refreshMetacognition();
+refreshBuffer();
+refreshBlender();
+refreshDialogue();
+refreshSensory();
+refreshDream();
+refreshAffective();
+refreshTransforms();
+refreshImagine();
+refreshRedTeam();
+refreshIdentity();
+refreshProgress();
+refreshMetaCurr();
+refreshActionPhys();
+refreshStreamBridge();
+refreshPercept();
+refreshRobust();
+refreshAttention();
+refreshToM();
+refreshAgentMem();
+refreshStream();
+refresh();
+setInterval(refresh,4000);
+setInterval(refreshSelfModel,8000);
+setInterval(refreshMetaLearner,12000);
+setInterval(refreshPhysics,15000);
+setInterval(refreshKnowledge,20000);
+setInterval(refreshArena,10000);
+setInterval(refreshWorkspace,6000);
+setInterval(refreshPredictive,8000);
+setInterval(refreshTrainer,5000);
+setInterval(refreshSociety,10000);
+setInterval(refreshMetacognition,15000);
+setInterval(refreshBuffer,5000);
+setInterval(refreshBlender,15000);
+setInterval(refreshDialogue,8000);
+setInterval(refreshSensory,10000);
+setInterval(refreshDream,12000);
+setInterval(refreshAffective,6000);
+setInterval(refreshTransforms,15000);
+setInterval(refreshImagine,8000);
+setInterval(refreshRedTeam,10000);
+setInterval(refreshIdentity,20000);
+setInterval(refreshProgress,8000);
+setInterval(refreshMetaCurr,10000);
+setInterval(refreshActionPhys,15000);
+setInterval(refreshStreamBridge,6000);
+setInterval(refreshPercept,12000);
+setInterval(refreshRobust,12000);
+setInterval(refreshAttention,5000);
+setInterval(refreshToM,10000);
+setInterval(refreshAgentMem,10000);
+setInterval(refreshStream,4000);
+// Multi-agent: refresh agent cards every 2s (SSE handles the live feed)
+setInterval(refreshMultiAgent, 2000);
+// On load, check if agents were already running and reconnect SSE
+(async()=>{
+  const d = await F('/api/agents/status');
+  if(d && d.running) _maStartSSE();
+})();
+</script>
+</body>
+</html>

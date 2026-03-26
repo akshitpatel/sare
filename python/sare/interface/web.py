@@ -4758,27 +4758,8 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._json_response({"error": str(e)}, 500)
 
     def _api_brain_solve(self, body: dict):
-        """POST /api/brain/solve — Solve using the Brain orchestrator."""
-        expr = body.get("expression", "")
-        if not expr:
-            self._json_response({"error": "No expression"}, 400)
-            return
-        try:
-            from sare.brain import get_brain
-            brain = get_brain()
-            result = brain.solve(
-                expression=expr,
-                algorithm=body.get("algorithm", "beam"),
-                beam_width=body.get("beam_width", 8),
-                max_depth=body.get("max_depth", 30),
-                budget=body.get("budget", 10.0),
-                domain=body.get("domain", "general"),
-                kappa=float(body.get("kappa", 0.1)),
-                force_python=bool(body.get("force_python", False)),
-            )
-            self._json_response(result)
-        except Exception as e:
-            self._json_response({"error": str(e)}, 500)
+        """POST /api/brain/solve — Alias for /api/solve (same backend)."""
+        self._api_solve(body)
 
     def _api_brain_learn(self, body: dict):
         """POST /api/brain/learn — Run N autonomous learning cycles."""
