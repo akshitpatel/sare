@@ -247,10 +247,29 @@ def _save_hook(curriculum_gen, experiment_runner):
         log.debug("transform_predictor save error: %s", e)
 
 
-def run_daemon(interval: float = 30.0, batch_size: int = 5, verbose: bool = False):
+_PID_FILE = REPO_ROOT / "data" / "memory" / "daemon.pid"
+
+
+def run_daemon(interval: float = 15.0, batch_size: int = 10, verbose: bool = False):
     """Main daemon loop."""
     if verbose:
         logging.getLogger().setLevel(logging.DEBUG)
+
+    # PID guard — prevent multiple daemon instances from running simultaneously
+    import os as _pid_os
+    try:
+        _PID_FILE.parent.mkdir(parents=True, exist_ok=True)
+        if _PID_FILE.exists():
+            try:
+                _old_pid = int(_PID_FILE.read_text().strip())
+                _pid_os.kill(_old_pid, 0)   # signal 0: check existence without sending
+                log.warning("learn_daemon already running (pid=%d) — exiting to avoid conflicts.", _old_pid)
+                return 0
+            except (ProcessLookupError, ValueError):
+                pass   # stale PID file — ok to overwrite
+        _PID_FILE.write_text(str(_pid_os.getpid()))
+    except Exception as _pid_exc:
+        log.debug("PID guard error (non-fatal): %s", _pid_exc)
 
     log.info("learn_daemon starting (interval=%.0fs, batch=%d)", interval, batch_size)
 
@@ -1548,6 +1567,12 @@ def run_daemon(interval: float = 30.0, batch_size: int = 5, verbose: bool = Fals
 
     log.info("learn_daemon stopped after %d cycles.", cycle)
 
+    # Remove PID file on clean shutdown
+    try:
+        _PID_FILE.unlink(missing_ok=True)
+    except Exception:
+        pass
+
     # Shutdown parallel learners
     if _auto_trainer:
         try:
@@ -1565,13 +1590,19 @@ def run_daemon(interval: float = 30.0, batch_size: int = 5, verbose: bool = Fals
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="SARE-HX autonomous learning daemon")
-    parser.add_argument("--interval",   type=float, default=30.0,
-                        help="Seconds between batches (default: 30)")
-    parser.add_argument("--batch-size", type=int,   default=5,
-                        help="Problems per batch (default: 5)")
+    parser.add_argument("--interval",   type=float, default=15.0,
+                        help="Seconds between batches (default: 15)")
+    parser.add_argument("--batch-size", type=int,   default=10,
+                        help="Problems per batch (default: 10)")
     parser.add_argument("--verbose",    action="store_true",
                         help="Enable DEBUG logging")
+    parser.add_argument("--fast",       action="store_true",
+                        help="Fast training mode: interval=5s, batch=20")
     args = parser.parse_args()
+
+    if args.fast:
+        args.interval   = 5.0
+        args.batch_size = 20
 
     return run_daemon(
         interval=args.interval,

@@ -82,7 +82,7 @@ class ExperimentRunner:
         concept_registry=None,
         transforms=None,
         beam_width: int = 8,
-        budget_seconds: float = 5.0,
+        budget_seconds: float = 8.0,
         analogy_transfer=None,
         **kwargs,
     ):
@@ -619,11 +619,8 @@ class ExperimentRunner:
         _saved_beam = self.beam_width
         _saved_budget = self.budget_seconds
         self.beam_width = max(2, self.beam_width + beam_delta)
-        # Adaptive budget: small graphs get less time, large graphs get more
-        _graph_size = len(graph.nodes) if hasattr(graph, "nodes") else 5
-        _adaptive_budget = min(self.budget_seconds + budget_delta,
-                               max(0.3, 0.2 * _graph_size))
-        self.budget_seconds = max(0.3, _adaptive_budget)
+        # Adaptive budget: adjust by emotional state, never drop below 0.3s
+        self.budget_seconds = max(0.3, self.budget_seconds + budget_delta)
 
         if beam_delta != 0 or budget_delta != 0.0:
             if _im is not None:

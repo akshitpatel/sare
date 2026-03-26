@@ -15,7 +15,12 @@ This module:
 """
 
 from dataclasses import dataclass, field
+import json
+from pathlib import Path
 from typing import Dict, List, Optional
+
+
+_DEFAULT_PERSIST_PATH = Path(__file__).resolve().parents[3] / "data" / "memory" / "credit_assigner.json"
 
 
 @dataclass
@@ -44,17 +49,31 @@ class CreditAssigner:
         self.alpha = alpha
         self.eta = eta
         self.utilities: Dict[str, float] = {}  # U_k per module
-        self.baseline: float = 0.0             # running baseline b
+        self.baseline: float = 0.0             # global baseline (kept for backward compat)
         self.baseline_count: int = 0
+        self._baselines: Dict[str, float] = {}  # per-domain EMA baselines
+
+    def _get_baseline(self, domain: str) -> float:
+        """Return EMA baseline for the given domain (falls back to global)."""
+        return self._baselines.get(domain, self.baseline)
+
+    def _update_baseline(self, domain: str, reward: float, alpha_b: float = 0.05) -> None:
+        """Update per-domain and global EMA baselines."""
+        b = self._baselines.get(domain, self.baseline)
+        self._baselines[domain] = (1 - alpha_b) * b + alpha_b * reward
+        # Also keep global baseline in sync
+        self.baseline = (1 - alpha_b) * self.baseline + alpha_b * reward
 
     def assign_credit(self, transform_sequence: List[str],
-                      energy_trajectory: List[float]) -> List[CreditResult]:
+                      energy_trajectory: List[float],
+                      domain: str = "general") -> List[CreditResult]:
         """
         Assign credit to each transform in a solve trace.
 
         Args:
             transform_sequence: list of transform names applied
             energy_trajectory: E at each step (len = len(transforms) + 1)
+            domain: problem domain for per-domain baseline tracking
 
         Returns:
             List of CreditResult for each transform application
@@ -65,10 +84,8 @@ class CreditAssigner:
         # Total reward: R = -(E_final - E_initial)
         total_reward = -(energy_trajectory[-1] - energy_trajectory[0])
 
-        # Update baseline with running average
-        self.baseline_count += 1
-        alpha_b = 1.0 / self.baseline_count
-        self.baseline = (1 - alpha_b) * self.baseline + alpha_b * total_reward
+        # Update per-domain baseline (replaces single global baseline)
+        self._update_baseline(domain, total_reward)
 
         results = []
         for i, transform_name in enumerate(transform_sequence):
@@ -78,8 +95,8 @@ class CreditAssigner:
             # Per-step ΔE
             delta_e = energy_trajectory[i + 1] - energy_trajectory[i]
 
-            # Credit: R - b (baseline subtracted)
-            credit = total_reward - self.baseline
+            # Credit: R - b using per-domain baseline
+            credit = total_reward - self._get_baseline(domain)
 
             # Update utility: U_k^{t+1} = (1-α)U_k^t + α(-ΔE_k)
             current_u = self.utilities.get(transform_name, 0.0)
@@ -112,3 +129,45 @@ class CreditAssigner:
     def get_underperformers(self, threshold: float = 0.0) -> List[str]:
         """Get transforms with utility below threshold (candidates for pruning)."""
         return [name for name, u in self.utilities.items() if u < threshold]
+
+    def save(self, path: Optional[Path] = None) -> None:
+        """Persist utility scores and baseline statistics to disk."""
+        target = Path(path or _DEFAULT_PERSIST_PATH)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "alpha": self.alpha,
+            "eta": self.eta,
+            "utilities": self.utilities,
+            "baseline": self.baseline,
+            "baseline_count": self.baseline_count,
+            "baselines": self._baselines,
+        }
+        import os as _os
+        _tmp = target.with_suffix(".tmp")
+        _tmp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        _os.replace(_tmp, target)
+
+    def load(self, path: Optional[Path] = None) -> None:
+        """Restore utility scores and baseline statistics from disk."""
+        target = Path(path or _DEFAULT_PERSIST_PATH)
+        if not target.exists():
+            return
+
+        try:
+            payload = json.loads(target.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            # Corrupted file (e.g. from non-atomic concurrent write) — reset
+            target.unlink(missing_ok=True)
+            return
+        self.alpha = float(payload.get("alpha", self.alpha))
+        self.eta = float(payload.get("eta", self.eta))
+        self.utilities = {
+            str(name): float(score)
+            for name, score in payload.get("utilities", {}).items()
+        }
+        self.baseline = float(payload.get("baseline", 0.0))
+        self.baseline_count = int(payload.get("baseline_count", 0))
+        self._baselines = {
+            str(k): float(v)
+            for k, v in payload.get("baselines", {}).items()
+        }
