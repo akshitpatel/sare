@@ -338,6 +338,15 @@ def run_daemon(interval: float = 30.0, batch_size: int = 5, verbose: bool = Fals
     except Exception as exc:
         log.debug("MultiAgentLearner unavailable: %s", exc)
 
+    # A.3 — Boot MultiAgentArena (competitive self-play between strategy variants)
+    _arena = None
+    try:
+        from sare.agent.multi_agent_arena import MultiAgentArena
+        _arena = MultiAgentArena(n_agents=3)
+        log.info("MultiAgentArena ready (3 agents, competitive self-play)")
+    except Exception as exc:
+        log.debug("MultiAgentArena unavailable: %s", exc)
+
     # A.4 — Start GeneralSolver + GeneralCurriculum (general intelligence)
     _general_solver = None
     _general_curriculum = None
@@ -786,6 +795,48 @@ def run_daemon(interval: float = 30.0, batch_size: int = 5, verbose: bool = Fals
                     log.info("[MAML] fast_adapt launched for domain=%s", _weak_domain)
                 except Exception as _fa_exc:
                     log.debug("fast_adapt error: %s", _fa_exc)
+
+        # ── MultiAgentArena: competitive self-play every 50 cycles ──────────
+        if cycle % 50 == 0 and _arena is not None:
+            try:
+                def _arena_engine(expr, beam_width=6, budget_seconds=3.0, **_kw):
+                    from sare.engine import load_problem
+                    _, _g = load_problem(expr)
+                    if _g is None:
+                        return {"success": False, "delta": 0.0, "result": expr, "steps": 0, "transforms_used": []}
+                    _p = type("P", (), {
+                        "graph": _g, "id": "arena", "domain": "arithmetic",
+                        "expression": expr, "py_graph": True,
+                    })()
+                    _r = experiment_runner._run_single(_p)
+                    return {
+                        "success": bool(getattr(_r, "solved", False)),
+                        "delta": float(getattr(_r, "delta", 0.0)),
+                        "result": expr, "steps": len(getattr(_r, "proof_steps", None) or []),
+                        "transforms_used": list(getattr(_r, "proof_steps", None) or []),
+                    }
+                _arena_expr = (results[0].problem_id if results else "x + 0")
+                _winner, _ = _arena.race(_arena_expr, _arena_engine, max_workers=3)
+                log.info("[ARENA] cycle %d: winner=%s delta=%.3f",
+                         cycle, _winner.agent_id, _winner.delta)
+            except Exception as _ae:
+                log.debug("Arena race error: %s", _ae)
+
+        # ── RedTeamAdversary: challenge promoted rules every 25 cycles ───────
+        if cycle % 25 == 0 and promoted > 0:
+            try:
+                from sare.agent.red_team import RedTeamAdversary as _RTA
+                _rt = _RTA()
+                _rt.wire(engine=lambda expr: experiment_runner._run_single(
+                    type("P", (), {"graph": __import__("sare.engine", fromlist=["load_problem"]).load_problem(expr)[1],
+                                   "id": "rt", "domain": "algebra", "expression": expr, "py_graph": True})()
+                ))
+                _rt_res = _rt.run_attack_round(top_k=3)
+                log.info("[REDTEAM] cycle %d: attacks=%d falsifications=%d rate=%.2f",
+                         cycle, _rt_res.get("attacks", 0), _rt_res.get("falsifications", 0),
+                         _rt_res.get("falsification_rate", 0.0))
+            except Exception as _rte:
+                log.debug("RedTeam error: %s", _rte)
 
         # ── T2-1: NeuralPerception — embed recent expressions every 15 cycles ──
         if cycle % 15 == 0 and neural_perception is not None:
