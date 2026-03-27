@@ -122,7 +122,7 @@ class LLMTeacher:
     def _save_log(self):
         try:
             _LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
-            tmp = _LOG_PATH.with_suffix(".tmp")
+            tmp = _LOG_PATH.parent / f"{_LOG_PATH.stem}.{os.getpid()}.tmp"
             tmp.write_text(json.dumps(self._log[-200:], indent=2))
             os.replace(tmp, _LOG_PATH)
         except Exception as e:

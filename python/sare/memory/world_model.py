@@ -1871,7 +1871,7 @@ class WorldModel:
                 _hyp_path = Path(__file__).resolve().parents[3] / "data" / "memory" / "world_hypotheses.json"
                 try:
                     import os as _os
-                    _tmp = _hyp_path.with_suffix(".tmp")
+                    _tmp = _hyp_path.parent / f"{_hyp_path.stem}.{os.getpid()}.tmp"
                     _tmp.write_text(_json.dumps(self._hypotheses, indent=2))
                     _os.replace(_tmp, _hyp_path)
                 except Exception:

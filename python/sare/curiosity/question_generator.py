@@ -15,6 +15,7 @@ Sources of questions:
 from __future__ import annotations
 
 import json
+import os
 import logging
 import time
 import threading
@@ -112,7 +113,7 @@ class QuestionGenerator:
         with self._lock:
             _MEMORY_DIR.mkdir(parents=True, exist_ok=True)
             data = [q.to_dict() for q in self._questions]
-            tmp_path = _QUESTIONS_PATH.with_suffix(".tmp")
+            tmp_path = _QUESTIONS_PATH.parent / f"{_QUESTIONS_PATH.stem}.{os.getpid()}.tmp"
             with open(tmp_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             tmp_path.replace(_QUESTIONS_PATH)

@@ -364,7 +364,7 @@ class ExperientialLearner:
                 "counterfactuals_added": self._counterfactuals_added,
                 "correct_predictions": self._correct_predictions,
             }
-            tmp = _PERSIST_PATH.with_suffix(".tmp")
+            tmp = _PERSIST_PATH.parent / f"{_PERSIST_PATH.stem}.{os.getpid()}.tmp"
             with open(tmp, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, sort_keys=True)
             os.replace(tmp, _PERSIST_PATH)

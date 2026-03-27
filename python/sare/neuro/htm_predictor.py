@@ -304,7 +304,7 @@ class HTMPredictor:
                 "correct_predictions": self._correct_predictions,
                 "saved_at": time.time(),
             }
-            tmp = _HTM_PATH.with_suffix(".tmp")
+            tmp = _HTM_PATH.parent / f"{_HTM_PATH.stem}.{os.getpid()}.tmp"
             tmp.write_text(json.dumps(payload, indent=2))
             os.replace(tmp, _HTM_PATH)
         except Exception as e:

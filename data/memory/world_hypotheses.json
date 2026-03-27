@@ -1,14 +1,62 @@
 [
   {
-    "hypothesis": "The 'not_false' transformation was intentionally designed to introduce a more complex, nested structure. This resulted in a significantly increased complexity, leading to a reduction of 7.1 compared to the expected 0.9. This suggests a deliberate manipulation of the arithmetic rules rather than a simple reduction in complexity.",
-    "pattern": "nested_expression",
+    "hypothesis": "The 'synth_arithmetic_-_self_inverse' transformation was intentionally designed to introduce a complex, non-linear relationship that significantly increases the number of operations required. This resulted in a substantially higher level of arithmetic complexity, leading to a reduction in the expected simplification factor.",
+    "pattern": "complex_arithmetic",
+    "confidence": 0.05,
+    "domain": "logic",
+    "transform": "synth_arithmetic_-_self_inverse",
+    "expected": 0.3942,
+    "actual": 3.0999999999999996,
+    "surprise": 6.864028411973616,
+    "evidence": 2,
+    "timestamp": 1774583994.308246
+  },
+  {
+    "hypothesis": "The 'synth_arithmetic_-_self_inverse' transformation was intentionally designed to introduce a highly complex, recursive pattern that significantly increases the number of operations required. This resulted in a substantial reduction in expression complexity, effectively doubling the number of steps compared to the original.",
+    "pattern": "Recursive Substitution with Nested Loops and Conditional Expressions",
     "confidence": 0.0,
-    "domain": "arithmetic",
-    "transform": "not_false",
-    "expected": 0.91012,
-    "actual": 7.110000000000001,
-    "surprise": 6.81215663868501,
+    "domain": "logic",
+    "transform": "synth_arithmetic_-_self_inverse",
+    "expected": 0.37632499999999997,
+    "actual": 3.099999999999998,
+    "surprise": 7.23756061914568,
     "evidence": 1,
-    "timestamp": 1774583881.198949
+    "timestamp": 1774584066.694108
+  },
+  {
+    "hypothesis": "The 'synth_arithmetic_-_self_inverse' transformation was intentionally designed to introduce a highly complex, recursive pattern that significantly increases the number of operations required. This resulted in a substantial reduction in expression complexity, effectively doubling the number of steps compared to the original.",
+    "pattern": "A nested sequence of arithmetic operations with a self-referential loop that's difficult to trace.",
+    "confidence": 0.0,
+    "domain": "logic",
+    "transform": "synth_arithmetic_-_self_inverse",
+    "expected": 0.911,
+    "actual": 3.0999999999999996,
+    "surprise": 2.4028540065861685,
+    "evidence": 1,
+    "timestamp": 1774584140.901036
+  },
+  {
+    "hypothesis": "The 'synth_arithmetic_-_self_inverse' transformation was intentionally designed to introduce a complex, non-linear arithmetic operation with a significant degree of self-inverse behavior. This resulted in an exponential increase in the number of operations and a substantial reduction in the overall complexity, effectively doubling the original complexity.",
+    "pattern": "complex_arithmetic_with_self_inverse",
+    "confidence": 0.0,
+    "domain": "logic",
+    "transform": "synth_arithmetic_-_self_inverse",
+    "expected": 0.91095,
+    "actual": 3.1000000000000014,
+    "surprise": 2.403040781601626,
+    "evidence": 1,
+    "timestamp": 1774584285.594404
+  },
+  {
+    "hypothesis": "The 'synth_arithmetic_-_self_inverse' transformation was intentionally designed to introduce a significant, and largely unexpected, 'recursive' dependency. This resulted in a dramatically increased number of nested computations compared to the original expression, leading to a substantial reduction in complexity. The 'self_inverse' aspect likely amplified this effect by creating a loop that inherently reduces the overall complexity.",
+    "pattern": "recursive_dependency",
+    "confidence": 0.0,
+    "domain": "logic",
+    "transform": "synth_arithmetic_-_self_inverse",
+    "expected": 0.40661499999999995,
+    "actual": 3.1000000000000014,
+    "surprise": 6.623919432386906,
+    "evidence": 1,
+    "timestamp": 1774584384.225634
   }
 ]

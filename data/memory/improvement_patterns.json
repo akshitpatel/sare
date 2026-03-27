@@ -212,8 +212,8 @@
   "sare.memory.autobiographical": {
     "optimize": {
       "applied": 1,
-      "rejected": 4,
-      "avg_critic": 1.6
+      "rejected": 5,
+      "avg_critic": 1.3333333333333333
     }
   },
   "sare.perception.perception_bridge": {
@@ -499,7 +499,7 @@
   "sare.curiosity.multi_task_scheduler": {
     "optimize": {
       "applied": 0,
-      "rejected": 16,
+      "rejected": 17,
       "avg_critic": 0.0
     }
   },
@@ -576,7 +576,7 @@
   "sare.world.generative_world": {
     "optimize": {
       "applied": 0,
-      "rejected": 19,
+      "rejected": 20,
       "avg_critic": 0.0
     }
   },
@@ -639,7 +639,7 @@
   "sare.world.sensory_bridge": {
     "optimize": {
       "applied": 0,
-      "rejected": 12,
+      "rejected": 13,
       "avg_critic": 0.0
     }
   },

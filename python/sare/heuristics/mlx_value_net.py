@@ -225,7 +225,7 @@ class MLXValueNet:
             _STATS_PATH.write_text(json.dumps(self._stats, indent=2))
             # Persist replay buffer (last 500 entries)
             buf = list(self._replay_buffer)[-500:]
-            tmp = _BUFFER_PATH.with_suffix(".tmp")
+            tmp = _BUFFER_PATH.parent / f"{_BUFFER_PATH.stem}.{os.getpid()}.tmp"
             tmp.write_text(json.dumps(buf))
             os.replace(tmp, _BUFFER_PATH)
         except Exception as e:

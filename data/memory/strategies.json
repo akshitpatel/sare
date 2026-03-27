@@ -12,34 +12,34 @@
   "constant:1_operator:1_variable:1": {
     "signature": "constant:1_operator:1_variable:1",
     "transform_sequence": [
-      "synth_distribution_*_identity"
+      "chemistry_stoich_coeff_one"
     ],
-    "avg_energy_reduction": 2.729141960237448,
+    "avg_energy_reduction": 2.727711576933381,
     "success_rate": 1.0,
-    "attempts": 11468,
-    "usage_count": 11468
+    "attempts": 11497,
+    "usage_count": 11497
   },
   "constant:2_operator:1": {
     "signature": "constant:2_operator:1",
     "transform_sequence": [
       "const_fold"
     ],
-    "avg_energy_reduction": 1.6239234093279693,
+    "avg_energy_reduction": 1.6232621906032312,
     "success_rate": 1.0,
-    "attempts": 13422,
-    "usage_count": 13422
+    "attempts": 13494,
+    "usage_count": 13494
   },
   "constant:2_operator:3_variable:2": {
     "signature": "constant:2_operator:3_variable:2",
     "transform_sequence": [
-      "learned_additive_identity",
-      "learned_additive_identity",
-      "division_self_elim"
+      "synth_distribution_*_identity",
+      "synth_distribution_*_annihilation",
+      "synth_distribution_*_annihilation"
     ],
-    "avg_energy_reduction": 8.582294102364022,
+    "avg_energy_reduction": 8.577358735095679,
     "success_rate": 1.0,
-    "attempts": 7698,
-    "usage_count": 7698
+    "attempts": 7716,
+    "usage_count": 7716
   },
   "constant:3_operator:8_variable:6": {
     "signature": "constant:3_operator:8_variable:6",
@@ -167,10 +167,10 @@
       "synth_distribution_*_identity",
       "synth_distribution_*_identity"
     ],
-    "avg_energy_reduction": 15.377102803738302,
+    "avg_energy_reduction": 15.344755244755229,
     "success_rate": 1.0,
-    "attempts": 428,
-    "usage_count": 428
+    "attempts": 429,
+    "usage_count": 429
   },
   "constant:5_operator:7_variable:3": {
     "signature": "constant:5_operator:7_variable:3",
@@ -200,15 +200,15 @@
   "constant:4_operator:5_variable:2": {
     "signature": "constant:4_operator:5_variable:2",
     "transform_sequence": [
+      "synth_distribution_^_identity",
       "algebraic_factor",
-      "power_zero_elim",
-      "synth_distribution_*_identity",
-      "const_fold"
+      "const_fold",
+      "commutativity_canonicalize"
     ],
-    "avg_energy_reduction": 6.219664492077692,
+    "avg_energy_reduction": 6.210031522343185,
     "success_rate": 1.0,
-    "attempts": 5365,
-    "usage_count": 5365
+    "attempts": 5393,
+    "usage_count": 5393
   },
   "constant:6_operator:7_variable:4": {
     "signature": "constant:6_operator:7_variable:4",
@@ -236,10 +236,10 @@
       "synth_distribution_*_identity",
       "synth_logic_basics_and_identity"
     ],
-    "avg_energy_reduction": 6.873557852617417,
+    "avg_energy_reduction": 6.822393949358642,
     "success_rate": 1.0,
-    "attempts": 2999,
-    "usage_count": 2999
+    "attempts": 3041,
+    "usage_count": 3041
   },
   "constant:2_function_def:1_identifier:4_meta:1_operator:4_return_stmt:1_variable:1": {
     "signature": "constant:2_function_def:1_identifier:4_meta:1_operator:4_return_stmt:1_variable:1",
@@ -730,10 +730,10 @@
       "synth_distribution_*_annihilation",
       "learned_discovered_+_0_identity"
     ],
-    "avg_energy_reduction": 10.311338141025626,
+    "avg_energy_reduction": 10.304359999999985,
     "success_rate": 1.0,
-    "attempts": 1248,
-    "usage_count": 1248
+    "attempts": 1250,
+    "usage_count": 1250
   },
   "constant:2_function_def:1_identifier:2_meta:1_operator:5_return_stmt:1_variable:1": {
     "signature": "constant:2_function_def:1_identifier:2_meta:1_operator:5_return_stmt:1_variable:1",
@@ -775,10 +775,10 @@
       "distributive_expand",
       "algebraic_factor"
     ],
-    "avg_energy_reduction": 10.567356124743744,
+    "avg_energy_reduction": 10.567950496104102,
     "success_rate": 1.0,
-    "attempts": 9331,
-    "usage_count": 9331
+    "attempts": 9373,
+    "usage_count": 9373
   },
   "constant:3_operator:5_variable:1": {
     "signature": "constant:3_operator:5_variable:1",
@@ -828,10 +828,10 @@
       "add_zero_elim",
       "add_zero_elim"
     ],
-    "avg_energy_reduction": 5.8023291925466784,
+    "avg_energy_reduction": 5.799793174767416,
     "success_rate": 1.0,
-    "attempts": 966,
-    "usage_count": 966
+    "attempts": 967,
+    "usage_count": 967
   },
   "operator:5_variable:2": {
     "signature": "operator:5_variable:2",
@@ -871,12 +871,13 @@
   "constant:1_operator:2_variable:2": {
     "signature": "constant:1_operator:2_variable:2",
     "transform_sequence": [
-      "synth_distribution_+_identity"
+      "synth_distribution_*_identity",
+      "bool_idempotent"
     ],
-    "avg_energy_reduction": 4.535611374407721,
+    "avg_energy_reduction": 4.537948282370848,
     "success_rate": 1.0,
-    "attempts": 5275,
-    "usage_count": 5275
+    "attempts": 5298,
+    "usage_count": 5298
   },
   "constant:3_function_def:1_identifier:4_meta:1_operator:5_return_stmt:1_variable:1": {
     "signature": "constant:3_function_def:1_identifier:4_meta:1_operator:5_return_stmt:1_variable:1",
@@ -970,10 +971,10 @@
     "transform_sequence": [
       "deriv_sin"
     ],
-    "avg_energy_reduction": 3.1062572198687968,
+    "avg_energy_reduction": 3.1063928981987154,
     "success_rate": 1.0,
-    "attempts": 7791,
-    "usage_count": 7791
+    "attempts": 7829,
+    "usage_count": 7829
   },
   "constant:2_function_def:1_identifier:2_meta:1_operator:3_return_stmt:1_variable:1": {
     "signature": "constant:2_function_def:1_identifier:2_meta:1_operator:3_return_stmt:1_variable:1",
@@ -989,10 +990,10 @@
     "transform_sequence": [
       "synth_distribution_*_identity"
     ],
-    "avg_energy_reduction": 4.5976673695311465,
+    "avg_energy_reduction": 4.597391648004525,
     "success_rate": 1.0,
-    "attempts": 7588,
-    "usage_count": 7588
+    "attempts": 7591,
+    "usage_count": 7591
   },
   "constant:3_operator:6_variable:2": {
     "signature": "constant:3_operator:6_variable:2",
@@ -1007,23 +1008,23 @@
     "signature": "constant:1_operator:3_variable:1",
     "transform_sequence": [
       "synth_distribution_*_identity",
-      "synth_logic_not_involution"
+      "double_neg"
     ],
-    "avg_energy_reduction": 4.697751994198452,
+    "avg_energy_reduction": 4.702054100968946,
     "success_rate": 1.0,
-    "attempts": 6895,
-    "usage_count": 6895
+    "attempts": 6913,
+    "usage_count": 6913
   },
   "constant:2_operator:2_variable:1": {
     "signature": "constant:2_operator:2_variable:1",
     "transform_sequence": [
-      "chemistry_stoich_coeff_one",
-      "synth_distribution_*_identity"
+      "synth_distribution_*_identity",
+      "synth_logic_and_annihilation"
     ],
-    "avg_energy_reduction": 4.400528266518654,
+    "avg_energy_reduction": 4.395453774384744,
     "success_rate": 1.0,
-    "attempts": 23473,
-    "usage_count": 23473
+    "attempts": 23580,
+    "usage_count": 23580
   },
   "operator:6_variable:3": {
     "signature": "operator:6_variable:3",
@@ -1039,12 +1040,13 @@
   "constant:1_operator:4_variable:4": {
     "signature": "constant:1_operator:4_variable:4",
     "transform_sequence": [
-      "learned_discovered_+_0_annihilation"
+      "synth_distribution_+_identity",
+      "bool_idempotent"
     ],
-    "avg_energy_reduction": 5.547122665320614,
+    "avg_energy_reduction": 5.546986128625541,
     "success_rate": 1.0,
-    "attempts": 3962,
-    "usage_count": 3962
+    "attempts": 3965,
+    "usage_count": 3965
   },
   "constant:4_function_def:1_identifier:1_meta:1_operator:3_return_stmt:1": {
     "signature": "constant:4_function_def:1_identifier:1_meta:1_operator:3_return_stmt:1",
@@ -1775,10 +1777,10 @@
       "synth_distribution_*_identity",
       "concept_contradiction"
     ],
-    "avg_energy_reduction": 4.996138743455548,
+    "avg_energy_reduction": 4.986186770428067,
     "success_rate": 1.0,
-    "attempts": 764,
-    "usage_count": 764
+    "attempts": 771,
+    "usage_count": 771
   },
   "constant:1_operator:8_variable:8": {
     "signature": "constant:1_operator:8_variable:8",
@@ -1845,14 +1847,12 @@
   "constant:2_operator:3_variable:1": {
     "signature": "constant:2_operator:3_variable:1",
     "transform_sequence": [
-      "synth_distribution_*_identity",
-      "deriv_power_rule",
-      "synth_distribution_^_identity"
+      "synth_distribution_*_identity"
     ],
-    "avg_energy_reduction": 2.780215343203233,
+    "avg_energy_reduction": 2.7812793034159435,
     "success_rate": 1.0,
-    "attempts": 1486,
-    "usage_count": 1486
+    "attempts": 1493,
+    "usage_count": 1493
   },
   "constant:2_operator:4_variable:2": {
     "signature": "constant:2_operator:4_variable:2",
@@ -1873,12 +1873,12 @@
     "transform_sequence": [
       "synth_distribution_*_identity",
       "bool_idempotent",
-      "synth_logic_not_involution"
+      "double_neg"
     ],
-    "avg_energy_reduction": 8.854575163398685,
+    "avg_energy_reduction": 8.873870967741928,
     "success_rate": 1.0,
-    "attempts": 153,
-    "usage_count": 153
+    "attempts": 155,
+    "usage_count": 155
   },
   "constant:1_operator:2_variable:1": {
     "signature": "constant:1_operator:2_variable:1",
@@ -1886,10 +1886,10 @@
       "deriv_power_rule",
       "synth_distribution_^_identity"
     ],
-    "avg_energy_reduction": 4.1767767408471315,
+    "avg_energy_reduction": 4.178832378223535,
     "success_rate": 1.0,
-    "attempts": 1393,
-    "usage_count": 1393
+    "attempts": 1396,
+    "usage_count": 1396
   },
   "constant:2_operator:5_variable:1": {
     "signature": "constant:2_operator:5_variable:1",
@@ -1979,13 +1979,13 @@
   "operator:4_variable:1": {
     "signature": "operator:4_variable:1",
     "transform_sequence": [
-      "synth_logic_not_involution",
-      "synth_logic_not_involution"
+      "double_neg",
+      "double_neg"
     ],
     "avg_energy_reduction": 7.8,
     "success_rate": 1.0,
-    "attempts": 19,
-    "usage_count": 19
+    "attempts": 20,
+    "usage_count": 20
   },
   "constant:3_operator:2": {
     "signature": "constant:3_operator:2",
@@ -1993,10 +1993,10 @@
       "const_fold",
       "const_fold"
     ],
-    "avg_energy_reduction": 4.344571484413175,
+    "avg_energy_reduction": 4.347294803302575,
     "success_rate": 1.0,
-    "attempts": 10233,
-    "usage_count": 10233
+    "attempts": 10295,
+    "usage_count": 10295
   },
   "constant:1_operator:4_variable:3": {
     "signature": "constant:1_operator:4_variable:3",
@@ -2021,10 +2021,10 @@
     "transform_sequence": [
       "add_zero_elim"
     ],
-    "avg_energy_reduction": 3.9454545454545475,
+    "avg_energy_reduction": 3.944117647058826,
     "success_rate": 1.0,
-    "attempts": 33,
-    "usage_count": 33
+    "attempts": 34,
+    "usage_count": 34
   },
   "constant:2_operator:7_variable:5": {
     "signature": "constant:2_operator:7_variable:5",
@@ -2059,13 +2059,13 @@
   "constant:1_operator:4_variable:1": {
     "signature": "constant:1_operator:4_variable:1",
     "transform_sequence": [
-      "synth_logic_not_involution",
+      "double_neg",
       "synth_distribution_*_identity"
     ],
-    "avg_energy_reduction": 8.22768595041324,
+    "avg_energy_reduction": 8.242460317460335,
     "success_rate": 1.0,
-    "attempts": 121,
-    "usage_count": 121
+    "attempts": 126,
+    "usage_count": 126
   },
   "constant:3_operator:8_variable:4": {
     "signature": "constant:3_operator:8_variable:4",
@@ -2324,8 +2324,8 @@
     ],
     "avg_energy_reduction": 4.14999999999994,
     "success_rate": 1.0,
-    "attempts": 1395,
-    "usage_count": 1395
+    "attempts": 1397,
+    "usage_count": 1397
   },
   "constant:1_operator:1": {
     "signature": "constant:1_operator:1",
@@ -2334,8 +2334,8 @@
     ],
     "avg_energy_reduction": 0.75,
     "success_rate": 1.0,
-    "attempts": 8506,
-    "usage_count": 8506
+    "attempts": 8530,
+    "usage_count": 8530
   },
   "constant:2_operator:7_variable:3": {
     "signature": "constant:2_operator:7_variable:3",
@@ -2352,12 +2352,12 @@
   "operator:1_variable:2": {
     "signature": "operator:1_variable:2",
     "transform_sequence": [
-      "division_self_elim"
+      "self_subtraction"
     ],
-    "avg_energy_reduction": 2.7679389312977234,
+    "avg_energy_reduction": 2.7729323308270812,
     "success_rate": 1.0,
-    "attempts": 262,
-    "usage_count": 262
+    "attempts": 266,
+    "usage_count": 266
   },
   "operator:4_variable:5": {
     "signature": "operator:4_variable:5",
@@ -2382,12 +2382,12 @@
   "operator:3_variable:4": {
     "signature": "operator:3_variable:4",
     "transform_sequence": [
-      "concept_subtractive_self"
+      "bool_idempotent"
     ],
-    "avg_energy_reduction": 3.23690476190476,
+    "avg_energy_reduction": 3.2069767441860453,
     "success_rate": 1.0,
-    "attempts": 84,
-    "usage_count": 84
+    "attempts": 86,
+    "usage_count": 86
   },
   "constant:1_operator:5_variable:4": {
     "signature": "constant:1_operator:5_variable:4",
@@ -2395,32 +2395,32 @@
       "learned_discovered_+_0_annihilation",
       "learned_discovered_and_0_annihilation"
     ],
-    "avg_energy_reduction": 7.522222222222221,
+    "avg_energy_reduction": 7.521978021978021,
     "success_rate": 1.0,
-    "attempts": 90,
-    "usage_count": 90
+    "attempts": 91,
+    "usage_count": 91
   },
   "constant:4_operator:3": {
     "signature": "constant:4_operator:3",
     "transform_sequence": [
       "const_fold",
-      "const_fold",
+      "chemistry_stoich_coeff_one",
       "const_fold"
     ],
-    "avg_energy_reduction": 7.23021276595741,
+    "avg_energy_reduction": 7.245416666666629,
     "success_rate": 1.0,
-    "attempts": 470,
-    "usage_count": 470
+    "attempts": 480,
+    "usage_count": 480
   },
   "constant:1_operator:11_variable:6": {
     "signature": "constant:1_operator:11_variable:6",
     "transform_sequence": [
       "learned_discovered_+_0_annihilation"
     ],
-    "avg_energy_reduction": 6.208139534883726,
+    "avg_energy_reduction": 6.200000000000005,
     "success_rate": 1.0,
-    "attempts": 86,
-    "usage_count": 86
+    "attempts": 87,
+    "usage_count": 87
   },
   "operator:2_variable:2": {
     "signature": "operator:2_variable:2",

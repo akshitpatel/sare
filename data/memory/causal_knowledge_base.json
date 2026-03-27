@@ -4,19 +4,19 @@
       "operator": "*",
       "desc": "*(x, 1) \u2192 x",
       "confidence": 0.99,
-      "count": 3546
+      "count": 3554
     },
     "neg::neg(neg(x)) \u2192 x": {
       "operator": "neg",
       "desc": "neg(neg(x)) \u2192 x",
       "confidence": 0.99,
-      "count": 1699
+      "count": 1715
     },
     "+::+(x, 0) \u2192 x": {
       "operator": "+",
       "desc": "+(x, 0) \u2192 x",
       "confidence": 0.99,
-      "count": 3193
+      "count": 3199
     },
     "or::or(x, false) \u2192 x": {
       "operator": "or",
@@ -40,7 +40,7 @@
       "operator": "+",
       "desc": "+(x, 0) \u2192 0",
       "confidence": 0.99,
-      "count": 772
+      "count": 773
     },
     "neg::neg(x, 0) \u2192 0": {
       "operator": "neg",
@@ -346,7 +346,7 @@
       "operator": "or",
       "desc": "or(c1, c2) \u2192 c3",
       "confidence": 0.8,
-      "count": 1
+      "count": 2
     },
     "-::-(c1, c2) \u2192 c3": {
       "operator": "-",

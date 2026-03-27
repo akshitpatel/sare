@@ -18620,5 +18620,181 @@
   ],
   "d8cc1e226ceddf8e": [
     "mul_one_elim"
+  ],
+  "ca2056299c67a0d3": [
+    "bool_or_false"
+  ],
+  "2cbba98f9f71327b": [
+    "double_neg"
+  ],
+  "d8ec8b746648e726": [
+    "mul_one_elim"
+  ],
+  "8c7f387eb5ea4c6d": [
+    "bool_or_false",
+    "bool_or_false"
+  ],
+  "ce7d4ca20a7674e2": [
+    "double_neg"
+  ],
+  "c1e904966d6177ae": [
+    "double_neg"
+  ],
+  "74ad0766c2254bca": [
+    "synth_arithmetic_*_self_inverse",
+    "synth_factoring_/_identity"
+  ],
+  "72686118167eca78": [
+    "double_neg"
+  ],
+  "24cd8c48c13f4ec5": [
+    "double_neg",
+    "double_neg",
+    "double_neg"
+  ],
+  "27bd9572f289a958": [
+    "synth_arithmetic_*_self_inverse",
+    "commutativity_canonicalize"
+  ],
+  "c5892ca0eb6e168c": [
+    "synth_factoring_*_identity",
+    "synth_factoring_*_identity"
+  ],
+  "d26041103145df0b": [
+    "double_neg"
+  ],
+  "917bacc8d7e4b7e8": [
+    "double_neg"
+  ],
+  "4747153f5aeebce7": [
+    "synth_distribution_+_identity"
+  ],
+  "31ece3430f02376f": [
+    "double_neg"
+  ],
+  "8f90ab05a8a02e0e": [
+    "synth_arithmetic_*_self_inverse",
+    "synth_arithmetic_*_self_inverse",
+    "const_fold",
+    "const_fold"
+  ],
+  "2fe103ccd7f049a9": [
+    "double_neg"
+  ],
+  "d4ab2dae69605d26": [
+    "macro_add_mul_8da76e79"
+  ],
+  "c9cc618204be1b6f": [
+    "double_neg",
+    "bool_and_true"
+  ],
+  "6e62d1a1b27351f0": [
+    "bool_idempotent",
+    "double_neg"
+  ],
+  "62fdc665b0e14ae3": [
+    "double_neg"
+  ],
+  "c463a956f5746e05": [
+    "double_neg",
+    "double_neg"
+  ],
+  "db1f446bf84f6706": [
+    "double_neg"
+  ],
+  "98832d2fdfed7ef6": [
+    "synth_distribution_+_identity",
+    "synth_distribution_+_identity"
+  ],
+  "7d7fac5a18fa7f4b": [
+    "double_neg"
+  ],
+  "0d153af927754fda": [
+    "double_neg"
+  ],
+  "d6d557a7d71fca3c": [
+    "double_neg",
+    "bool_and_true"
+  ],
+  "a85d7f875e510495": [
+    "synth_distribution_+_identity",
+    "synth_distribution_+_identity",
+    "commutativity_canonicalize"
+  ],
+  "f4af54e911574b3d": [
+    "double_neg"
+  ],
+  "632e7555b8de800f": [
+    "add_zero_elim"
+  ],
+  "caf2eba0d37f6f69": [
+    "double_neg"
+  ],
+  "f8eaeb816879386b": [
+    "distributive_expand",
+    "mul_one_elim",
+    "algebraic_factor"
+  ],
+  "ede5b9d25fc5f3ef": [
+    "double_neg"
+  ],
+  "01c83f7acb780902": [
+    "double_neg"
+  ],
+  "c980e59ea47efd41": [
+    "macro_add_const_f9f3d713",
+    "const_fold"
+  ],
+  "48a8d9d87a1de413": [
+    "synth_distribution_+_identity"
+  ],
+  "b410c12a119677f9": [
+    "synth_distribution_+_identity",
+    "synth_distribution_+_identity"
+  ],
+  "3084cc3af563994f": [
+    "double_neg"
+  ],
+  "321a198656146dfb": [
+    "synth_distribution_+_identity"
+  ],
+  "56ffb5c87b2699c0": [
+    "double_neg",
+    "double_neg"
+  ],
+  "d30569faa05b8fa0": [
+    "synth_arithmetic_*_self_inverse"
+  ],
+  "ef285e6d98df3cec": [
+    "double_neg"
+  ],
+  "ed4446cad37c29cf": [
+    "double_neg",
+    "double_neg"
+  ],
+  "fea16726fd9dcbc6": [
+    "add_zero_elim"
+  ],
+  "c2a2d00d34770476": [
+    "macro_add_mul_8da76e79"
+  ],
+  "8d1e6a5b1a522e17": [
+    "double_neg"
+  ],
+  "3e163072bd066498": [
+    "macro_add_mul_8da76e79"
+  ],
+  "9276b112c1e799b6": [
+    "macro_add_mul_8da76e79",
+    "const_fold",
+    "const_fold",
+    "const_fold"
+  ],
+  "d93a33b79e83ef67": [
+    "add_zero_elim"
+  ],
+  "3e64361b9611be50": [
+    "double_neg",
+    "double_neg"
   ]
 }

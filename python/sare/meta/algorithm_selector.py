@@ -1,6 +1,7 @@
 """Epsilon-greedy algorithm selector — picks best strategy per task type."""
 import json
 import logging
+import os
 import random
 import time
 from pathlib import Path
@@ -75,7 +76,7 @@ class AlgorithmSelector:
                 "total_selections": self._total_selections,
             }
             _STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-            tmp = _STATE_PATH.with_suffix(".tmp")
+            tmp = _STATE_PATH.parent / f"algorithm_selector.{os.getpid()}.tmp"
             tmp.write_text(json.dumps(summary, indent=2))
             os.replace(tmp, _STATE_PATH)
         except Exception as e:
