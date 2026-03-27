@@ -1,0 +1,62 @@
+{
+  "arithmetician": {
+    "agent_id": "arithmetician",
+    "skill_profile": {},
+    "trust_score": 0.086,
+    "personality": {
+      "curiosity": 0.5,
+      "stubbornness": 0.5,
+      "collaboration": 0.5
+    },
+    "total_interactions": 0,
+    "sessions_seen": 4,
+    "episodic_count": 0,
+    "semantic_count": 0,
+    "top_skills": [],
+    "recent_episodic": [],
+    "top_facts": [],
+    "episodic_memory": [],
+    "semantic_memory": [],
+    "created_at": 1773561251.696555
+  },
+  "logician": {
+    "agent_id": "logician",
+    "skill_profile": {},
+    "trust_score": 0.086,
+    "personality": {
+      "curiosity": 0.5,
+      "stubbornness": 0.5,
+      "collaboration": 0.5
+    },
+    "total_interactions": 0,
+    "sessions_seen": 4,
+    "episodic_count": 0,
+    "semantic_count": 0,
+    "top_skills": [],
+    "recent_episodic": [],
+    "top_facts": [],
+    "episodic_memory": [],
+    "semantic_memory": [],
+    "created_at": 1773561251.696565
+  },
+  "physicist": {
+    "agent_id": "physicist",
+    "skill_profile": {},
+    "trust_score": 0.086,
+    "personality": {
+      "curiosity": 0.5,
+      "stubbornness": 0.5,
+      "collaboration": 0.5
+    },
+    "total_interactions": 0,
+    "sessions_seen": 4,
+    "episodic_count": 0,
+    "semantic_count": 0,
+    "top_skills": [],
+    "recent_episodic": [],
+    "top_facts": [],
+    "episodic_memory": [],
+    "semantic_memory": [],
+    "created_at": 1773561251.696566
+  }
+}

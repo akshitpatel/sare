@@ -1,0 +1,17 @@
+{
+  "generated_at": 1774583847.0793831,
+  "targets": [
+    {
+      "file_path": "/Users/akshitpatel/sare/python/sare/transforms/logic_transforms.py",
+      "module_name": "sare.transforms.logic_transforms",
+      "score": 0.15,
+      "reason": "3 synth failures (weighted)",
+      "improvement_type": "extend",
+      "evidence": {
+        "logic_solve_rate": 1.0,
+        "synth_failures": 3
+      },
+      "domain": "general"
+    }
+  ]
+}

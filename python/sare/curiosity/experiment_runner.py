@@ -808,6 +808,15 @@ class ExperimentRunner:
                 except Exception:
                     pass
 
+                # Option B: Hypothesis engine — generate forward predictions
+                _hypotheses = []
+                try:
+                    from sare.search.hypothesis_engine import get_hypothesis_engine
+                    _hyp_engine = get_hypothesis_engine()
+                    _hypotheses = _hyp_engine.generate(graph, domain or "general")
+                except Exception:
+                    pass
+
                 outcome = self._search(graph, transforms=_search_transforms)
                 solved, final_graph, proof_steps, proof_nl = self._parse_search_outcome(outcome, graph, energy_before)
 
@@ -927,6 +936,14 @@ class ExperimentRunner:
         try:
             from sare.meta.algorithm_selector import get_algorithm_selector as _get_as
             _get_as().record_outcome(domain or "algebra", "beam_search", solved)
+        except Exception:
+            pass
+
+        # Record hypothesis engine outcome
+        try:
+            if _hypotheses:
+                from sare.search.hypothesis_engine import get_hypothesis_engine
+                get_hypothesis_engine().record(solved)
         except Exception:
             pass
 

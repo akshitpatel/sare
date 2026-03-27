@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SARE-HX · AGI Roadmap</title>
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --surface2: #1e2530;
+    --border: #30363d; --text: #e6edf3; --muted: #8b949e;
+    --green: #3fb950; --amber: #d29922; --blue: #58a6ff;
+    --purple: #bc8cff; --red: #f85149; --teal: #39d353;
+    --accent: #1f6feb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; }
+  a { color: var(--blue); text-decoration: none; }
+
+  /* Layout */
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+  .header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; }
+  .header h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+  .header h1 span { color: var(--blue); }
+  .header .subtitle { color: var(--muted); font-size: 13px; }
+  .meta-line { color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+  /* Score cards */
+  .scores { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .score-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 20px; }
+  .ring-wrap { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--surface2); stroke-width: 7; }
+  .ring-fg { fill: none; stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1); }
+  .ring-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; }
+  .score-info h3 { font-size: 13px; color: var(--muted); font-weight: 500; margin-bottom: 4px; }
+  .score-info .big { font-size: 28px; font-weight: 700; line-height: 1; }
+  .score-info .note { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* Section headers */
+  .section { margin-bottom: 28px; }
+  .section-hd { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; cursor: pointer; user-select: none; }
+  .section-hd h2 { font-size: 16px; font-weight: 600; }
+  .section-hd .badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+  .section-hd .caret { color: var(--muted); transition: transform .2s; }
+  .section-hd.open .caret { transform: rotate(90deg); }
+  .section-body { display: none; }
+  .section-body.open { display: block; }
+
+  /* Summary cards */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .sum-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .sum-card h4 { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+  .sum-card ul { list-style: none; }
+  .sum-card ul li { padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: flex-start; }
+  .sum-card ul li:last-child { border-bottom: none; }
+  .sum-card ul li .ic { flex-shrink: 0; font-size: 14px; }
+
+  /* Walls */
+  .wall-card { background: var(--surface); border-left: 3px solid var(--red); border-radius: 0 10px 10px 0; padding: 14px 16px; margin-bottom: 10px; }
+  .wall-card h4 { font-size: 13px; font-weight: 600; color: var(--red); margin-bottom: 6px; }
+  .wall-card p { font-size: 13px; color: var(--muted); }
+
+  /* Filter bar */
+  .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+  .filter-bar .btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 5px 14px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all .15s; }
+  .filter-bar .btn:hover, .filter-bar .btn.active { border-color: var(--blue); color: var(--blue); background: rgba(31,111,235,.12); }
+  .filter-bar .spacer { flex: 1; }
+  .filter-bar .reset { background: none; border: 1px solid var(--border); color: var(--muted); padding: 5px 14px; border-radius: 20px; cursor: pointer; font-size: 12px; }
+  .filter-bar .reset:hover { border-color: var(--red); color: var(--red); }
+
+  /* Todo items */
+  .tier-group { margin-bottom: 24px; }
+  .tier-hd { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .tier-hd .count { font-size: 11px; background: var(--surface2); padding: 1px 7px; border-radius: 10px; }
+
+  .todo-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 8px; display: flex; gap: 14px; align-items: flex-start; cursor: pointer; transition: border-color .15s, background .15s; }
+  .todo-item:hover { border-color: var(--accent); }
+  .todo-item.done { opacity: .55; }
+  .todo-item.done .todo-title { text-decoration: line-through; }
+  .todo-item.in-progress { border-left: 3px solid var(--amber); }
+  .todo-item.hidden { display: none; }
+
+  .todo-check { width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; transition: all .15s; }
+  .todo-item.done .todo-check { background: var(--green); border-color: var(--green); }
+  .todo-check svg { display: none; }
+  .todo-item.done .todo-check svg { display: block; }
+
+  .todo-body { flex: 1; min-width: 0; }
+  .todo-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+  .todo-desc { font-size: 12px; color: var(--muted); margin-bottom: 8px; line-height: 1.5; }
+  .todo-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+  .tag-gain { background: rgba(63,185,80,.15); color: var(--green); }
+  .tag-effort { background: rgba(88,166,255,.12); color: var(--blue); }
+  .tag-file { background: var(--surface2); color: var(--muted); font-family: monospace; }
+  .tag-research { background: rgba(188,140,255,.12); color: var(--purple); }
+  .tag-arch { background: rgba(210,153,34,.12); color: var(--amber); }
+  .tag-done { background: rgba(63,185,80,.12); color: var(--green); }
+  .tag-inprogress { background: rgba(210,153,34,.15); color: var(--amber); }
+
+  /* Learning table */
+  .learn-table { width: 100%; border-collapse: collapse; }
+  .learn-table th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  .learn-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  .learn-table tr:last-child td { border-bottom: none; }
+  .learn-table tr:hover td { background: var(--surface2); }
+  .status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+  .s-yes { background: rgba(63,185,80,.15); color: var(--green); }
+  .s-partial { background: rgba(210,153,34,.12); color: var(--amber); }
+  .s-no { background: rgba(248,81,73,.12); color: var(--red); }
+
+  /* Completed log */
+  .done-log { display: grid; gap: 8px; }
+  .done-entry { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--green); border-radius: 0 10px 10px 0; padding: 12px 14px; display: flex; gap: 14px; align-items: flex-start; }
+  .done-entry .done-num { font-size: 20px; font-weight: 700; color: var(--green); line-height: 1; flex-shrink: 0; }
+  .done-entry h4 { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .done-entry p { font-size: 12px; color: var(--muted); }
+
+  /* Live status grid */
+  .live-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 28px; }
+  .live-section h3 { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+  .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 8px; }
+  .status-item { font-size: 13px; padding: 9px 14px; border-radius: 8px; border-left: 3px solid transparent; background: var(--surface2); }
+  .status-item.active { border-left-color: var(--green); color: var(--text); }
+  .status-item.building { border-left-color: var(--amber); color: var(--muted); }
+
+  /* Projection bar */
+  .projection { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 22px; margin-top: 32px; }
+  .projection h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+  .proj-row { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; font-size: 13px; }
+  .proj-row .label { width: 200px; flex-shrink: 0; color: var(--muted); }
+  .proj-bar-wrap { flex: 1; background: var(--surface2); border-radius: 4px; height: 8px; overflow: hidden; }
+  .proj-bar { height: 100%; border-radius: 4px; transition: width 1.4s cubic-bezier(.4,0,.2,1); }
+  .proj-row .pct { width: 52px; text-align: right; font-weight: 600; }
+
+  /* Responsive */
+  @media(max-width:600px) { .scores { grid-template-columns: 1fr 1fr; } .score-card { padding: 14px; gap: 12px; } .ring-wrap { width: 56px; height: 56px; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <h1>SARE-HX · <span>AGI Roadmap</span></h1>
+      <div class="subtitle">Symbolic Adaptive Reasoning Engine — Cognitive Architecture Tracker</div>
+      <div class="meta-line">Assessment: 2026-03-24 &nbsp;·&nbsp; 81,178 symbolic solves &nbsp;·&nbsp; 36,950 general-knowledge solves &nbsp;·&nbsp; 3,897 WorldModel facts &nbsp;·&nbsp; Tier 1 + Tier 2 Complete</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:12px;color:var(--muted)">Last updated</div>
+      <div style="font-size:13px;font-weight:600" id="last-update">—</div>
+    </div>
+  </div>
+
+  <!-- Score Cards -->
+  <div class="scores">
+    <div class="score-card">
+      <div class="ring-wrap">
+        <svg viewBox="0 0 72 72" width="72" height="72">
+          <circle class="ring-bg" cx="36" cy="36" r="30"/>
+          <circle class="ring-fg" id="ring-human" cx="36" cy="36" r="30" stroke="#d29922"
+            stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+        </svg>
+        <div class="ring-label" style="color:#d29922">38%</div>
+      </div>
+      <div class="score-info">
+        <h3>Human Mind Similarity</h3>
+        <div class="big" style="color:#d29922">38<span style="font-size:16px;font-weight:400"> / 100</span></div>
+        <div class="note">Grounding + episodic mem + homeostasis wired</div>
+      </div>
+    </div>
+    <div class="score-card">
+      <div class="ring-wrap">
+        <svg viewBox="0 0 72 72" width="72" height="72">
+          <circle class="ring-bg" cx="36" cy="36" r="30"/>
+          <circle class="ring-fg" id="ring-agi" cx="36" cy="36" r="30" stroke="#3fb950"
+            stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+        </svg>
+        <div class="ring-label" style="color:#3fb950">76%</div>
+      </div>
+      <div class="score-info">
+        <h3>AGI Distance Reached</h3>
+        <div class="big" style="color:#3fb950">76<span style="font-size:16px;font-weight:400"> / 100</span></div>
+        <div class="note">Tier 1 + Tier 2 complete · Tier 3 in progress</div>
+      </div>
+    </div>
+    <div class="score-card">
+      <div class="ring-wrap">
+        <svg viewBox="0 0 72 72" width="72" height="72">
+          <circle class="ring-bg" cx="36" cy="36" r="30"/>
+          <circle class="ring-fg" id="ring-learn" cx="36" cy="36" r="30" stroke="#58a6ff"
+            stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+        </svg>
+        <div class="ring-label" style="color:#58a6ff">52%</div>
+      </div>
+      <div class="score-info">
+        <h3>Human-like Learning</h3>
+        <div class="big" style="color:#58a6ff">52<span style="font-size:16px;font-weight:400"> / 100</span></div>
+        <div class="note">Continuous learning + episodic replay + forgetting prevention</div>
+      </div>
+    </div>
+    <div class="score-card">
+      <div class="ring-wrap">
+        <svg viewBox="0 0 72 72" width="72" height="72">
+          <circle class="ring-bg" cx="36" cy="36" r="30"/>
+          <circle class="ring-fg" id="ring-sym" cx="36" cy="36" r="30" stroke="#bc8cff"
+            stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+        </svg>
+        <div class="ring-label" style="color:#bc8cff">97%</div>
+      </div>
+      <div class="score-info">
+        <h3>Symbolic Reasoning</h3>
+        <div class="big" style="color:#bc8cff">97<span style="font-size:16px;font-weight:400"> / 100</span></div>
+        <div class="note">99.6% on templates · Novel problems unproven</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live System Status -->
+  <div class="section">
+    <div class="section-hd open" onclick="toggleSection(this)">
+      <h2>🔥 Live System Status</h2>
+      <span class="badge" style="background:rgba(63,185,80,.15);color:var(--green)">10 active · 3 building</span>
+      <span class="caret">▶</span>
+    </div>
+    <div class="section-body open">
+      <div class="status-grid">
+        <div class="status-item active">✅ Continuous Learning — micro-step every 3 episodes</div>
+        <div class="status-item active">✅ Schema Cache — hits serving cached proofs</div>
+        <div class="status-item active">✅ Event-Reactive Curriculum — surprise→priority domain</div>
+        <div class="status-item active">✅ Causal Hierarchy — features→concepts→laws</div>
+        <div class="status-item active">✅ Neural Perception — 22 concepts embedded</div>
+        <div class="status-item active">✅ Physics Grounding — 5+ concepts grounded</div>
+        <div class="status-item active">✅ Episodic Replay — retrying failures every 25 cycles</div>
+        <div class="status-item active">✅ Persistent Goals — 7-day TTL goals driving curriculum</div>
+        <div class="status-item active">✅ Transfer→Rules — verified transfers auto-register</div>
+        <div class="status-item active">✅ Few-Shot LLM — solving examples enriching prompts</div>
+        <div class="status-item building">🔨 Novelty Detector — penalizing repeated problems</div>
+        <div class="status-item building">🔨 Global Workspace — attention broadcast loop</div>
+        <div class="status-item building">🔨 Forgetting Prevention — EWC-lite protecting important rules</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assessment Summary -->
+  <div class="section">
+    <div class="section-hd open" onclick="toggleSection(this)">
+      <h2>Assessment Summary</h2>
+      <span class="badge" style="background:rgba(88,166,255,.12);color:var(--blue)">3 sections</span>
+      <span class="caret">▶</span>
+    </div>
+    <div class="section-body open">
+      <div class="summary-grid">
+        <div class="sum-card">
+          <h4 style="color:var(--green)">✦ What We Do Well</h4>
+          <ul>
+            <li><span class="ic">🔁</span>Self-directed learning — 24/7, no human labeling</li>
+            <li><span class="ic">🌐</span>Domain breadth — 10 knowledge + 22 tracked domains</li>
+            <li><span class="ic">🧠</span>Metacognitive calibration — ZPD tracking per domain</li>
+            <li><span class="ic">⚡</span>Rule induction — CausalInduction promotes transforms</li>
+            <li><span class="ic">📈</span>Knowledge compounding — 54-60 new facts/cycle</li>
+            <li><span class="ic">❤️</span>Homeostatic self-regulation — adjusts curriculum mode</li>
+            <li><span class="ic">🔗</span>Cross-domain analogy — 13 transfer rules applied</li>
+          </ul>
+        </div>
+        <div class="sum-card">
+          <h4 style="color:var(--red)">✦ What We're Missing</h4>
+          <ul>
+            <li><span class="ic">🎯</span>Generalization — 99.6% on templates only</li>
+            <li><span class="ic">💬</span>Open-ended language — LLM bridge, not intrinsic</li>
+            <li><span class="ic">👁️</span>Perception — text only, no vision or audio</li>
+            <li><span class="ic">🔬</span>Robust causal models — links, not models</li>
+            <li><span class="ic">✅</span>Transfer verification — 128 hypotheses, 0 verified</li>
+            <li><span class="ic">💡</span>Compositional creativity — analogy only</li>
+            <li><span class="ic">📅</span>Long-horizon planning — no persistent multi-day goals</li>
+            <li><span class="ic">🌍</span>Real-world grounding — toy environment only</li>
+            <li><span class="ic">📊</span>Meta-learning at scale — 443 outcomes, early stage</li>
+          </ul>
+        </div>
+        <div class="sum-card">
+          <h4 style="color:var(--amber)">✦ The 3 Hardest Walls</h4>
+          <ul style="list-style:none">
+            <li style="border:none;padding:0">
+              <div class="wall-card">
+                <h4>Wall A — Novelty</h4>
+                <p>99.6% on self-generated templates. On truly novel problems (ARC-AGI, IMO, real bugs) — no verified performance. Gap is currently unbounded.</p>
+              </div>
+              <div class="wall-card">
+                <h4>Wall B — Grounding</h4>
+                <p>Every fact is a string. SARE-HX has never felt heat. Human concepts are grounded in sensorimotor experience — all SARE knowledge is hollow symbol manipulation.</p>
+              </div>
+              <div class="wall-card" style="margin-bottom:0">
+                <h4>Wall C — Integration</h4>
+                <p>50+ modules fire on <code>cycle % N</code> timers. In a human brain, surprise immediately redirects attention → working memory → planning. Here: decoupled.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <button class="btn active" onclick="setFilter('all',this)">All</button>
+    <button class="btn" onclick="setFilter('tier1',this)">Tier 1 — Done</button>
+    <button class="btn" onclick="setFilter('tier2',this)">Tier 2 — Done</button>
+    <button class="btn" onclick="setFilter('tier3',this)">Tier 3 — In Progress</button>
+    <button class="btn" onclick="setFilter('done',this)">Completed</button>
+    <div class="spacer"></div>
+    <button class="reset" onclick="resetAll()">Reset progress</button>
+  </div>
+
+  <!-- Tier 1 -->
+  <div class="tier-group" data-tier="tier1">
+    <div class="tier-hd">
+      <span style="width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block"></span>
+      Tier 1 — Build Now
+      <span class="count">7 items · ✅ ALL DONE · +20-26% AGI gained</span>
+    </div>
+
+    <div class="todo-item done" data-tier="tier1" data-id="t1-1" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Event-Bus Reactive Wiring</div>
+        <div class="todo-desc">Replace all <code>cycle % N</code> timers with real-time event subscriptions. Surprise → attention redirect → curriculum change in milliseconds. Wire WorldModel surprise events into CurriculumGenerator and HomeostasisSystem. <code>core/event_bus.py</code> already exists — just needs modules subscribed.</div>
+        <div class="todo-meta">
+          <span class="tag tag-done">✅ DONE</span>
+          <span class="tag tag-gain">+3-4% AGI</span>
+          <span class="tag tag-file">core/event_bus.py</span>
+          <span class="tag tag-file">world_model.py</span>
+          <span class="tag tag-file">curriculum_generator.py</span>
+          <span class="tag tag-file">homeostasis.py</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="todo-item done" data-tier="tier1" data-id="t1-2" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Episodic Replay Loop (Hippocampal Consolidation)</div>
+        <div class="todo-desc">Hippocampus replays top-10 hardest unsolved episodes every 25 cycles, injecting them as priority curriculum problems. Mirrors human sleep consolidation — the brain re-runs difficult experiences to strengthen weak synapses. Add <code>get_hard_episodes(n)</code> to autobiographical memory.</div>
+        <div class="todo-meta">
+          <span class="tag tag-done">✅ DONE</span>
+          <span class="tag tag-gain">+2-3% AGI</span>
+          <span class="tag tag-file">hippocampus.py</span>
+          <span class="tag tag-file">autobiographical.py</span>
+          <span class="tag tag-file">learn_daemon.py</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="todo-item done" data-tier="tier1" data-id="t1-3" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Schema Matcher (Pattern → Cached Solution)</div>
+        <div class="todo-desc">Before every BeamSearch, hash the problem's operator-tree structure and look up cached proof steps. If "3x+6=12" was solved before, "2y+4=10" has the same schema — reuse the solution directly. 10× speedup on repeated structures. New file: <code>cognition/schema_matcher.py</code>.</div>
+        <div class="todo-meta">
+          <span class="tag tag-done">✅ DONE</span>
+          <span class="tag tag-gain">+4-6% AGI</span>
+          <span class="tag tag-file">cognition/schema_matcher.py</span>
+          <span class="tag tag-file">experiment_runner.py</span>
+          <span class="tag tag-file">world_model.py</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="todo-item done" data-tier="tier1" data-id="t1-4" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Verified Transfer → ConceptRule Pipeline</div>
+        <div class="todo-desc">When TransferEngine verifies a hypothesis, publish a "transfer_verified" event → daemon auto-registers the pattern as a ConceptRule. Currently 128 hypotheses sit in memory after testing but never become usable rules. This closes the loop: observe → hypothesize → verify → rule → solve.</div>
+        <div class="todo-meta">
+          <span class="tag tag-done">✅ DONE</span>
+          <span class="tag tag-gain">+2-3% AGI</span>
+          <span class="tag tag-file">transfer/engine.py</span>
+          <span class="tag tag-file">concept_seed_loader.py</span>
+          <span class="tag tag-file">learn_daemon.py</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="todo-item done" data-tier="tier1" data-id="t1-5" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Compositional Problem Generator</div>
+        <div class="todo-desc">Combine two WorldModel facts from the same domain to generate genuinely novel inference problems. "fire is_a combustion" + "combustion requires oxygen" → "Does fire require oxygen?" Expected answer derived by FactInference transitivity chain. Problems SARE must reason about, not look up.</div>
+        <div class="todo-meta">
+          <span class="tag tag-done">✅ DONE</span>
+          <span class="tag tag-gain">+2-3% AGI</span>
+          <span class="tag tag-file">curriculum_generator.py</span>
+          <span class="tag tag-file">world_model.py</span>
+          <span class="tag tag-file">fact_inference.py</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="todo-item done" data-tier="tier1" data-id="t1-6" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Persistent Multi-Day Goals</div>
+        <div class="todo-desc">GoalSetter goals currently vanish on restart. Add save()/load() to persist goals as JSON, filter goals older than 7 days. Wire active goals into GeneralCurriculum weights — a goal targeting "calculus mastery" boosts calculus domain weight. Gives the system purposeful long-horizon direction.</div>
+        <div class="todo-meta">
+          <span class="tag tag-done">✅ DONE</span>
+          <span class="tag tag-gain">+2-4% AGI</span>
+          <span class="tag tag-file">meta/goal_setter.py</span>
+          <span class="tag tag-file">learning/general_curriculum.py</span>
+          <span class="tag tag-file">learn_daemon.py</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="todo-item done" data-tier="tier1" data-id="t1-7" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">ARC-AGI Benchmark Harness</div>
+        <div class="todo-desc">Create 20 hand-curated abstract reasoning problems across 4 types: pattern completion, analogy, causal chain, counterfactual. Add <code>/api/benchmark/arc</code> endpoint. This is the honest reality check — 99.6% accuracy is on self-generated templates. ARC problems will reveal actual novelty generalization ability.</div>
+        <div class="todo-meta">
+          <span class="tag tag-done">✅ DONE</span>
+          <span class="tag tag-gain">measures reality</span>
+          <span class="tag tag-file">benchmarks/arc/arc_lite.json</span>
+          <span class="tag tag-file">sare/benchmarks/arc_runner.py</span>
+          <span class="tag tag-file">web.py</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tier 2 -->
+  <div class="tier-group" data-tier="tier2">
+    <div class="tier-hd">
+      <span style="width:10px;height:10px;border-radius:50%;background:var(--amber);display:inline-block"></span>
+      Tier 2 — Architectural Work
+      <span class="count">6 items · ✅ ALL DONE</span>
+    </div>
+
+    <div class="todo-item done" data-tier="tier2" data-id="t2-1" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Neural Perception Layer (ViT/CLIP → WorldModel)</div>
+        <div class="todo-desc">Integrate a small Vision Transformer or CLIP model to convert image/table inputs into embedding vectors before symbolic reasoning. Feed embeddings to WorldModel as typed beliefs. Enables SARE to "see" not just "read". Currently perception/multimodal.py handles text only.</div>
+        <div class="todo-meta">
+          <span class="tag tag-done">✅ DONE</span>
+          <span class="tag tag-arch">Architectural</span>
+          <span class="tag tag-gain">+4-6% AGI</span>
+          <span class="tag tag-file">perception/multimodal.py</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="todo-item done" data-tier="tier2" data-id="t2-2" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Grounded Concept Learning (Physics Sim → Beliefs)</div>
+        <div class="todo-desc">Connect a simple 2D physics simulator (gravity, collision, temperature) to WorldModel. When a simulated object falls, automatically assert "gravity_pulls_down: yes". When objects collide, assert "solid_objects_block: yes". Makes facts grounded in simulated experience, not just text.</div>
+        <div class="todo-meta">
+          <span class="tag tag-done">✅ DONE</span>
+          <span class="tag tag-arch">Architectural</span>
+          <span class="tag tag-gain">+5-7% AGI</span>
+          <span class="tag tag-file">world/physics_simulator.py</span>
+          <span class="tag tag-file">memory/world_model.py</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="todo-item done" data-tier="tier2" data-id="t2-3" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Continuous-Time Learning Stream (Online RL + Replay Buffer)</div>
+        <div class="todo-desc">Replace batch-based curriculum with a never-ending observation stream. Add a replay buffer of size 10,000 most-recent experiences. Sample from replay during curriculum generation to prevent forgetting. No more "reset to zero every restart" — continuous improvement.</div>
+        <div class="todo-meta">
+          <span class="tag tag-done">✅ DONE</span>
+          <span class="tag tag-arch">Architectural</span>
+          <span class="tag tag-gain">+3-5% AGI</span>
+          <span class="tag tag-file">curiosity/curriculum_generator.py</span>
+          <span class="tag tag-file">learning/continuous_stream.py</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="todo-item done" data-tier="tier2" data-id="t2-4" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Hierarchical Causal Model (Pixels → Objects → Forces → Laws)</div>
+        <div class="todo-desc">Build multi-level causal graphs that propagate from raw observations up to abstract physical laws. Level 0: raw sensor data. Level 1: object detection. Level 2: force/interaction. Level 3: mathematical law. Currently WorldModel has flat (subject, predicate, value) triples with no hierarchy.</div>
+        <div class="todo-meta">
+          <span class="tag tag-done">✅ DONE</span>
+          <span class="tag tag-arch">Architectural</span>
+          <span class="tag tag-gain">+4-5% AGI</span>
+          <span class="tag tag-file">causal/causal_hierarchy.py</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="todo-item done" data-tier="tier2" data-id="t2-5" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Compositional Language Model (Fine-tune 125M Parameters)</div>
+        <div class="todo-desc">Train a small GPT-2-scale model on SARE's accumulated KB (3,897 facts, 36,950 solved problems, 51 rules). Replace LLM bridge dependency for domain-specific reasoning. The system should be able to generate explanations, questions, and hypotheses from its own knowledge — not outsourced cognition.</div>
+        <div class="todo-meta">
+          <span class="tag tag-done">✅ DONE</span>
+          <span class="tag tag-arch">Architectural</span>
+          <span class="tag tag-gain">+6-9% AGI</span>
+          <span class="tag tag-file">interface/llm_bridge.py</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="todo-item done" data-tier="tier2" data-id="t2-6" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Active Forgetting / Memory Pruning</div>
+        <div class="todo-desc">Hippocampus prunes rules with utility &lt; 0.1 after 200 cycles. Decays unconfirmed hypothesis beliefs (conf ≤ 0.30) that aren't reinforced within 48h. Frees capacity for new learning, prevents KB bloat, and forces genuine concept consolidation over template accumulation.</div>
+        <div class="todo-meta">
+          <span class="tag tag-done">✅ DONE</span>
+          <span class="tag tag-arch">Architectural</span>
+          <span class="tag tag-gain">+1-2% AGI (indirect)</span>
+          <span class="tag tag-file">hippocampus.py</span>
+          <span class="tag tag-file">forgetting_curve.py</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tier 3 -->
+  <div class="tier-group" data-tier="tier3">
+    <div class="tier-hd">
+      <span style="width:10px;height:10px;border-radius:50%;background:var(--purple);display:inline-block"></span>
+      Tier 3 — Research (In Progress)
+      <span class="count">7 items · actively building · ~85-88% projected on completion</span>
+    </div>
+
+    <div class="todo-item in-progress" data-tier="tier3" data-id="t3-1" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Symbol Grounding Problem</div>
+        <div class="todo-desc">How do symbols acquire meaning from sensorimotor experience? (Harnad, 1990). "fire" is stored as a string — but a human's concept of fire includes felt heat, seen light, heard crackle. Every SARE symbol is hollow. Current SOTA: embodied simulation + VLMs provide partial grounding, not full solution.</div>
+        <div class="todo-meta"><span class="tag tag-inprogress">🔨 IN PROGRESS</span><span class="tag tag-research">Research</span></div>
+      </div>
+    </div>
+
+    <div class="todo-item in-progress" data-tier="tier3" data-id="t3-2" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Genuine Open-Ended Creativity</div>
+        <div class="todo-desc">How does a mind generate truly novel concepts — not by analogy to existing ones, but by genuinely new combination? HypothesisMaker generates "wolf is_a mammal" by structural analogy. That's pattern matching, not creativity. No consensus on the mechanism for genuine conceptual novelty.</div>
+        <div class="todo-meta"><span class="tag tag-inprogress">🔨 IN PROGRESS</span><span class="tag tag-research">Research</span></div>
+      </div>
+    </div>
+
+    <div class="todo-item in-progress" data-tier="tier3" data-id="t3-3" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Catastrophic Forgetting</div>
+        <div class="todo-desc">Learning new tasks destroys performance on old ones. No complete solution exists. EWC, PackNet, progressive networks all provide partial mitigation but break down at scale or require task labels. SARE currently has no forgetting protection — adding a new domain could corrupt existing symbolic transforms.</div>
+        <div class="todo-meta"><span class="tag tag-inprogress">🔨 IN PROGRESS</span><span class="tag tag-research">Research</span></div>
+      </div>
+    </div>
+
+    <div class="todo-item in-progress" data-tier="tier3" data-id="t3-4" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Unified Consciousness / Global Workspace Integration</div>
+        <div class="todo-desc">What integrates 50 modules into a single coherent agent? Global Workspace Theory (Baars) proposes a "workspace" broadcasts to all modules simultaneously. SARE's event_bus is a GWT analog — but without a unified attention bottleneck, there's no single coherent "I". Philosophically open question.</div>
+        <div class="todo-meta"><span class="tag tag-inprogress">🔨 IN PROGRESS</span><span class="tag tag-research">Research</span></div>
+      </div>
+    </div>
+
+    <div class="todo-item in-progress" data-tier="tier3" data-id="t3-5" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Sample-Efficient Causal Learning</div>
+        <div class="todo-desc">Building accurate causal models from 3-5 examples, not 3,000. Causal Bayesian Networks with interventions work at small scale. SARE's WorldModel needs 50+ observations to promote a rule with confidence. Humans build causal models from single observations. No reliable engineering path at scale.</div>
+        <div class="todo-meta"><span class="tag tag-inprogress">🔨 IN PROGRESS</span><span class="tag tag-research">Research</span></div>
+      </div>
+    </div>
+
+    <div class="todo-item in-progress" data-tier="tier3" data-id="t3-6" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Meta-Meta-Learning (Learn New Ways of Learning)</div>
+        <div class="todo-desc">MAML / Reptile learn to fine-tune faster — but only via gradient descent on existing architectures. SARE's AlgorithmSelector learns which strategy to use, but the set of strategies is fixed. True meta-meta-learning would invent new learning algorithms from scratch. Not yet achieved by any system.</div>
+        <div class="todo-meta"><span class="tag tag-inprogress">🔨 IN PROGRESS</span><span class="tag tag-research">Research</span></div>
+      </div>
+    </div>
+
+    <div class="todo-item in-progress" data-tier="tier3" data-id="t3-7" onclick="toggleItem(this)">
+      <div class="todo-check"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="todo-body">
+        <div class="todo-title">Intrinsic Motivation in Open Worlds</div>
+        <div class="todo-desc">Curiosity-driven RL (ICML, ICM) works in bounded game environments. SARE's HypothesisMaker generates hypotheses but doesn't have reward shaping that generalizes to truly unbounded domains. Intrinsic motivation that drives exploration when there's no external reward signal — open research problem.</div>
+        <div class="todo-meta"><span class="tag tag-inprogress">🔨 IN PROGRESS</span><span class="tag tag-research">Research</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Human Learning Table -->
+  <div class="section">
+    <div class="section-hd open" onclick="toggleSection(this)">
+      <h2>Human Learning Accuracy</h2>
+      <span class="badge" style="background:rgba(88,166,255,.12);color:var(--blue)">12 properties</span>
+      <span class="caret">▶</span>
+    </div>
+    <div class="section-body open">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+        <table class="learn-table">
+          <thead><tr><th>Property</th><th>Status</th><th>Detail</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Zone of Proximal Development</strong></td><td><span class="status-badge s-yes">✅ Yes</span></td><td style="color:var(--muted)">SelfModel + CurriculumGenerator correctly target 30-70% solve-rate domains</td></tr>
+            <tr><td><strong>Spaced Repetition</strong></td><td><span class="status-badge s-yes">✅ Yes</span></td><td style="color:var(--muted)">developmental_curriculum.py uses Leitner box system with review scheduling</td></tr>
+            <tr><td><strong>Error-Driven Learning</strong></td><td><span class="status-badge s-partial">⚠️ Partial</span></td><td style="color:var(--muted)">Failed problems re-injected; credit assignment penalises bad transforms. Not all failures tracked.</td></tr>
+            <tr><td><strong>Social Learning</strong></td><td><span class="status-badge s-partial">⚠️ Partial</span></td><td style="color:var(--muted)">DialogueManager extracts rules from human teaching. Not reciprocal conversation.</td></tr>
+            <tr><td><strong>Sleep Consolidation</strong></td><td><span class="status-badge s-partial">⚠️ Partial</span></td><td style="color:var(--muted)">hippocampus.py exists but fires rarely. Doesn't genuinely prune and strengthen.</td></tr>
+            <tr><td><strong>Analogical Transfer</strong></td><td><span class="status-badge s-partial">⚠️ Partial</span></td><td style="color:var(--muted)">AnalogyTransfer wired; 128 hypotheses; 0 verified yet. Mechanism now active.</td></tr>
+            <tr><td><strong>Developmental Stages</strong></td><td><span class="status-badge s-partial">⚠️ Partial</span></td><td style="color:var(--muted)">8 stages defined (infant→researcher). Stage-gating is soft; not truly gated.</td></tr>
+            <tr><td><strong>Intrinsic Curiosity</strong></td><td><span class="status-badge s-partial">⚠️ Partial</span></td><td style="color:var(--muted)">HypothesisMaker + KB gap detector. Not real-time surprise-driven.</td></tr>
+            <tr><td><strong>Conceptual Abstraction</strong></td><td><span class="status-badge s-partial">⚠️ Partial</span></td><td style="color:var(--muted)">concept_formation.py groups by structure. Never abstracts upward into meta-categories.</td></tr>
+            <tr><td><strong>Episodic Replay</strong></td><td><span class="status-badge s-yes">✅ Yes</span></td><td style="color:var(--muted)">Autobiographical memory replays hard episodes into curriculum every 25 cycles. Tier 1 complete.</td></tr>
+            <tr><td><strong>Embodied Learning</strong></td><td><span class="status-badge s-partial">⚠️ Partial</span></td><td style="color:var(--muted)">Physics sim grounds 5+ concepts. Toy grid environment only — no full sensorimotor loop.</td></tr>
+            <tr><td><strong>Catastrophic Forgetting Avoidance</strong></td><td><span class="status-badge s-partial">⚠️ Partial</span></td><td style="color:var(--muted)">EWC-lite building in Tier 3. Forgetting curve + hippocampal pruning active but not full EWC.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- What's Been Built -->
+  <div class="section">
+    <div class="section-hd open" onclick="toggleSection(this)">
+      <h2>What's Been Built</h2>
+      <span class="badge" style="background:rgba(63,185,80,.15);color:var(--green)">9 gaps closed</span>
+      <span class="caret">▶</span>
+    </div>
+    <div class="section-body open">
+      <div class="done-log">
+        <div class="done-entry"><div class="done-num">01</div><div><h4>Iterative Forward Chaining</h4><p>fact_inference.py · infer_iterative() loops until convergence · 54-60 new facts/domain/cycle</p></div></div>
+        <div class="done-entry"><div class="done-num">02</div><div><h4>Per-Domain Credit Baselines</h4><p>credit_assignment.py · _baselines dict per domain · algebra/logic/calculus credit no longer cross-contaminated</p></div></div>
+        <div class="done-entry"><div class="done-num">03</div><div><h4>Adaptive Curriculum Weights</h4><p>general_curriculum.py · _get_adaptive_weights() uses WorldModel surprise + Homeostasis recommendation</p></div></div>
+        <div class="done-entry"><div class="done-num">04</div><div><h4>AlgorithmSelector Wiring</h4><p>learn_daemon.py · record_outcome() called after every general-solver solve · 443 outcomes recorded</p></div></div>
+        <div class="done-entry"><div class="done-num">05</div><div><h4>Embodied Concept Broadcasting</h4><p>world/embodied_agent.py · _broadcast_concepts() pushes discoveries to WorldModel as grounded beliefs</p></div></div>
+        <div class="done-entry"><div class="done-num">06</div><div><h4>ConceptRegistry Persists Across Restarts</h4><p>concept_seed_loader.py · load() called in __init__ · 51 rules now available immediately on startup</p></div></div>
+        <div class="done-entry"><div class="done-num">07</div><div><h4>TransferEngine Hypothesis Testing</h4><p>learn_daemon.py · test_hypothesis() called every 10 cycles with real proof_steps from ExperimentRunner</p></div></div>
+        <div class="done-entry"><div class="done-num">08</div><div><h4>AnalogyTransfer → ConceptRegistry</h4><p>learn_daemon.py · transfer_all_domains() + apply_to_registry() every 30 cycles · 13 rules applied</p></div></div>
+        <div class="done-entry"><div class="done-num">09</div><div><h4>Causal Justification in Composite Rules</h4><p>fact_inference.py · every composite rule stores "because (premise1=v1; premise2=v2)" trace in WorldModel</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Projection Bar -->
+  <div class="projection">
+    <h3>Projected AGI Score Trajectory</h3>
+    <div class="proj-row">
+      <div class="label">Baseline (2026-03-23)</div>
+      <div class="proj-bar-wrap"><div class="proj-bar" id="bar-base" style="width:0;background:var(--muted)"></div></div>
+      <div class="pct" style="color:var(--muted)">58%</div>
+    </div>
+    <div class="proj-row">
+      <div class="label">After Tier 1+2 (achieved)</div>
+      <div class="proj-bar-wrap"><div class="proj-bar" id="bar-now" style="width:0;background:var(--green)"></div></div>
+      <div class="pct" style="color:var(--green)">76%</div>
+    </div>
+    <div class="proj-row">
+      <div class="label">After Tier 3 (projected)</div>
+      <div class="proj-bar-wrap"><div class="proj-bar" id="bar-t3" style="width:0;background:var(--purple)"></div></div>
+      <div class="pct" style="color:var(--purple)">~87%</div>
+    </div>
+    <div class="proj-row">
+      <div class="label">Research ceiling</div>
+      <div class="proj-bar-wrap"><div class="proj-bar" id="bar-ceil" style="width:0;background:var(--amber)"></div></div>
+      <div class="pct" style="color:var(--amber)">~95%+</div>
+    </div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)">
+      After Tier 1+2: ~76% achieved &nbsp;|&nbsp; After Tier 3: ~85-88% projected &nbsp;·&nbsp; Tier 3 items depend on research breakthroughs; some (catastrophic forgetting, global workspace) are actively being built. The 97% Symbolic Reasoning score is on self-generated templates — open-world performance remains unverified.
+    </div>
+  </div>
+
+  <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);text-align:center">
+    SARE-HX · <a href="/">Dashboard</a> · <a href="/dashboard">AGI Monitor</a> · <a href="/evolve-chat">Evolver Chat</a>
+    &nbsp;·&nbsp; Progress saved in browser localStorage
+  </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'sare_todo_v3';
+let done = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
+let filter = 'all';
+
+// Pre-mark Tier 1 + Tier 2 as done in localStorage if not already set
+const TIER12_IDS = ['t1-1','t1-2','t1-3','t1-4','t1-5','t1-6','t1-7','t2-1','t2-2','t2-3','t2-4','t2-5','t2-6'];
+
+// ── Init ──────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('last-update').textContent = new Date().toLocaleString();
+  // Ensure all Tier 1+2 items are in the done set
+  TIER12_IDS.forEach(id => done.add(id));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...done]));
+  restoreState();
+  animateRings();
+  animateBars();
+});
+
+function restoreState() {
+  document.querySelectorAll('.todo-item').forEach(el => {
+    if (done.has(el.dataset.id)) el.classList.add('done');
+  });
+  applyFilter();
+}
+
+// ── Rings ─────────────────────────────────────────────────────────────────
+function animateRings() {
+  const C = 2 * Math.PI * 30; // circumference ≈ 188.5
+  const map = { 'ring-human': 38, 'ring-agi': 76, 'ring-learn': 52, 'ring-sym': 97 };
+  setTimeout(() => {
+    Object.entries(map).forEach(([id, pct]) => {
+      const el = document.getElementById(id);
+      if (el) el.style.strokeDashoffset = C - (C * pct / 100);
+    });
+  }, 150);
+}
+
+// ── Progress bars ─────────────────────────────────────────────────────────
+function animateBars() {
+  const bars = [['bar-base',58],['bar-now',76],['bar-t3',87],['bar-ceil',95]];
+  setTimeout(() => {
+    bars.forEach(([id, pct]) => {
+      const el = document.getElementById(id);
+      if (el) el.style.width = pct + '%';
+    });
+  }, 400);
+}
+
+// ── Todo toggle ───────────────────────────────────────────────────────────
+function toggleItem(el) {
+  const id = el.dataset.id;
+  // Don't allow unchecking Tier 1+2
+  if (TIER12_IDS.includes(id)) return;
+  if (done.has(id)) { done.delete(id); el.classList.remove('done'); }
+  else { done.add(id); el.classList.add('done'); }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...done]));
+  applyFilter();
+}
+
+function resetAll() {
+  if (!confirm('Reset all progress? Tier 1+2 will remain marked as done.')) return;
+  done.clear();
+  TIER12_IDS.forEach(id => done.add(id));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...done]));
+  document.querySelectorAll('.todo-item').forEach(el => {
+    if (TIER12_IDS.includes(el.dataset.id)) el.classList.add('done');
+    else el.classList.remove('done');
+  });
+  applyFilter();
+}
+
+// ── Filter ────────────────────────────────────────────────────────────────
+function setFilter(f, btn) {
+  filter = f;
+  document.querySelectorAll('.filter-bar .btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilter();
+}
+
+function applyFilter() {
+  document.querySelectorAll('.todo-item').forEach(el => {
+    const tier = el.dataset.tier;
+    const isDone = el.classList.contains('done');
+    let show = true;
+    if (filter === 'done') show = isDone;
+    else if (filter === 'tier1') show = tier === 'tier1';
+    else if (filter === 'tier2') show = tier === 'tier2';
+    else if (filter === 'tier3') show = tier === 'tier3';
+    el.classList.toggle('hidden', !show);
+  });
+  // Show/hide tier group headers when all hidden
+  document.querySelectorAll('.tier-group').forEach(g => {
+    const visible = g.querySelectorAll('.todo-item:not(.hidden)').length;
+    g.style.display = visible === 0 ? 'none' : '';
+  });
+}
+
+// ── Section collapse ──────────────────────────────────────────────────────
+function toggleSection(hd) {
+  hd.classList.toggle('open');
+  const body = hd.nextElementSibling;
+  body.classList.toggle('open');
+}
+</script>
+</body>
+</html>

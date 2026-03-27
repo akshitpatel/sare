@@ -1,0 +1,5353 @@
+{
+  "domain_stats": {
+    "algebra": {
+      "commutativity_canonicalize": [
+        75,
+        75
+      ],
+      "equation_solve": [
+        2,
+        2
+      ],
+      "equation_subtract_const": [
+        619,
+        619
+      ],
+      "learned_additive_identity": [
+        137,
+        137
+      ],
+      "learned_discovered_+_0_identity": [
+        2,
+        2
+      ],
+      "linear_equation_solve": [
+        7,
+        7
+      ],
+      "multiply_equation_solve": [
+        415,
+        415
+      ],
+      "perfect_square_trinomial": [
+        205,
+        205
+      ],
+      "physics_newton_f_ma": [
+        1,
+        1
+      ],
+      "power_zero_elim": [
+        1,
+        1
+      ],
+      "quadratic_solve": [
+        205,
+        205
+      ],
+      "synth_distribution_*_annihilation": [
+        3,
+        3
+      ],
+      "synth_distribution_*_identity": [
+        11,
+        11
+      ],
+      "synth_distribution_+_identity": [
+        2,
+        2
+      ],
+      "synth_distribution_-_identity": [
+        1,
+        1
+      ],
+      "synth_distribution_^_identity": [
+        1,
+        1
+      ]
+    },
+    "arithmetic": {
+      "additive_cancellation": [
+        5,
+        5
+      ],
+      "chemistry_stoich_coeff_one": [
+        24,
+        24
+      ],
+      "combine_like_terms": [
+        6,
+        6
+      ],
+      "commutativity_canonicalize": [
+        10,
+        10
+      ],
+      "concept_subtractive_self": [
+        40,
+        40
+      ],
+      "const_fold": [
+        2907,
+        2907
+      ],
+      "division_self_elim": [
+        22,
+        22
+      ],
+      "learned_additive_identity": [
+        234,
+        234
+      ],
+      "learned_discovered_+_0_annihilation": [
+        9,
+        9
+      ],
+      "macro_add_const_f9f3d713": [
+        1,
+        1
+      ],
+      "macro_add_mul_8da76e79": [
+        9,
+        9
+      ],
+      "perfect_square_trinomial": [
+        3,
+        3
+      ],
+      "power_product": [
+        17,
+        17
+      ],
+      "power_zero_elim": [
+        53,
+        53
+      ],
+      "self_subtraction": [
+        4,
+        4
+      ],
+      "synth_arithmetic_-_self_inverse": [
+        14,
+        14
+      ],
+      "synth_distribution_*_annihilation": [
+        89,
+        89
+      ],
+      "synth_distribution_*_identity": [
+        112,
+        112
+      ],
+      "synth_distribution_+_identity": [
+        102,
+        102
+      ],
+      "synth_distribution_-_identity": [
+        63,
+        63
+      ],
+      "synth_distribution_/_identity": [
+        66,
+        66
+      ],
+      "synth_distribution_^_identity": [
+        40,
+        40
+      ],
+      "synth_distribution_neg_involution": [
+        49,
+        49
+      ],
+      "zero_div": [
+        17,
+        17
+      ]
+    },
+    "calculus": {
+      "algebraic_factor": [
+        3,
+        3
+      ],
+      "deriv_const_zero": [
+        2,
+        2
+      ],
+      "deriv_cos": [
+        2,
+        2
+      ],
+      "deriv_linear": [
+        2,
+        2
+      ],
+      "deriv_ln": [
+        1,
+        1
+      ],
+      "deriv_power_rule": [
+        27,
+        27
+      ],
+      "deriv_product_rule": [
+        2,
+        2
+      ],
+      "deriv_sin": [
+        13,
+        13
+      ],
+      "deriv_sum_rule": [
+        6,
+        6
+      ],
+      "distributive_expand": [
+        2,
+        2
+      ],
+      "integ_linear": [
+        36,
+        36
+      ],
+      "integ_power_rule": [
+        1,
+        1
+      ],
+      "integ_sum_rule": [
+        1,
+        1
+      ],
+      "learned_discovered_+_0_annihilation": [
+        3,
+        3
+      ],
+      "power_zero_elim": [
+        1,
+        1
+      ],
+      "synth_distribution_*_annihilation": [
+        1,
+        1
+      ],
+      "synth_distribution_*_identity": [
+        1,
+        1
+      ],
+      "synth_distribution_+_identity": [
+        10,
+        10
+      ],
+      "synth_distribution_/_identity": [
+        1,
+        1
+      ],
+      "synth_distribution_^_identity": [
+        19,
+        19
+      ]
+    },
+    "distribution": {
+      "algebraic_factor": [
+        28,
+        28
+      ],
+      "commutativity_canonicalize": [
+        12,
+        12
+      ],
+      "const_fold": [
+        651,
+        651
+      ],
+      "distributive_expand": [
+        49,
+        49
+      ],
+      "learned_additive_identity": [
+        26,
+        26
+      ],
+      "learned_discovered_+_0_annihilation": [
+        5,
+        5
+      ],
+      "learned_discovered_+_0_identity": [
+        1,
+        1
+      ],
+      "macro_add_mul_8da76e79": [
+        31,
+        31
+      ],
+      "power_zero_elim": [
+        1,
+        1
+      ],
+      "synth_arithmetic_*_self_inverse": [
+        1,
+        1
+      ],
+      "synth_distribution_*_annihilation": [
+        8,
+        8
+      ],
+      "synth_distribution_*_identity": [
+        16,
+        16
+      ],
+      "synth_distribution_+_identity": [
+        10,
+        10
+      ],
+      "synth_distribution_/_identity": [
+        3,
+        3
+      ],
+      "synth_distribution_^_identity": [
+        3,
+        3
+      ]
+    },
+    "factoring": {
+      "algebraic_factor": [
+        1253,
+        1253
+      ],
+      "combine_like_terms": [
+        1,
+        1
+      ],
+      "commutativity_canonicalize": [
+        1,
+        1
+      ],
+      "const_fold": [
+        1,
+        1
+      ],
+      "distributive_expand": [
+        833,
+        833
+      ],
+      "learned_additive_identity": [
+        2,
+        2
+      ],
+      "power_zero_elim": [
+        2,
+        2
+      ],
+      "synth_distribution_*_annihilation": [
+        1,
+        1
+      ],
+      "synth_distribution_*_identity": [
+        1,
+        1
+      ],
+      "synth_distribution_+_identity": [
+        1,
+        1
+      ]
+    },
+    "logic_basics": {
+      "add_zero_elim": [
+        1,
+        1
+      ],
+      "bool_and_false": [
+        4,
+        4
+      ],
+      "bool_and_true": [
+        4,
+        4
+      ],
+      "bool_idempotent": [
+        116,
+        116
+      ],
+      "bool_or_false": [
+        21,
+        21
+      ],
+      "bool_or_true": [
+        2,
+        2
+      ],
+      "concept_contradiction": [
+        23,
+        23
+      ],
+      "const_fold": [
+        1,
+        1
+      ],
+      "learned_additive_identity": [
+        8,
+        8
+      ],
+      "learned_discovered_+_0_annihilation": [
+        26,
+        26
+      ],
+      "synth_arithmetic_*_self_inverse": [
+        1,
+        1
+      ],
+      "synth_distribution_*_annihilation": [
+        1,
+        1
+      ],
+      "synth_distribution_*_identity": [
+        204,
+        204
+      ],
+      "synth_distribution_+_identity": [
+        61,
+        61
+      ],
+      "synth_logic_and_annihilation": [
+        38,
+        38
+      ],
+      "synth_logic_basics_and_identity": [
+        83,
+        83
+      ],
+      "synth_logic_basics_or_identity": [
+        29,
+        29
+      ],
+      "synth_logic_not_involution": [
+        262,
+        262
+      ],
+      "synth_logic_or_annihilation": [
+        19,
+        19
+      ]
+    },
+    "propositional": {
+      "synth_distribution_*_identity": [
+        1,
+        1
+      ]
+    },
+    "set_theory": {
+      "learned_discovered_+_0_annihilation": [
+        12,
+        12
+      ],
+      "synth_distribution_*_identity": [
+        44,
+        44
+      ],
+      "synth_distribution_+_identity": [
+        13,
+        13
+      ]
+    },
+    "trigonometry": {
+      "concept_subtractive_self": [
+        24,
+        24
+      ],
+      "const_fold": [
+        2,
+        2
+      ],
+      "learned_additive_identity": [
+        32,
+        32
+      ],
+      "learned_discovered_+_0_annihilation": [
+        8,
+        8
+      ],
+      "power_zero_elim": [
+        6,
+        6
+      ],
+      "synth_distribution_*_annihilation": [
+        2,
+        2
+      ],
+      "synth_distribution_*_identity": [
+        15,
+        15
+      ],
+      "synth_distribution_+_identity": [
+        3,
+        3
+      ],
+      "synth_distribution_-_identity": [
+        1,
+        1
+      ],
+      "synth_distribution_/_identity": [
+        4,
+        4
+      ],
+      "synth_distribution_^_identity": [
+        17,
+        17
+      ],
+      "trig_zero": [
+        411,
+        411
+      ]
+    }
+  },
+  "history": [
+    {
+      "delta": 5.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:03.887415",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:08.988136",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 5.499999999999998,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:13.309534",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:13.407029",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:17.230166",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 8.800000000000002,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:21.460908",
+      "transforms_used": [
+        "concept_subtractive_self",
+        "synth_distribution_-_identity"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:24.973631",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 8.3,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:25.249035",
+      "transforms_used": [
+        "perfect_square_trinomial",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 3.0999999999999996,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:27.068618",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:29.090752",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:34.594915",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.9000000000000004,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:36.146884",
+      "transforms_used": [
+        "synth_distribution_+_identity"
+      ]
+    },
+    {
+      "delta": 0.75,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:38.369587",
+      "transforms_used": [
+        "trig_zero"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:39.356300",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 8.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:41.916426",
+      "transforms_used": [
+        "learned_additive_identity",
+        "synth_distribution_*_annihilation",
+        "synth_distribution_+_identity"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:44.882975",
+      "transforms_used": [
+        "equation_subtract_const",
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:45.303270",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:46.236905",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:48.838199",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:51.517997",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0999999999999996,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:51.545666",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 8.3,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:54.028742",
+      "transforms_used": [
+        "perfect_square_trinomial",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:57.627390",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:31:59.336917",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:01.758286",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:06.804110",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:08.963818",
+      "transforms_used": [
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:10.329502",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 7.800000000000001,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:16.562784",
+      "transforms_used": [
+        "synth_logic_not_involution",
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:16.751258",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:16.775249",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:20.061109",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:25.867101",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 3.9000000000000004,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:25.932535",
+      "transforms_used": [
+        "synth_distribution_+_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:28.322022",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 16.200000000000003,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:40.316515",
+      "transforms_used": [
+        "learned_additive_identity",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:45.208450",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:45.726915",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:48.968028",
+      "transforms_used": [
+        "synth_distribution_-_identity"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:49.434443",
+      "transforms_used": [
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:52.668288",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:58.130153",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.9000000000000004,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:32:58.746998",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:33:03.314525",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 0.75,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:33:04.731253",
+      "transforms_used": [
+        "trig_zero"
+      ]
+    },
+    {
+      "delta": 5.500000000000002,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:33:08.373030",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:33:09.989487",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 8.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:33:19.769351",
+      "transforms_used": [
+        "learned_additive_identity",
+        "synth_distribution_*_annihilation",
+        "synth_distribution_-_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:33:20.078283",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:33:22.829401",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:33:23.210054",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 8.3,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:33:27.767933",
+      "transforms_used": [
+        "perfect_square_trinomial",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 3.0999999999999996,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:33:28.290167",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:33:28.785489",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:33:30.970032",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 7.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:33:38.385960",
+      "transforms_used": [
+        "learned_additive_identity",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:33:38.968602",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:33:42.330427",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:33:47.826973",
+      "transforms_used": [
+        "synth_distribution_-_identity"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:33:50.319656",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:33:52.718333",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:34:01.747324",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:34:04.461957",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:34:14.400050",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:34:23.565654",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:34:23.748473",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:34:27.235227",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.4999999999999996,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:34:27.340794",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:34:30.882515",
+      "transforms_used": [
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:34:30.913836",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:34:34.788293",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:34:38.889081",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:34:39.227565",
+      "transforms_used": [
+        "equation_subtract_const",
+        "quadratic_solve"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:34:41.838659",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:34:48.104343",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:34:48.120875",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:34:51.108873",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:34:53.043728",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:34:58.053881",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:35:08.348632",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 8.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:35:15.521994",
+      "transforms_used": [
+        "learned_additive_identity",
+        "synth_distribution_*_annihilation",
+        "synth_distribution_-_identity"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:35:19.477552",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 8.3,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:35:20.671021",
+      "transforms_used": [
+        "perfect_square_trinomial",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:35:22.653391",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 5.500000000000002,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:35:26.655898",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:35:29.590419",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:35:33.761361",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 7.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:35:40.945481",
+      "transforms_used": [
+        "learned_additive_identity",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:35:42.851841",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:35:46.530173",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 10.350000000000001,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:35:51.829881",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "bool_idempotent",
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:35:52.076387",
+      "transforms_used": [
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:35:55.194599",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 7.499999999999999,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:35:58.680610",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "bool_idempotent"
+      ]
+    },
+    {
+      "delta": 8.3,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:35:58.867783",
+      "transforms_used": [
+        "perfect_square_trinomial",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:36:02.224052",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 8.3,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:36:06.685588",
+      "transforms_used": [
+        "perfect_square_trinomial",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 3.3499999999999996,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:36:07.502404",
+      "transforms_used": [
+        "synth_distribution_*_annihilation"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:36:11.345033",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:36:15.783601",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 8.3,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:36:17.678993",
+      "transforms_used": [
+        "perfect_square_trinomial",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 8.600000000000001,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:36:17.680139",
+      "transforms_used": [
+        "synth_logic_not_involution",
+        "synth_distribution_*_identity"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:36:23.181912",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:36:24.757731",
+      "transforms_used": [
+        "learned_additive_identity",
+        "power_zero_elim"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:36:30.227245",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:36:33.025685",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:36:35.823558",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.9000000000000004,
+      "domain": "set_theory",
+      "success": true,
+      "timestamp": "2026-03-27T03:36:38.245125",
+      "transforms_used": [
+        "learned_discovered_+_0_annihilation"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:36:38.318255",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:36:48.828413",
+      "transforms_used": [
+        "equation_subtract_const",
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 8.600000000000001,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:36:57.951459",
+      "transforms_used": [
+        "learned_additive_identity",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:36:58.583752",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:37:05.845336",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:37:06.065852",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 5.4,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:37:07.957730",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "synth_logic_basics_or_identity"
+      ]
+    },
+    {
+      "delta": 3.9000000000000004,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:37:13.993434",
+      "transforms_used": [
+        "chemistry_stoich_coeff_one"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:37:14.899996",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:37:16.462663",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:37:19.353143",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:37:20.213028",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:37:24.148732",
+      "transforms_used": [
+        "equation_subtract_const",
+        "quadratic_solve"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:37:28.125304",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:37:33.854340",
+      "transforms_used": [
+        "equation_subtract_const",
+        "quadratic_solve"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:37:33.975057",
+      "transforms_used": [
+        "equation_subtract_const",
+        "quadratic_solve"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:37:36.753918",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 3.9000000000000004,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:37:46.988325",
+      "transforms_used": [
+        "chemistry_stoich_coeff_one"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:37:48.090232",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:37:55.197181",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 10.100000000000001,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:37:56.579839",
+      "transforms_used": [
+        "synth_logic_basics_and_identity",
+        "synth_distribution_*_identity",
+        "synth_logic_basics_and_identity"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:38:02.381304",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.099999999999998,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:38:04.106920",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:38:07.102329",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:38:14.197321",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:38:16.767768",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:38:18.168215",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:38:21.608277",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:38:22.403821",
+      "transforms_used": [
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:38:33.450459",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:38:41.638929",
+      "transforms_used": [
+        "equation_subtract_const",
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:38:44.754445",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:38:46.304954",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.9,
+      "domain": "set_theory",
+      "success": true,
+      "timestamp": "2026-03-27T03:38:49.753390",
+      "transforms_used": [
+        "synth_distribution_*_identity"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:38:52.629149",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:38:56.041634",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 7.0,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:38:56.106744",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "bool_idempotent"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:38:59.346315",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:39:04.279527",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:39:05.785075",
+      "transforms_used": [
+        "equation_subtract_const",
+        "quadratic_solve"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:39:10.580894",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:39:14.104896",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:39:14.180202",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:39:15.770917",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:39:20.179284",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:39:20.360228",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 4.4,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:39:21.768134",
+      "transforms_used": [
+        "learned_discovered_+_0_annihilation"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:39:33.285476",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:39:34.620866",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:39:45.764813",
+      "transforms_used": [
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 0.75,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:39:46.747152",
+      "transforms_used": [
+        "trig_zero"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:39:52.193031",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:08.409761",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:08.722763",
+      "transforms_used": [
+        "equation_subtract_const",
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:15.829064",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:27.802946",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:28.965471",
+      "transforms_used": [
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:30.650147",
+      "transforms_used": [
+        "equation_subtract_const",
+        "quadratic_solve"
+      ]
+    },
+    {
+      "delta": 14.899999999999999,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:32.162498",
+      "transforms_used": [
+        "learned_discovered_+_0_annihilation",
+        "synth_distribution_*_annihilation"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:39.825511",
+      "transforms_used": [
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:40.234361",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:40.235520",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:44.814246",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:48.635824",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:51.063017",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:53.345575",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:56.372641",
+      "transforms_used": [
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:56.631222",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 5.5,
+      "domain": "set_theory",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:58.226583",
+      "transforms_used": [
+        "learned_discovered_+_0_annihilation"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:59.091091",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:40:59.092815",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:00.970928",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:06.121183",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:06.777466",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:09.943523",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 4.1000000000000005,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:11.356671",
+      "transforms_used": [
+        "concept_subtractive_self"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:12.561623",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:13.230268",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 7.699999999999999,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:15.944374",
+      "transforms_used": [
+        "const_fold",
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:18.338073",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 7.0,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:23.369086",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "bool_idempotent"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:25.085076",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:26.329450",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:31.794667",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:32.626989",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 9.3,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:36.303196",
+      "transforms_used": [
+        "learned_additive_identity",
+        "learned_additive_identity",
+        "division_self_elim"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:39.559326",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 8.3,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:39.581043",
+      "transforms_used": [
+        "perfect_square_trinomial",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 5.4,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:43.143030",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "synth_logic_and_annihilation"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:48.992471",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 8.600000000000001,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:54.639504",
+      "transforms_used": [
+        "synth_logic_not_involution",
+        "synth_distribution_*_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:58.046836",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:58.088111",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 8.3,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:41:58.560073",
+      "transforms_used": [
+        "perfect_square_trinomial",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 3.1000000000000014,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:42:00.766655",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:42:05.643884",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0999999999999996,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:42:08.880083",
+      "transforms_used": [
+        "const_fold",
+        "commutativity_canonicalize"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:42:09.933032",
+      "transforms_used": [
+        "equation_subtract_const",
+        "quadratic_solve"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:42:13.976979",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:42:16.974880",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:42:19.094228",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:42:20.393331",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:42:25.149140",
+      "transforms_used": [
+        "equation_subtract_const",
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 7.0,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:42:25.309130",
+      "transforms_used": [
+        "learned_discovered_+_0_annihilation",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:42:29.504851",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 4.15,
+      "domain": "calculus",
+      "success": true,
+      "timestamp": "2026-03-27T03:42:33.185142",
+      "transforms_used": [
+        "integ_linear"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:42:37.829464",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:42:42.100298",
+      "transforms_used": [
+        "power_zero_elim"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:42:42.492610",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:42:45.062123",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 7.800000000000001,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:42:52.182619",
+      "transforms_used": [
+        "macro_add_mul_8da76e79"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:42:54.960241",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:43:03.703714",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:43:04.263462",
+      "transforms_used": [
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:43:11.734416",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 6.199999999999999,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:43:22.455823",
+      "transforms_used": [
+        "learned_additive_identity",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:43:36.087428",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:43:36.940078",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:43:38.617803",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:43:39.973920",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:43:50.709330",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 8.3,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:43:51.192084",
+      "transforms_used": [
+        "perfect_square_trinomial",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:43:52.537081",
+      "transforms_used": [
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 4.15,
+      "domain": "calculus",
+      "success": true,
+      "timestamp": "2026-03-27T03:43:54.116281",
+      "transforms_used": [
+        "integ_linear"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:43:55.218152",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:44:01.741179",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.4999999999999996,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:44:04.269591",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:44:08.203878",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:44:08.965590",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:44:09.012755",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.9000000000000004,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:44:10.538345",
+      "transforms_used": [
+        "synth_distribution_*_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:44:14.861304",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:44:16.449517",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:44:21.088711",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 4.4,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:44:23.053805",
+      "transforms_used": [
+        "learned_discovered_+_0_annihilation"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:44:40.365831",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.9000000000000004,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:44:41.793774",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:44:44.211304",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:44:47.138865",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 6.700000000000001,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:44:48.037763",
+      "transforms_used": [
+        "synth_distribution_*_annihilation",
+        "synth_distribution_+_identity"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:44:50.595486",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:44:55.440139",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 5.75,
+      "domain": "calculus",
+      "success": true,
+      "timestamp": "2026-03-27T03:44:59.851241",
+      "transforms_used": [
+        "deriv_power_rule",
+        "synth_distribution_^_identity"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:01.856355",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:02.524777",
+      "transforms_used": [
+        "equation_subtract_const",
+        "quadratic_solve"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:06.360301",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 4.6,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:07.903563",
+      "transforms_used": [
+        "synth_distribution_*_annihilation",
+        "synth_distribution_+_identity"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:09.668257",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:11.799645",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:15.065870",
+      "transforms_used": [
+        "zero_div"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:17.391106",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:21.388912",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 4.6,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:24.046103",
+      "transforms_used": [
+        "synth_distribution_neg_involution",
+        "synth_distribution_-_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:28.050003",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:30.024195",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:31.213513",
+      "transforms_used": [
+        "bool_idempotent"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:32.414846",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:34.480734",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:35.596022",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:39.748452",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 7.500000000000002,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:41.906637",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "bool_idempotent"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:41.908866",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 5.65,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:48.803677",
+      "transforms_used": [
+        "learned_discovered_+_0_annihilation",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:49.079220",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:50.640480",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:55.544883",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 7.600000000000001,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:56.728480",
+      "transforms_used": [
+        "learned_discovered_+_0_annihilation"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:45:57.080948",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:46:04.725134",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:46:11.660483",
+      "transforms_used": [
+        "synth_logic_basics_and_identity"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:46:15.293903",
+      "transforms_used": [
+        "equation_subtract_const",
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:46:18.347081",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:46:21.434175",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:46:28.469340",
+      "transforms_used": [
+        "equation_subtract_const",
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 4.4,
+      "domain": "set_theory",
+      "success": true,
+      "timestamp": "2026-03-27T03:46:28.715463",
+      "transforms_used": [
+        "learned_discovered_+_0_annihilation"
+      ]
+    },
+    {
+      "delta": 0.75,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:46:29.337379",
+      "transforms_used": [
+        "trig_zero"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:46:34.886798",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:46:42.987180",
+      "transforms_used": [
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:46:43.956818",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:46:45.042643",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:46:51.937996",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:46:53.798774",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:46:58.940405",
+      "transforms_used": [
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:46:59.237890",
+      "transforms_used": [
+        "synth_logic_and_annihilation"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:01.402724",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 7.0,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:09.200742",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:11.099206",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:16.860341",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:21.168938",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 11.0,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:24.938287",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "bool_idempotent"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:26.446255",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:27.760992",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 7.0,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:32.513769",
+      "transforms_used": [
+        "learned_discovered_+_0_annihilation",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:34.512397",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:35.665486",
+      "transforms_used": [
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 6.199999999999999,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:39.932514",
+      "transforms_used": [
+        "learned_additive_identity",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:41.527965",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 0.75,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:42.539457",
+      "transforms_used": [
+        "trig_zero"
+      ]
+    },
+    {
+      "delta": 7.699999999999999,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:46.429752",
+      "transforms_used": [
+        "learned_additive_identity",
+        "learned_additive_identity",
+        "division_self_elim"
+      ]
+    },
+    {
+      "delta": 0.75,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:46.985161",
+      "transforms_used": [
+        "trig_zero"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:47.487336",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:53.844338",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:56.708330",
+      "transforms_used": [
+        "equation_subtract_const",
+        "quadratic_solve"
+      ]
+    },
+    {
+      "delta": 11.0,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:47:59.856122",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "bool_idempotent"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:48:02.579434",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:48:06.711442",
+      "transforms_used": [
+        "equation_subtract_const",
+        "quadratic_solve"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:48:11.322194",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:48:18.200110",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:48:19.585318",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:48:23.093565",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:48:26.326413",
+      "transforms_used": [
+        "equation_subtract_const",
+        "quadratic_solve"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:48:26.712585",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:48:29.357779",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:48:31.154123",
+      "transforms_used": [
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 3.9000000000000004,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:48:32.593259",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:48:36.334758",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:48:39.026563",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:48:39.351899",
+      "transforms_used": [
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:48:44.343595",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:48:47.061063",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:48:49.480465",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:48:52.996924",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:00.099509",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:00.457684",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:05.617887",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:16.370988",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:22.362339",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 10.100000000000001,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:23.900245",
+      "transforms_used": [
+        "learned_discovered_+_0_annihilation",
+        "synth_logic_basics_and_identity",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:25.260897",
+      "transforms_used": [
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:29.326726",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:32.816581",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 10.100000000000001,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:35.651385",
+      "transforms_used": [
+        "synth_logic_basics_and_identity",
+        "synth_distribution_*_identity",
+        "synth_logic_basics_and_identity"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:36.477536",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:41.156843",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 4.15,
+      "domain": "calculus",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:42.510788",
+      "transforms_used": [
+        "integ_linear"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:45.276288",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:51.511511",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:52.531603",
+      "transforms_used": [
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:56.803840",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 0.75,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:57.185522",
+      "transforms_used": [
+        "trig_zero"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:49:59.314135",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 8.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:50:01.916898",
+      "transforms_used": [
+        "learned_additive_identity",
+        "synth_distribution_*_annihilation",
+        "synth_distribution_+_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:50:04.307654",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:50:08.182942",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:50:13.437836",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 8.3,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:50:17.092066",
+      "transforms_used": [
+        "perfect_square_trinomial",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:50:21.886858",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:50:26.376226",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:50:29.702255",
+      "transforms_used": [
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:50:33.065851",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 7.25,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:50:33.895943",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "concept_contradiction"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:50:38.175154",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:50:41.341555",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:50:42.483412",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:50:48.668892",
+      "transforms_used": [
+        "equation_subtract_const",
+        "quadratic_solve"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:50:50.636313",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 6.000000000000002,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:50:54.149057",
+      "transforms_used": [
+        "learned_discovered_+_0_annihilation"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:50:56.501941",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 0.9999999999999991,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:51:00.830116",
+      "transforms_used": [
+        "power_product"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:51:03.831929",
+      "transforms_used": [
+        "equation_subtract_const",
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:51:04.912540",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:51:11.945584",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:51:14.179698",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:51:17.238193",
+      "transforms_used": [
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:51:17.987963",
+      "transforms_used": [
+        "synth_distribution_-_identity"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:51:19.927648",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:51:29.663148",
+      "transforms_used": [
+        "concept_subtractive_self"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:51:30.721566",
+      "transforms_used": [
+        "equation_subtract_const",
+        "quadratic_solve"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:51:34.130509",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:51:43.880942",
+      "transforms_used": [
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 5.75,
+      "domain": "calculus",
+      "success": true,
+      "timestamp": "2026-03-27T03:51:48.923341",
+      "transforms_used": [
+        "deriv_power_rule",
+        "synth_distribution_^_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:51:51.383925",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:51:55.452218",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:51:56.441586",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:52:06.502305",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:52:07.330838",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:52:23.876426",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 7.600000000000001,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:52:25.352999",
+      "transforms_used": [
+        "learned_discovered_+_0_annihilation"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:52:27.581430",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:52:35.055498",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 7.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:52:38.385292",
+      "transforms_used": [
+        "learned_additive_identity",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:52:39.526426",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:52:46.222023",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 4.6,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:52:46.623940",
+      "transforms_used": [
+        "learned_additive_identity",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:52:47.310159",
+      "transforms_used": [
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:52:47.973630",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:52:50.435935",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:52:53.623241",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:52:56.692857",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 8.3,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:53:00.297654",
+      "transforms_used": [
+        "perfect_square_trinomial",
+        "learned_additive_identity"
+      ]
+    },
+    {
+      "delta": 16.000000000000004,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:55:50.944387",
+      "transforms_used": [
+        "macro_add_mul_8da76e79"
+      ]
+    },
+    {
+      "delta": 23.6,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:55:52.518492",
+      "transforms_used": [
+        "macro_add_mul_8da76e79",
+        "synth_distribution_+_identity",
+        "chemistry_stoich_coeff_one"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:55:52.612101",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:55:52.771777",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.6000000000000014,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:55:53.657848",
+      "transforms_used": [
+        "perfect_square_trinomial",
+        "commutativity_canonicalize"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:55:54.761393",
+      "transforms_used": [
+        "equation_subtract_const",
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 18.8,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:55:54.800309",
+      "transforms_used": [
+        "synth_distribution_+_identity",
+        "combine_like_terms",
+        "synth_distribution_+_identity"
+      ]
+    },
+    {
+      "delta": 3.9000000000000004,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:55:55.035340",
+      "transforms_used": [
+        "synth_distribution_+_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:55:56.494462",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 12.600000000000001,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:55:56.912093",
+      "transforms_used": [
+        "chemistry_stoich_coeff_one",
+        "synth_distribution_*_identity"
+      ]
+    },
+    {
+      "delta": 3.9000000000000004,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:55:57.652734",
+      "transforms_used": [
+        "synth_distribution_*_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:55:57.663642",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.6000000000000005,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:55:57.759169",
+      "transforms_used": [
+        "perfect_square_trinomial",
+        "commutativity_canonicalize"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:55:58.768423",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 13.2,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:55:59.861111",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "power_zero_elim",
+        "synth_distribution_*_annihilation",
+        "synth_distribution_+_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:01.184797",
+      "transforms_used": [
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 11.600000000000001,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:01.906122",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "synth_distribution_/_identity",
+        "synth_distribution_*_annihilation",
+        "synth_distribution_-_identity"
+      ]
+    },
+    {
+      "delta": 16.3,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:04.995064",
+      "transforms_used": [
+        "algebraic_factor",
+        "power_zero_elim",
+        "synth_distribution_*_identity",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 7.0,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:05.097329",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "bool_idempotent"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:05.793507",
+      "transforms_used": [
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 7.699999999999999,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:06.534537",
+      "transforms_used": [
+        "const_fold",
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:06.785851",
+      "transforms_used": [
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 19.700000000000003,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:08.825429",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "synth_distribution_*_identity",
+        "synth_distribution_*_identity"
+      ]
+    },
+    {
+      "delta": 7.800000000000001,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:10.130468",
+      "transforms_used": [
+        "synth_logic_not_involution",
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 6.2,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:11.275715",
+      "transforms_used": [
+        "synth_logic_basics_and_identity",
+        "synth_logic_basics_and_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:11.789534",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 6.2,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:12.583963",
+      "transforms_used": [
+        "synth_logic_basics_or_identity",
+        "synth_logic_basics_or_identity"
+      ]
+    },
+    {
+      "delta": 4.6,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:13.250405",
+      "transforms_used": [
+        "synth_logic_not_involution",
+        "synth_logic_basics_and_identity"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:13.722426",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:14.151925",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 7.800000000000001,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:14.770460",
+      "transforms_used": [
+        "bool_idempotent",
+        "bool_idempotent"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:16.380559",
+      "transforms_used": [
+        "synth_logic_basics_and_identity",
+        "synth_logic_basics_or_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:17.249748",
+      "transforms_used": [
+        "synth_logic_basics_or_identity"
+      ]
+    },
+    {
+      "delta": 6.2,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:21.591315",
+      "transforms_used": [
+        "bool_idempotent",
+        "synth_logic_basics_and_identity"
+      ]
+    },
+    {
+      "delta": 3.9000000000000004,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:23.124096",
+      "transforms_used": [
+        "synth_distribution_*_identity"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:23.740490",
+      "transforms_used": [
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 4.6,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:24.105979",
+      "transforms_used": [
+        "synth_logic_not_involution",
+        "synth_logic_basics_and_identity"
+      ]
+    },
+    {
+      "delta": 7.800000000000001,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:24.114713",
+      "transforms_used": [
+        "synth_logic_not_involution",
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:24.964152",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:25.620753",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 13.45,
+      "domain": "calculus",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:26.151267",
+      "transforms_used": [
+        "deriv_sum_rule",
+        "deriv_sum_rule",
+        "deriv_linear",
+        "deriv_power_rule",
+        "synth_distribution_^_identity",
+        "deriv_const_zero",
+        "synth_distribution_+_identity"
+      ]
+    },
+    {
+      "delta": 5.65,
+      "domain": "calculus",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:26.165682",
+      "transforms_used": [
+        "deriv_product_rule",
+        "deriv_const_zero",
+        "synth_distribution_*_annihilation",
+        "synth_distribution_+_identity",
+        "deriv_power_rule"
+      ]
+    },
+    {
+      "delta": 16.45,
+      "domain": "calculus",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:26.175883",
+      "transforms_used": [
+        "synth_distribution_^_identity",
+        "deriv_sum_rule",
+        "deriv_linear",
+        "deriv_power_rule",
+        "synth_distribution_+_identity"
+      ]
+    },
+    {
+      "delta": 8.0,
+      "domain": "calculus",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:26.184019",
+      "transforms_used": [
+        "deriv_sum_rule",
+        "deriv_sin",
+        "deriv_cos"
+      ]
+    },
+    {
+      "delta": 3.75,
+      "domain": "calculus",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:26.192951",
+      "transforms_used": [
+        "deriv_sum_rule",
+        "deriv_ln",
+        "synth_distribution_/_identity"
+      ]
+    },
+    {
+      "delta": 3.8500000000000014,
+      "domain": "calculus",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:26.202040",
+      "transforms_used": [
+        "integ_sum_rule",
+        "integ_linear",
+        "integ_power_rule"
+      ]
+    },
+    {
+      "delta": 11.15,
+      "domain": "calculus",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:26.214696",
+      "transforms_used": [
+        "synth_distribution_+_identity",
+        "deriv_power_rule"
+      ]
+    },
+    {
+      "delta": 12.65,
+      "domain": "calculus",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:27.868795",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "deriv_power_rule",
+        "synth_distribution_^_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:32.792113",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 3.6000000000000014,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:32.819225",
+      "transforms_used": [
+        "perfect_square_trinomial",
+        "commutativity_canonicalize"
+      ]
+    },
+    {
+      "delta": 7.800000000000001,
+      "domain": "calculus",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:33.217645",
+      "transforms_used": [
+        "power_zero_elim",
+        "synth_distribution_^_identity",
+        "deriv_sum_rule",
+        "deriv_power_rule",
+        "synth_distribution_^_identity"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:34.545332",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 9.3,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:35.741627",
+      "transforms_used": [
+        "const_fold",
+        "const_fold",
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.049999999999999,
+      "domain": "calculus",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:37.161565",
+      "transforms_used": [
+        "deriv_product_rule",
+        "algebraic_factor",
+        "deriv_cos",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:37.843354",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 5.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:39.557534",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "physics_newton_f_ma"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:39.981124",
+      "transforms_used": [
+        "equation_subtract_const",
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 3.6000000000000014,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:40.957653",
+      "transforms_used": [
+        "perfect_square_trinomial",
+        "commutativity_canonicalize"
+      ]
+    },
+    {
+      "delta": 5.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:41.939899",
+      "transforms_used": [
+        "synth_distribution_*_identity"
+      ]
+    },
+    {
+      "delta": 20.6,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:41.978438",
+      "transforms_used": [
+        "macro_add_mul_8da76e79",
+        "synth_distribution_*_annihilation",
+        "learned_discovered_+_0_identity"
+      ]
+    },
+    {
+      "delta": 5.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:43.274697",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "commutativity_canonicalize"
+      ]
+    },
+    {
+      "delta": 3.5999999999999996,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:43.461070",
+      "transforms_used": [
+        "synth_distribution_*_annihilation",
+        "equation_solve",
+        "equation_solve"
+      ]
+    },
+    {
+      "delta": 4.6,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:45.603642",
+      "transforms_used": [
+        "synth_distribution_^_identity",
+        "power_zero_elim"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:46.291808",
+      "transforms_used": [
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:46.992921",
+      "transforms_used": [
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:47.251861",
+      "transforms_used": [
+        "synth_distribution_*_annihilation"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:47.895618",
+      "transforms_used": [
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:48.749411",
+      "transforms_used": [
+        "synth_distribution_*_annihilation",
+        "learned_discovered_+_0_identity"
+      ]
+    },
+    {
+      "delta": 19.700000000000003,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:52.017453",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "synth_distribution_*_identity",
+        "synth_distribution_*_identity"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:52.793922",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 5.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:55.040508",
+      "transforms_used": [
+        "synth_distribution_*_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:55.047994",
+      "transforms_used": [
+        "synth_distribution_*_annihilation"
+      ]
+    },
+    {
+      "delta": 3.9000000000000004,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:56.753531",
+      "transforms_used": [
+        "learned_discovered_+_0_identity"
+      ]
+    },
+    {
+      "delta": 5.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:57.929742",
+      "transforms_used": [
+        "synth_distribution_*_identity"
+      ]
+    },
+    {
+      "delta": 5.4,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:59.460395",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "zero_div"
+      ]
+    },
+    {
+      "delta": 3.9000000000000004,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:56:59.666628",
+      "transforms_used": [
+        "synth_distribution_+_identity"
+      ]
+    },
+    {
+      "delta": 3.9000000000000004,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:01.346458",
+      "transforms_used": [
+        "synth_distribution_*_identity"
+      ]
+    },
+    {
+      "delta": 0.75,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:02.161496",
+      "transforms_used": [
+        "trig_zero"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:02.493928",
+      "transforms_used": [
+        "concept_subtractive_self"
+      ]
+    },
+    {
+      "delta": 5.4,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:05.690238",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "synth_distribution_-_identity"
+      ]
+    },
+    {
+      "delta": 0.75,
+      "domain": "trigonometry",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:06.676782",
+      "transforms_used": [
+        "trig_zero"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:07.819779",
+      "transforms_used": [
+        "division_self_elim"
+      ]
+    },
+    {
+      "delta": 10.7,
+      "domain": "factoring",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:08.605564",
+      "transforms_used": [
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor",
+        "distributive_expand",
+        "algebraic_factor"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:09.208273",
+      "transforms_used": [
+        "equation_subtract_const"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:09.251660",
+      "transforms_used": [
+        "synth_distribution_*_annihilation"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:09.284500",
+      "transforms_used": [
+        "synth_distribution_^_identity"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:09.546006",
+      "transforms_used": [
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 5.4,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:10.190169",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "synth_logic_basics_and_identity"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:10.917931",
+      "transforms_used": [
+        "power_zero_elim"
+      ]
+    },
+    {
+      "delta": 5.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:13.605337",
+      "transforms_used": [
+        "synth_distribution_+_identity"
+      ]
+    },
+    {
+      "delta": 11.0,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:15.480569",
+      "transforms_used": [
+        "chemistry_stoich_coeff_one",
+        "synth_distribution_*_identity"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:17.052493",
+      "transforms_used": [
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 3.9000000000000004,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:17.979773",
+      "transforms_used": [
+        "chemistry_stoich_coeff_one"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:17.993882",
+      "transforms_used": [
+        "equation_subtract_const",
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 13.2,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:18.227377",
+      "transforms_used": [
+        "synth_distribution_*_identity",
+        "power_zero_elim",
+        "synth_distribution_*_annihilation",
+        "synth_distribution_+_identity"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:19.787893",
+      "transforms_used": [
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:20.973496",
+      "transforms_used": [
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 1.5,
+      "domain": "arithmetic",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:22.485515",
+      "transforms_used": [
+        "const_fold"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:22.785298",
+      "transforms_used": [
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 3.0,
+      "domain": "algebra",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:26.318809",
+      "transforms_used": [
+        "equation_subtract_const",
+        "multiply_equation_solve"
+      ]
+    },
+    {
+      "delta": 3.1,
+      "domain": "logic_basics",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:28.416088",
+      "transforms_used": [
+        "synth_logic_not_involution"
+      ]
+    },
+    {
+      "delta": 6.0,
+      "domain": "distribution",
+      "success": true,
+      "timestamp": "2026-03-27T03:57:28.500260",
+      "transforms_used": [
+        "distributive_expand",
+        "synth_distribution_*_identity"
+      ]
+    }
+  ],
+  "session_count": 6028,
+  "update_count": 50
+}

@@ -1,0 +1,21 @@
+{
+  "agent_id": "sare_agent",
+  "state": {
+    "energy": 1.0,
+    "arousal": 1.0,
+    "valence": 1.0,
+    "current_focus": "general",
+    "action_count": 0,
+    "success_streak": 35,
+    "failure_streak": 0,
+    "last_action": null,
+    "last_reward": 1.0,
+    "preferences": {
+      "general": 1.0
+    },
+    "fears": {}
+  },
+  "episode_count": 0,
+  "total_reward": 76.19999999999999,
+  "birth_time": 1773043616.4128
+}

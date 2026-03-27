@@ -1,0 +1,121 @@
+{
+  "default": {
+    "session_id": "default",
+    "turns": [
+      {
+        "speaker": "human",
+        "text": "x plus zero equals x",
+        "intent": "teach",
+        "extracted_rule": {
+          "lhs_a": "x",
+          "lhs_b": "zero",
+          "rhs": "x",
+          "op": "+",
+          "pattern": "x + zero",
+          "result": "x",
+          "domain": "arithmetic",
+          "source_text": "x plus zero equals x"
+        },
+        "confidence": 1.0,
+        "timestamp": 1773146472.045812
+      },
+      {
+        "speaker": "system",
+        "text": "I've verified that 'x + zero = x' holds in arithmetic! I've promoted this as a new rule. Energy 4.400 \u2192 0.500 (delta=3.900). This matches patterns I already know \u2014 thank you!",
+        "intent": "respond",
+        "extracted_rule": null,
+        "confidence": 1.0,
+        "timestamp": 1773146473.194734
+      },
+      {
+        "speaker": "human",
+        "text": "not not x simplifies to x",
+        "intent": "teach",
+        "extracted_rule": {
+          "pattern": "not not x",
+          "result": "x",
+          "domain": "general",
+          "source_text": "not not x simplifies to x"
+        },
+        "confidence": 1.0,
+        "timestamp": 1773146473.2076359
+      },
+      {
+        "speaker": "system",
+        "text": "I've verified that 'not not x = x' holds in general! I've promoted this as a new rule. Energy 3.600 \u2192 0.500 (delta=3.100). This matches patterns I already know \u2014 thank you!",
+        "intent": "respond",
+        "extracted_rule": null,
+        "confidence": 1.0,
+        "timestamp": 1773146473.207798
+      },
+      {
+        "speaker": "human",
+        "text": "x plus zero equals x",
+        "intent": "teach",
+        "extracted_rule": {
+          "lhs_a": "x",
+          "lhs_b": "zero",
+          "rhs": "x",
+          "op": "+",
+          "pattern": "x + zero",
+          "result": "x",
+          "domain": "arithmetic",
+          "source_text": "x plus zero equals x"
+        },
+        "confidence": 1.0,
+        "timestamp": 1773146942.869384
+      },
+      {
+        "speaker": "system",
+        "text": "I've verified that 'x + zero = x' holds in arithmetic! I've promoted this as a new rule. Energy 4.400 \u2192 0.500 (delta=3.900). This matches patterns I already know \u2014 thank you!",
+        "intent": "respond",
+        "extracted_rule": null,
+        "confidence": 1.0,
+        "timestamp": 1773146942.8718138
+      }
+    ],
+    "taught_rules": [
+      "dialogue_add_zero",
+      "dialogue_rule_x"
+    ],
+    "disputed_rules": [],
+    "open_questions": [],
+    "created_at": 1773146472.0458019
+  },
+  "test": {
+    "session_id": "test",
+    "turns": [
+      {
+        "speaker": "human",
+        "text": "x plus zero equals x",
+        "intent": "teach",
+        "extracted_rule": {
+          "lhs_a": "x",
+          "lhs_b": "zero",
+          "rhs": "x",
+          "op": "+",
+          "pattern": "x + zero",
+          "result": "x",
+          "domain": "arithmetic",
+          "source_text": "x plus zero equals x"
+        },
+        "confidence": 1.0,
+        "timestamp": 1773147681.58011
+      },
+      {
+        "speaker": "system",
+        "text": "I've verified that 'x + zero = x' holds in arithmetic! I've promoted this as a new rule. Energy 4.400 \u2192 0.500 (delta=3.900). This matches patterns I already know \u2014 thank you!",
+        "intent": "respond",
+        "extracted_rule": null,
+        "confidence": 1.0,
+        "timestamp": 1773147681.5848908
+      }
+    ],
+    "taught_rules": [
+      "dialogue_add_zero"
+    ],
+    "disputed_rules": [],
+    "open_questions": [],
+    "created_at": 1773147681.580103
+  }
+}

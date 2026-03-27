@@ -1,0 +1,1569 @@
+{
+  "domains": {
+    "identity_basics": {
+      "unlocked": true,
+      "mastered": true,
+      "difficulty": "challenge",
+      "attempts": 624,
+      "successes": 624,
+      "last_attempted": 1774349224.094534,
+      "last_reviewed": 1773679343.1094542
+    },
+    "annihilation": {
+      "unlocked": true,
+      "mastered": true,
+      "difficulty": "challenge",
+      "attempts": 69,
+      "successes": 69,
+      "last_attempted": 1773470312.020354,
+      "last_reviewed": 1774349222.7832692
+    },
+    "constant_arithmetic": {
+      "unlocked": true,
+      "mastered": true,
+      "difficulty": "challenge",
+      "attempts": 200,
+      "successes": 200,
+      "last_attempted": 1773472560.026197,
+      "last_reviewed": 1773679353.6333492
+    },
+    "negation": {
+      "unlocked": true,
+      "mastered": true,
+      "difficulty": "challenge",
+      "attempts": 3323,
+      "successes": 3323,
+      "last_attempted": 1773470370.314784,
+      "last_reviewed": 1774349218.3572018
+    },
+    "power_rules": {
+      "unlocked": true,
+      "mastered": true,
+      "difficulty": "challenge",
+      "attempts": 58,
+      "successes": 58,
+      "last_attempted": 1773469913.143272,
+      "last_reviewed": 1773679343.1049962
+    },
+    "combining_terms": {
+      "unlocked": true,
+      "mastered": true,
+      "difficulty": "challenge",
+      "attempts": 51,
+      "successes": 51,
+      "last_attempted": 1773650514.4800692,
+      "last_reviewed": 1774349222.783958
+    },
+    "distribution": {
+      "unlocked": true,
+      "mastered": true,
+      "difficulty": "challenge",
+      "attempts": 890,
+      "successes": 890,
+      "last_attempted": 1774349224.1182878,
+      "last_reviewed": 1774349218.354337
+    },
+    "factoring": {
+      "unlocked": true,
+      "mastered": true,
+      "difficulty": "challenge",
+      "attempts": 139,
+      "successes": 139,
+      "last_attempted": 1774349220.316053,
+      "last_reviewed": 1773679343.106903
+    },
+    "linear_equations": {
+      "unlocked": true,
+      "mastered": true,
+      "difficulty": "challenge",
+      "attempts": 77,
+      "successes": 77,
+      "last_attempted": 1773472196.269645,
+      "last_reviewed": 1774349222.784996
+    },
+    "logic_basics": {
+      "unlocked": true,
+      "mastered": true,
+      "difficulty": "challenge",
+      "attempts": 1105,
+      "successes": 734,
+      "last_attempted": 1774349224.077271,
+      "last_reviewed": 1774349222.78446
+    },
+    "set_theory": {
+      "unlocked": true,
+      "mastered": true,
+      "difficulty": "challenge",
+      "attempts": 40,
+      "successes": 37,
+      "last_attempted": 1773680235.0263062,
+      "last_reviewed": 1774349218.365654
+    },
+    "complex_simplification": {
+      "unlocked": true,
+      "mastered": true,
+      "difficulty": "challenge",
+      "attempts": 53,
+      "successes": 53,
+      "last_attempted": 1773462582.037129,
+      "last_reviewed": 1773679343.101065
+    },
+    "calculus": {
+      "unlocked": true,
+      "mastered": true,
+      "difficulty": "challenge",
+      "attempts": 197,
+      "successes": 197,
+      "last_attempted": 1774349220.536342,
+      "last_reviewed": 1774349222.787097
+    },
+    "advanced_calculus": {
+      "unlocked": true,
+      "mastered": true,
+      "difficulty": "challenge",
+      "attempts": 180,
+      "successes": 180,
+      "last_attempted": 1773462582.064841,
+      "last_reviewed": 1773679343.108203
+    },
+    "integration": {
+      "unlocked": true,
+      "mastered": true,
+      "difficulty": "challenge",
+      "attempts": 30,
+      "successes": 30,
+      "last_attempted": 1773462582.06833,
+      "last_reviewed": 1774349222.779434
+    },
+    "probability_statistics": {
+      "unlocked": true,
+      "mastered": true,
+      "difficulty": "challenge",
+      "attempts": 64,
+      "successes": 64,
+      "last_attempted": 1773471426.017138,
+      "last_reviewed": 1774349222.781399
+    },
+    "matrix_operations": {
+      "unlocked": true,
+      "mastered": true,
+      "difficulty": "challenge",
+      "attempts": 75,
+      "successes": 75,
+      "last_attempted": 1773462582.1711302,
+      "last_reviewed": 1774349218.363241
+    },
+    "cancellation_patterns": {
+      "unlocked": true,
+      "mastered": true,
+      "difficulty": "challenge",
+      "attempts": 34,
+      "successes": 34,
+      "last_attempted": 1773469486.0250251,
+      "last_reviewed": 1773679348.0800588
+    }
+  },
+  "history": [
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680105.081148
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680108.575559
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680113.6909912
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680131.581038
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680135.4098089
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680135.702106
+    },
+    {
+      "expression": "not (A or B)",
+      "domain": "logic_basics",
+      "success": false,
+      "delta": 0.0,
+      "timestamp": 1773680137.273468
+    },
+    {
+      "expression": "not (A or B)",
+      "domain": "logic_basics",
+      "success": false,
+      "delta": 0.0,
+      "timestamp": 1773680137.273485
+    },
+    {
+      "expression": "not (A or B)",
+      "domain": "logic_basics",
+      "success": false,
+      "delta": 0.0,
+      "timestamp": 1773680137.273487
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1773680139.230158
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680142.728568
+    },
+    {
+      "expression": "not (A or B)",
+      "domain": "logic_basics",
+      "success": false,
+      "delta": 0.0,
+      "timestamp": 1773680143.15394
+    },
+    {
+      "expression": "not (A or B)",
+      "domain": "logic_basics",
+      "success": false,
+      "delta": 0.0,
+      "timestamp": 1773680143.153951
+    },
+    {
+      "expression": "not (A or B)",
+      "domain": "logic_basics",
+      "success": false,
+      "delta": 0.0,
+      "timestamp": 1773680143.153952
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680144.264707
+    },
+    {
+      "expression": "not not p  = p",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680153.629181
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680161.184094
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680168.713196
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1773680175.25032
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680177.278246
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680178.629627
+    },
+    {
+      "expression": "not not p  = p",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680179.460614
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680199.009631
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680205.71083
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680215.702085
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680216.5463529
+    },
+    {
+      "expression": "not not p  = p",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680216.624935
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680224.8450181
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1773680234.3527539
+    },
+    {
+      "expression": "A union empty  = A (identity)",
+      "domain": "set_theory",
+      "success": false,
+      "delta": 0.0,
+      "timestamp": 1773680235.0262961
+    },
+    {
+      "expression": "A union empty  = A (identity)",
+      "domain": "set_theory",
+      "success": false,
+      "delta": 0.0,
+      "timestamp": 1773680235.026304
+    },
+    {
+      "expression": "A union empty  = A (identity)",
+      "domain": "set_theory",
+      "success": false,
+      "delta": 0.0,
+      "timestamp": 1773680235.0263062
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680235.725368
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680242.4233038
+    },
+    {
+      "expression": "not not p  = p",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680242.9086988
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680245.13804
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680246.442879
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680246.488823
+    },
+    {
+      "expression": "not not p  = p",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680248.296649
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680251.9654028
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680252.833463
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680253.323211
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680260.169853
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680261.615814
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680263.6346219
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680271.165737
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680273.5287669
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680294.669585
+    },
+    {
+      "expression": "not not p  = p",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680295.4837708
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1773680295.4868731
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680296.146828
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680296.8683698
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680302.086776
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680310.315285
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680313.4705129
+    },
+    {
+      "expression": "not not p  = p",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680324.54867
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1773680325.8484092
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680332.224834
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680334.953744
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680335.498538
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680339.99899
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680347.581673
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680348.0556622
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680358.947184
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680359.9229481
+    },
+    {
+      "expression": "not not p  = p",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680362.8157802
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680367.411325
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1773680369.679713
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680371.225045
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680371.987676
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680376.120259
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680376.5823739
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680377.7781298
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680392.661279
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1773680393.401741
+    },
+    {
+      "expression": "not (A or B)",
+      "domain": "logic_basics",
+      "success": false,
+      "delta": 0.0,
+      "timestamp": 1773680395.024205
+    },
+    {
+      "expression": "not (A or B)",
+      "domain": "logic_basics",
+      "success": false,
+      "delta": 0.0,
+      "timestamp": 1773680395.024214
+    },
+    {
+      "expression": "not (A or B)",
+      "domain": "logic_basics",
+      "success": false,
+      "delta": 0.0,
+      "timestamp": 1773680395.0242162
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680395.153962
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680399.615923
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680401.9385998
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680413.888387
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680420.150641
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1773680421.002906
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680434.22877
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680437.8285089
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680437.995038
+    },
+    {
+      "expression": "sin^2(x) + cos^2(x)",
+      "domain": "factoring",
+      "success": true,
+      "delta": 10.7,
+      "timestamp": 1773680438.504253
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1773680444.001982
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1773680445.204725
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680457.748032
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680462.687787
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1773680469.500438
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680486.7796018
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680489.591681
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680490.747327
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680490.858597
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680497.864892
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680504.541993
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680508.884526
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680511.7784462
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680515.928564
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680520.3956962
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680521.901727
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680524.142962
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680525.704542
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680534.081773
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680535.398766
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680540.7564778
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680543.217906
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680544.8835142
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680546.268685
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680549.117067
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680552.524416
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680553.063769
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1773680558.3507998
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680558.421986
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680560.756557
+    },
+    {
+      "expression": "not not p  = p",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680561.67474
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680563.191446
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680565.1624
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680566.639106
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1773680577.743223
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680581.4051478
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680582.815419
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680583.812245
+    },
+    {
+      "expression": "not not p  = p",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680589.749037
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680592.15888
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680594.692058
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680598.054216
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680598.6480708
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680601.3606322
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680602.595053
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680604.208979
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1773680605.883887
+    },
+    {
+      "expression": "not not p  = p",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680619.232348
+    },
+    {
+      "expression": "not not p  = p",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680622.686313
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680625.730027
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680625.886945
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680631.539736
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680637.1770182
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680640.405087
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680647.2268538
+    },
+    {
+      "expression": "not not p  = p",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680649.733553
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680649.9809742
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1773680651.752377
+    },
+    {
+      "expression": "not not p  = p",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680652.820299
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680655.000467
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680657.069472
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680678.2595708
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680678.452131
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680679.338636
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1773680687.7571032
+    },
+    {
+      "expression": "not not p  = p",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680702.2485352
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680704.751957
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680705.656024
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680711.149954
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1773680712.6587641
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680713.05333
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1773680714.513428
+    },
+    {
+      "expression": "not not p  = p",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680716.204778
+    },
+    {
+      "expression": "not not A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680716.735504
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680720.785204
+    },
+    {
+      "expression": "not not p  = p",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680727.073576
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680729.230012
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680729.597418
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680730.1445389
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680733.2992399
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680741.493802
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680750.332277
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680751.067756
+    },
+    {
+      "expression": "integral(x, dx) * 1",
+      "domain": "calculus",
+      "success": true,
+      "delta": 4.15,
+      "timestamp": 1773680752.322943
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680755.54588
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1773680760.509409
+    },
+    {
+      "expression": "not not p  = p",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680760.633745
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1773680767.509307
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1773680768.863433
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1773680782.296675
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1774349219.29472
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1774349219.298367
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1774349219.3065732
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1774349219.334543
+    },
+    {
+      "expression": "A AND TRUE OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.0,
+      "timestamp": 1774349219.400147
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1774349219.403639
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1774349219.436804
+    },
+    {
+      "expression": "d/dx(x^0)",
+      "domain": "calculus",
+      "success": true,
+      "delta": 7.25,
+      "timestamp": 1774349219.510143
+    },
+    {
+      "expression": "d/dx(x^1)",
+      "domain": "calculus",
+      "success": true,
+      "delta": 7.25,
+      "timestamp": 1774349219.5416052
+    },
+    {
+      "expression": "(x + 0) * (y * 1)",
+      "domain": "distribution",
+      "success": true,
+      "delta": 14.399999999999999,
+      "timestamp": 1774349219.661005
+    },
+    {
+      "expression": "x * 0 + y * 0",
+      "domain": "factoring",
+      "success": true,
+      "delta": 11.7,
+      "timestamp": 1774349220.316061
+    },
+    {
+      "expression": "d/dx(c)  = 0",
+      "domain": "calculus",
+      "success": true,
+      "delta": 2.25,
+      "timestamp": 1774349220.536343
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1774349220.605634
+    },
+    {
+      "expression": "a*(b+c) = ab+ac",
+      "domain": "distribution",
+      "success": true,
+      "delta": 0.29999999999999893,
+      "timestamp": 1774349220.860163
+    },
+    {
+      "expression": "not (x and not x) + 0",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.9000000000000012,
+      "timestamp": 1774349222.3037682
+    },
+    {
+      "expression": "3 * (4 + 2)",
+      "domain": "distribution",
+      "success": true,
+      "delta": 8.0,
+      "timestamp": 1774349223.012158
+    },
+    {
+      "expression": "A OR FALSE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1774349223.990226
+    },
+    {
+      "expression": "x + 0",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1774349224.0418649
+    },
+    {
+      "expression": "NOT NOT A",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 3.1,
+      "timestamp": 1774349224.0672388
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic_basics",
+      "success": true,
+      "delta": 1.5,
+      "timestamp": 1774349224.0772722
+    },
+    {
+      "expression": "x * 1",
+      "domain": "identity_basics",
+      "success": true,
+      "delta": 3.9000000000000004,
+      "timestamp": 1774349224.094534
+    },
+    {
+      "expression": "(x + 1) * 1",
+      "domain": "distribution",
+      "success": true,
+      "delta": 10.5,
+      "timestamp": 1774349224.1182878
+    }
+  ],
+  "saved_at": 1774349225.239986
+}

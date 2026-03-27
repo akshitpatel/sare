@@ -1,0 +1,54 @@
+{
+  "pattern_counts": {
+    "multiplicative_identity": 8760,
+    "additive_identity": 23099,
+    "double_negation": 8379,
+    "multiplicative_zero": 244,
+    "distributive_mul_add": 13812,
+    "equation_solve": 14,
+    "subtractive_self": 93,
+    "algebraic_factor": 154
+  },
+  "promoted_rules": [
+    {
+      "name": "multiplicative_identity",
+      "domain": "logic",
+      "confidence": 0.8
+    },
+    {
+      "name": "additive_identity",
+      "domain": "arithmetic",
+      "confidence": 0.8
+    },
+    {
+      "name": "double_negation",
+      "domain": "arithmetic",
+      "confidence": 0.8
+    },
+    {
+      "name": "multiplicative_zero",
+      "domain": "arithmetic",
+      "confidence": 0.8
+    },
+    {
+      "name": "distributive_mul_add",
+      "domain": "algebra",
+      "confidence": 0.8
+    },
+    {
+      "name": "subtractive_self",
+      "domain": "arithmetic",
+      "confidence": 0.8
+    },
+    {
+      "name": "equation_solve",
+      "domain": "algebra",
+      "confidence": 0.8
+    },
+    {
+      "name": "algebraic_factor",
+      "domain": "algebra",
+      "confidence": 0.8
+    }
+  ]
+}

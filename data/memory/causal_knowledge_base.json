@@ -1,0 +1,441 @@
+{
+  "rules": {
+    "*::*(x, 1) \u2192 x": {
+      "operator": "*",
+      "desc": "*(x, 1) \u2192 x",
+      "confidence": 0.99,
+      "count": 3546
+    },
+    "neg::neg(neg(x)) \u2192 x": {
+      "operator": "neg",
+      "desc": "neg(neg(x)) \u2192 x",
+      "confidence": 0.99,
+      "count": 1699
+    },
+    "+::+(x, 0) \u2192 x": {
+      "operator": "+",
+      "desc": "+(x, 0) \u2192 x",
+      "confidence": 0.99,
+      "count": 3193
+    },
+    "or::or(x, false) \u2192 x": {
+      "operator": "or",
+      "desc": "or(x, false) \u2192 x",
+      "confidence": 0.99,
+      "count": 395
+    },
+    "^::^(x, 0) \u2192 0": {
+      "operator": "^",
+      "desc": "^(x, 0) \u2192 0",
+      "confidence": 0.99,
+      "count": 186
+    },
+    "neg::neg(x, 0) \u2192 x": {
+      "operator": "neg",
+      "desc": "neg(x, 0) \u2192 x",
+      "confidence": 0.99,
+      "count": 456
+    },
+    "+::+(x, 0) \u2192 0": {
+      "operator": "+",
+      "desc": "+(x, 0) \u2192 0",
+      "confidence": 0.99,
+      "count": 772
+    },
+    "neg::neg(x, 0) \u2192 0": {
+      "operator": "neg",
+      "desc": "neg(x, 0) \u2192 0",
+      "confidence": 0.99,
+      "count": 135
+    },
+    "neg::neg(x, 1) \u2192 x": {
+      "operator": "neg",
+      "desc": "neg(x, 1) \u2192 x",
+      "confidence": 0.99,
+      "count": 387
+    },
+    "*::*(x, 1) \u2192 1": {
+      "operator": "*",
+      "desc": "*(x, 1) \u2192 1",
+      "confidence": 0.99,
+      "count": 778
+    },
+    "not::not(not(x)) \u2192 x": {
+      "operator": "not",
+      "desc": "not(not(x)) \u2192 x",
+      "confidence": 0.99,
+      "count": 182
+    },
+    "and::and(x, true) \u2192 x": {
+      "operator": "and",
+      "desc": "and(x, true) \u2192 x",
+      "confidence": 0.99,
+      "count": 181
+    },
+    "neg::neg(x, 1) \u2192 1": {
+      "operator": "neg",
+      "desc": "neg(x, 1) \u2192 1",
+      "confidence": 0.99,
+      "count": 116
+    },
+    "derivative::derivative(x, 1) \u2192 x": {
+      "operator": "derivative",
+      "desc": "derivative(x, 1) \u2192 x",
+      "confidence": 0.99,
+      "count": 189
+    },
+    "neg::neg(x, true) \u2192 x": {
+      "operator": "neg",
+      "desc": "neg(x, true) \u2192 x",
+      "confidence": 0.99,
+      "count": 39
+    },
+    "neg::neg(c1, c2) \u2192 c3": {
+      "operator": "neg",
+      "desc": "neg(c1, c2) \u2192 c3",
+      "confidence": 0.99,
+      "count": 105
+    },
+    "+::+(x, 1) \u2192 x": {
+      "operator": "+",
+      "desc": "+(x, 1) \u2192 x",
+      "confidence": 0.99,
+      "count": 42
+    },
+    "or::or(x, 1) \u2192 x": {
+      "operator": "or",
+      "desc": "or(x, 1) \u2192 x",
+      "confidence": 0.99,
+      "count": 12
+    },
+    "not::Simplification via bool_idempotent (removed 4 nodes)": {
+      "operator": "not",
+      "desc": "Simplification via bool_idempotent (removed 4 nodes)",
+      "confidence": 0.99,
+      "count": 41
+    },
+    "*::*(x, 0) \u2192 x": {
+      "operator": "*",
+      "desc": "*(x, 0) \u2192 x",
+      "confidence": 0.99,
+      "count": 29
+    },
+    "neg::neg(x, 2) \u2192 2": {
+      "operator": "neg",
+      "desc": "neg(x, 2) \u2192 2",
+      "confidence": 0.99,
+      "count": 41
+    },
+    "/::/(x, 1) \u2192 x": {
+      "operator": "/",
+      "desc": "/(x, 1) \u2192 x",
+      "confidence": 0.99,
+      "count": 9
+    },
+    "neg::neg(x, 5) \u2192 5": {
+      "operator": "neg",
+      "desc": "neg(x, 5) \u2192 5",
+      "confidence": 0.99,
+      "count": 22
+    },
+    "neg::neg(x, 3) \u2192 3": {
+      "operator": "neg",
+      "desc": "neg(x, 3) \u2192 3",
+      "confidence": 0.99,
+      "count": 23
+    },
+    "^::^(x, 1) \u2192 1": {
+      "operator": "^",
+      "desc": "^(x, 1) \u2192 1",
+      "confidence": 0.99,
+      "count": 5
+    },
+    "and::and(x, 0) \u2192 x": {
+      "operator": "and",
+      "desc": "and(x, 0) \u2192 x",
+      "confidence": 0.99,
+      "count": 7
+    },
+    "neg::Simplification via double_neg (removed 2 nodes)": {
+      "operator": "neg",
+      "desc": "Simplification via double_neg (removed 2 nodes)",
+      "confidence": 0.99,
+      "count": 41
+    },
+    "neg::neg(x, 7) \u2192 7": {
+      "operator": "neg",
+      "desc": "neg(x, 7) \u2192 7",
+      "confidence": 0.99,
+      "count": 23
+    },
+    "and::and(x, 1) \u2192 x": {
+      "operator": "and",
+      "desc": "and(x, 1) \u2192 x",
+      "confidence": 0.99,
+      "count": 9
+    },
+    "neg::Simplification via synth_distribution_neg_involution (removed 4 nodes)": {
+      "operator": "neg",
+      "desc": "Simplification via synth_distribution_neg_involution (removed 4 nodes)",
+      "confidence": 0.99,
+      "count": 15
+    },
+    "neg::neg(x, false) \u2192 x": {
+      "operator": "neg",
+      "desc": "neg(x, false) \u2192 x",
+      "confidence": 0.99,
+      "count": 20
+    },
+    "neg::neg(x, 25) \u2192 25": {
+      "operator": "neg",
+      "desc": "neg(x, 25) \u2192 25",
+      "confidence": 0.99,
+      "count": 4
+    },
+    "^::^(c1, c2) \u2192 c3": {
+      "operator": "^",
+      "desc": "^(c1, c2) \u2192 c3",
+      "confidence": 0.99,
+      "count": 8
+    },
+    "neg::neg(x, 10) \u2192 10": {
+      "operator": "neg",
+      "desc": "neg(x, 10) \u2192 10",
+      "confidence": 0.99,
+      "count": 12
+    },
+    "^::^(x, 1) \u2192 x": {
+      "operator": "^",
+      "desc": "^(x, 1) \u2192 x",
+      "confidence": 0.99,
+      "count": 4
+    },
+    "neg::neg(x, 20) \u2192 20": {
+      "operator": "neg",
+      "desc": "neg(x, 20) \u2192 20",
+      "confidence": 0.99,
+      "count": 6
+    },
+    "or::or(x, 0) \u2192 x": {
+      "operator": "or",
+      "desc": "or(x, 0) \u2192 x",
+      "confidence": 0.99,
+      "count": 16
+    },
+    "neg::neg(x, x) \u2192 identity": {
+      "operator": "neg",
+      "desc": "neg(x, x) \u2192 identity",
+      "confidence": 0.99,
+      "count": 13
+    },
+    "neg::neg(x, 2.0) \u2192 2.0": {
+      "operator": "neg",
+      "desc": "neg(x, 2.0) \u2192 2.0",
+      "confidence": 0.65,
+      "count": 1
+    },
+    "neg::neg(x, 4.0) \u2192 4.0": {
+      "operator": "neg",
+      "desc": "neg(x, 4.0) \u2192 4.0",
+      "confidence": 0.8000000000000002,
+      "count": 4
+    },
+    "neg::neg(x, 2) \u2192 x": {
+      "operator": "neg",
+      "desc": "neg(x, 2) \u2192 x",
+      "confidence": 0.9500000000000003,
+      "count": 4
+    },
+    "neg::neg(x, 4) \u2192 4": {
+      "operator": "neg",
+      "desc": "neg(x, 4) \u2192 4",
+      "confidence": 0.99,
+      "count": 22
+    },
+    "neg::neg(x, 3) \u2192 x": {
+      "operator": "neg",
+      "desc": "neg(x, 3) \u2192 x",
+      "confidence": 0.99,
+      "count": 5
+    },
+    "neg::neg(x, 0.0) \u2192 0.0": {
+      "operator": "neg",
+      "desc": "neg(x, 0.0) \u2192 0.0",
+      "confidence": 0.8500000000000002,
+      "count": 3
+    },
+    "neg::neg(x, 3.0) \u2192 3.0": {
+      "operator": "neg",
+      "desc": "neg(x, 3.0) \u2192 3.0",
+      "confidence": 0.99,
+      "count": 2
+    },
+    "^::^(x, 0) \u2192 x": {
+      "operator": "^",
+      "desc": "^(x, 0) \u2192 x",
+      "confidence": 0.9000000000000002,
+      "count": 4
+    },
+    "neg::neg(x, 15) \u2192 15": {
+      "operator": "neg",
+      "desc": "neg(x, 15) \u2192 15",
+      "confidence": 0.9500000000000003,
+      "count": 4
+    },
+    "neg::neg(x, 2.0) \u2192 x": {
+      "operator": "neg",
+      "desc": "neg(x, 2.0) \u2192 x",
+      "confidence": 0.7,
+      "count": 1
+    },
+    "neg::neg(x, 12) \u2192 12": {
+      "operator": "neg",
+      "desc": "neg(x, 12) \u2192 12",
+      "confidence": 0.99,
+      "count": 4
+    },
+    "neg::neg(x, 6.0) \u2192 6.0": {
+      "operator": "neg",
+      "desc": "neg(x, 6.0) \u2192 6.0",
+      "confidence": 0.7500000000000001,
+      "count": 2
+    },
+    "neg::neg(x, 6) \u2192 6": {
+      "operator": "neg",
+      "desc": "neg(x, 6) \u2192 6",
+      "confidence": 0.9500000000000003,
+      "count": 4
+    },
+    "neg::neg(x, 5.0) \u2192 5.0": {
+      "operator": "neg",
+      "desc": "neg(x, 5.0) \u2192 5.0",
+      "confidence": 0.7500000000000001,
+      "count": 2
+    },
+    "unknown::Simplification via const_fold (removed 2 nodes)": {
+      "operator": "unknown",
+      "desc": "Simplification via const_fold (removed 2 nodes)",
+      "confidence": 0.6,
+      "count": 1
+    },
+    "neg::neg(x, 24.0) \u2192 24.0": {
+      "operator": "neg",
+      "desc": "neg(x, 24.0) \u2192 24.0",
+      "confidence": 0.65,
+      "count": 1
+    },
+    "and::Simplification via bool_idempotent (removed 2 nodes)": {
+      "operator": "and",
+      "desc": "Simplification via bool_idempotent (removed 2 nodes)",
+      "confidence": 0.99,
+      "count": 3
+    },
+    "neg::Simplification via synth_distribution_neg_involution (removed 6 nodes)": {
+      "operator": "neg",
+      "desc": "Simplification via synth_distribution_neg_involution (removed 6 nodes)",
+      "confidence": 0.6000000000000001,
+      "count": 3
+    },
+    "and::and(c1, c2) \u2192 c3": {
+      "operator": "and",
+      "desc": "and(c1, c2) \u2192 c3",
+      "confidence": 0.99,
+      "count": 2
+    },
+    "or::or(c1, c2) \u2192 c3": {
+      "operator": "or",
+      "desc": "or(c1, c2) \u2192 c3",
+      "confidence": 0.8,
+      "count": 1
+    },
+    "-::-(c1, c2) \u2192 c3": {
+      "operator": "-",
+      "desc": "-(c1, c2) \u2192 c3",
+      "confidence": 0.8,
+      "count": 1
+    }
+  },
+  "op_rules": {
+    "*": [
+      "*::*(x, 1) \u2192 x",
+      "*::*(x, 1) \u2192 1",
+      "*::*(x, 0) \u2192 x"
+    ],
+    "neg": [
+      "neg::neg(neg(x)) \u2192 x",
+      "neg::neg(x, 0) \u2192 x",
+      "neg::neg(x, 0) \u2192 0",
+      "neg::neg(x, 1) \u2192 x",
+      "neg::neg(x, 1) \u2192 1",
+      "neg::neg(x, true) \u2192 x",
+      "neg::neg(c1, c2) \u2192 c3",
+      "neg::neg(x, 2) \u2192 2",
+      "neg::neg(x, 5) \u2192 5",
+      "neg::neg(x, 3) \u2192 3",
+      "neg::Simplification via double_neg (removed 2 nodes)",
+      "neg::neg(x, 7) \u2192 7",
+      "neg::Simplification via synth_distribution_neg_involution (removed 4 nodes)",
+      "neg::neg(x, false) \u2192 x",
+      "neg::neg(x, 25) \u2192 25",
+      "neg::neg(x, 10) \u2192 10",
+      "neg::neg(x, 20) \u2192 20",
+      "neg::neg(x, x) \u2192 identity",
+      "neg::neg(x, 2.0) \u2192 2.0",
+      "neg::neg(x, 4.0) \u2192 4.0",
+      "neg::neg(x, 2) \u2192 x",
+      "neg::neg(x, 4) \u2192 4",
+      "neg::neg(x, 3) \u2192 x",
+      "neg::neg(x, 0.0) \u2192 0.0",
+      "neg::neg(x, 3.0) \u2192 3.0",
+      "neg::neg(x, 15) \u2192 15",
+      "neg::neg(x, 2.0) \u2192 x",
+      "neg::neg(x, 12) \u2192 12",
+      "neg::neg(x, 6.0) \u2192 6.0",
+      "neg::neg(x, 6) \u2192 6",
+      "neg::neg(x, 5.0) \u2192 5.0",
+      "neg::neg(x, 24.0) \u2192 24.0",
+      "neg::Simplification via synth_distribution_neg_involution (removed 6 nodes)"
+    ],
+    "+": [
+      "+::+(x, 0) \u2192 x",
+      "+::+(x, 0) \u2192 0",
+      "+::+(x, 1) \u2192 x"
+    ],
+    "or": [
+      "or::or(x, false) \u2192 x",
+      "or::or(x, 1) \u2192 x",
+      "or::or(x, 0) \u2192 x",
+      "or::or(c1, c2) \u2192 c3"
+    ],
+    "^": [
+      "^::^(x, 0) \u2192 0",
+      "^::^(x, 1) \u2192 1",
+      "^::^(c1, c2) \u2192 c3",
+      "^::^(x, 1) \u2192 x",
+      "^::^(x, 0) \u2192 x"
+    ],
+    "not": [
+      "not::not(not(x)) \u2192 x",
+      "not::Simplification via bool_idempotent (removed 4 nodes)"
+    ],
+    "and": [
+      "and::and(x, true) \u2192 x",
+      "and::and(x, 0) \u2192 x",
+      "and::and(x, 1) \u2192 x",
+      "and::Simplification via bool_idempotent (removed 2 nodes)",
+      "and::and(c1, c2) \u2192 c3"
+    ],
+    "derivative": [
+      "derivative::derivative(x, 1) \u2192 x"
+    ],
+    "/": [
+      "/::/(x, 1) \u2192 x"
+    ],
+    "unknown": [
+      "unknown::Simplification via const_fold (removed 2 nodes)"
+    ],
+    "-": [
+      "-::-(c1, c2) \u2192 c3"
+    ]
+  }
+}

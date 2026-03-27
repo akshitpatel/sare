@@ -1,0 +1,29 @@
+{
+    "provider": "lmstudio",
+    "lmstudio_url": "http://localhost:1234",
+    "model": "local-model",
+    "fallback_model": "local-model",
+    "fast_model": "local-model",
+    "synthesis_model": "local-model",
+    "final_fallback_model": "local-model",
+    "evolve_models": {
+        "prescreen":      "local-model",
+        "prescreen2":     "local-model",
+        "planner":        "local-model",
+        "executor":       "local-model",
+        "alt_proposer":   "local-model",
+        "alt_proposer2":  "local-model",
+        "critic_main":    "local-model",
+        "critic_cheap":   "local-model",
+        "judge":          "local-model",
+        "multi_judge":    "local-model",
+        "judge_fallback": "local-model",
+        "judge_fallback2":"local-model",
+        "verifier":       "local-model",
+        "test_gen":       "local-model"
+    },
+    "temperature": 0.1,
+    "max_tokens": 1536,
+    "parse_prompt": "You are a symbolic math/logic parser. Convert the user's problem into a structured JSON object with fields: {\"expression\": \"<canonical form>\", \"domain\": \"algebra|logic|arithmetic|code|general\", \"goal\": \"simplify|prove|evaluate|optimize\"}. Return ONLY valid JSON, no markdown.\n\nExamples:\n- \"What is 3x + 0?\" \u2192 {\"expression\": \"3*x + 0\", \"domain\": \"algebra\", \"goal\": \"simplify\"}\n- \"Is A AND (NOT A) true?\" \u2192 {\"expression\": \"A & (~A)\", \"domain\": \"logic\", \"goal\": \"evaluate\"}\n- \"Simplify (x+1)^2 - x^2 - 2x\" \u2192 {\"expression\": \"(x+1)^2 - x^2 - 2*x\", \"domain\": \"algebra\", \"goal\": \"simplify\"}\n\nUser problem: {PROBLEM}",
+    "explain_prompt": "You are a math/logic tutor. Explain this proof trace in 2-3 clear sentences. Be concrete about what happened to the expression.\n\nOriginal: {PROBLEM}\nExpression: {EXPRESSION}\nTransforms: {TRANSFORMS}\nComplexity: {E_BEFORE} \u2192 {E_AFTER} ({DELTA} reduction)\n\nExplanation:"
+}

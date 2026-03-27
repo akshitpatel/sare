@@ -941,6 +941,12 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_brain_composite()
         elif parsed.path == "/api/brain/astar":
             self._api_brain_astar_stats()
+        elif parsed.path == "/api/brain/hypothesis":
+            self._api_brain_hypothesis()
+        elif parsed.path == "/api/datasets":
+            self._api_datasets()
+        elif parsed.path == "/api/benchmark/hard":
+            self._api_benchmark_hard()
         elif parsed.path == "/api/brain/society":
             self._api_brain_society()
         elif parsed.path == "/api/brain/metacognition":
@@ -1279,6 +1285,8 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
             self._api_config_update(parsed.path, body)
+        elif parsed.path == "/api/benchmark/hard":
+            self._api_benchmark_hard_run()
         elif parsed.path == "/api/brain/society":
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
@@ -6058,6 +6066,45 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
                 self._json_response({"budget_seconds": float(value)})
             else:
                 self._json_response({"error": "not found"}, 404)
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_brain_hypothesis(self):
+        """GET /api/brain/hypothesis — HypothesisEngine stats."""
+        try:
+            from sare.search.hypothesis_engine import get_hypothesis_engine
+            self._json_response(get_hypothesis_engine().summary())
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_datasets(self):
+        """GET /api/datasets — external dataset ingester summary."""
+        try:
+            from sare.knowledge.external_datasets import get_dataset_ingester
+            self._json_response(get_dataset_ingester().summary())
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_benchmark_hard(self):
+        """GET /api/benchmark/hard — hard suite score trend."""
+        try:
+            from sare.benchmarks.hard_suite_runner import get_hard_suite_runner
+            self._json_response(get_hard_suite_runner().trend())
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_benchmark_hard_run(self):
+        """POST /api/benchmark/hard — run hard suite and return full results."""
+        try:
+            from sare.benchmarks.hard_suite_runner import get_hard_suite_runner
+            from sare.brain import get_brain
+            brain = get_brain()
+            if not brain:
+                self._json_response({"error": "Brain not available"}, 503)
+                return
+            runner = get_hard_suite_runner()
+            result = runner.run(lambda expr: brain.solve(expr), budget_seconds=5.0)
+            self._json_response(result)
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 

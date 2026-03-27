@@ -1,0 +1,14 @@
+[
+  {
+    "hypothesis": "The 'not_false' transformation was intentionally designed to introduce a more complex, nested structure. This resulted in a significantly increased complexity, leading to a reduction of 7.1 compared to the expected 0.9. This suggests a deliberate manipulation of the arithmetic rules rather than a simple reduction in complexity.",
+    "pattern": "nested_expression",
+    "confidence": 0.0,
+    "domain": "arithmetic",
+    "transform": "not_false",
+    "expected": 0.91012,
+    "actual": 7.110000000000001,
+    "surprise": 6.81215663868501,
+    "evidence": 1,
+    "timestamp": 1774583881.198949
+  }
+]

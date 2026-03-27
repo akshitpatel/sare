@@ -15,11 +15,12 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Dict, List, Optional, Set
 
 log = logging.getLogger(__name__)
 
 SEEDS_PATH = Path(__file__).resolve().parents[3] / "configs" / "knowledge_seeds.json"
+SUPPORTED_DOMAINS = {"arithmetic", "algebra", "logic", "calculus", "geometry", "physics"}
 
 
 def load_seeds(concept_registry, seeds_path: Optional[Path] = None) -> int:
@@ -49,13 +50,24 @@ def load_seeds(concept_registry, seeds_path: Optional[Path] = None) -> int:
 
     for seed in seeds:
         try:
-            _inject_seed(concept_registry, seed)
-            loaded += 1
+            if _validate_seed_domain(seed):
+                _inject_seed(concept_registry, seed)
+                loaded += 1
+            else:
+                log.debug("Seed '%s' skipped: unsupported domain '%s'", seed.get("name", "?"), seed.get("domain", "unknown"))
         except Exception as e:
             log.debug("Seed '%s' injection failed: %s", seed.get("name", "?"), e)
 
     log.info("Knowledge seeds loaded: %d/%d into ConceptRegistry", loaded, len(seeds))
     return loaded
+
+
+def _validate_seed_domain(seed: dict) -> bool:
+    """Validate that a seed's domain is supported by the system."""
+    domain = seed.get("domain", "general")
+    if domain == "general":
+        return True
+    return domain in SUPPORTED_DOMAINS
 
 
 def _inject_seed(concept_registry, seed: dict):
@@ -69,8 +81,11 @@ def _inject_seed(concept_registry, seed: dict):
         rule.domain      = seed.get("domain", "general")
         rule.confidence  = float(seed.get("confidence", 0.9))
         rule.observations = int(seed.get("observations", 1000))
-        # Pattern and replacement are stub graphs — they exist as metadata only.
-        # The actual transform logic lives in the C++ transform registry.
+        # NOTE: Seeds are informational metadata only — pattern/replacement graphs
+        # are intentionally not populated here. The actual transform logic lives
+        # in the C++ transform registry (registered by name, not by graph pattern).
+        # Seeds bootstrap confidence and observation counts so the system doesn't
+        # need to re-discover fundamental rules from experience.
         concept_registry.add_rule(rule)
         return
     except Exception:
@@ -89,7 +104,7 @@ class SeededConceptRegistry:
     """
     Pure-Python ConceptRegistry that works when C++ bindings are unavailable.
     Provides the same interface so web.py can call it generically.
-    
+
     Epic 22: Supports save/load for full concept persistence across reboots.
     """
 
@@ -99,12 +114,46 @@ class SeededConceptRegistry:
     def __init__(self):
         self._seeds: dict = {}
         self._learned: list = []
-        self._synthetic_code: list[dict] = []  # {name, code, problem, timestamp}
+        self._synthetic_code: List[Dict] = []  # {name, code, problem, timestamp}
+        self.load()
+
+    def load(self, path: Optional[Path] = None) -> None:
+        """Restore learned rules and synthetic code from disk."""
+        import json
+        p = Path(path or self.PERSIST_PATH)
+        if not p.exists():
+            return
+        try:
+            payload = json.loads(p.read_text(encoding="utf-8"))
+            learned = payload.get("learned", [])
+            existing_names = {
+                getattr(r, "name", None) or (r.get("name", "") if isinstance(r, dict) else "")
+                for r in self._learned
+            }
+            for r in learned:
+                name = r.get("name", "") if isinstance(r, dict) else getattr(r, "name", "")
+                if name and name not in existing_names:
+                    self._learned.append(r)
+                    existing_names.add(name)
+            self._synthetic_code = payload.get("synthetic", [])
+            log.debug("SeededConceptRegistry loaded %d rules from disk", len(self._learned))
+        except Exception as e:
+            log.debug("SeededConceptRegistry load failed: %s", e)
 
     def add_rule(self, rule):
         """Accept a rule object or dict."""
         name = getattr(rule, "name", None) or (rule.get("name", "") if isinstance(rule, dict) else "")
         if name:
+            # EWC-lite: check if overwrite is allowed
+            try:
+                from sare.learning.forgetting_prevention import get_forgetting_prevention
+                fp = get_forgetting_prevention()
+                new_conf = getattr(rule, "confidence", rule.get("confidence", 0.5) if isinstance(rule, dict) else 0.5)
+                if not fp.should_overwrite(name, float(new_conf)):
+                    log.debug("ForgettingPrevention: blocked overwrite of consolidated rule '%s'", name)
+                    return  # Don't overwrite
+            except Exception:
+                pass
             self._learned.append(rule)
 
     def add_synthetic_rule(self, name: str, code: str, problem: str):
@@ -118,7 +167,11 @@ class SeededConceptRegistry:
         seed_rules = list(self._seeds.values())
         return seed_rules + self._learned
 
-    def get_synthetic_rules(self) -> list[dict]:
+    def get_all_rules(self):
+        """Alias for get_rules() — used by external callers."""
+        return self.get_rules()
+
+    def get_synthetic_rules(self) -> List[Dict]:
         return list(self._synthetic_code)
 
     def get_consolidated_rules(self, min_confidence: float = 0.8):
@@ -153,30 +206,10 @@ class SeededConceptRegistry:
             sp = self.SYNTH_CODE_PATH
             sp.parent.mkdir(parents=True, exist_ok=True)
             with open(sp, "w") as f:
-                f.write("# Auto-generated hallucinated transforms — loaded on SARE-HX startup\n")
+                f.write("# Synthetic rules generated by SARE-HX\n")
                 for entry in self._synthetic_code:
-                    f.write(f"\n# Problem: {entry.get('problem', '?')}\n")
-                    f.write(entry.get("code", "") + "\n")
-
-            log.info(f"ConceptRegistry saved: {len(self._learned)} learned, {len(self._synthetic_code)} synthetic transforms.")
+                    f.write(f"\n# Rule: {entry['name']}\n")
+                    f.write(entry['code'])
+                    f.write("\n")
         except Exception as e:
-            log.error(f"ConceptRegistry save failed: {e}")
-
-    def load(self, path: Optional[Path] = None):
-        """Load previously persisted rules from disk."""
-        p = Path(path or self.PERSIST_PATH)
-        if not p.exists():
-            log.info("No persisted ConceptRegistry found. Starting fresh.")
-            return
-        try:
-            import json
-            with open(p) as f:
-                payload = json.load(f)
-            self._learned = payload.get("learned", [])
-            self._synthetic_code = payload.get("synthetic", [])
-            log.info(f"ConceptRegistry loaded: {len(self._learned)} learned, {len(self._synthetic_code)} synthetic rules.")
-        except Exception as e:
-            log.error(f"ConceptRegistry load failed: {e}")
-
-    def __len__(self):
-        return len(self._seeds) + len(self._learned)
+            log.error("Failed to save concept registry: %s", e)

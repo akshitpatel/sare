@@ -24,6 +24,11 @@ logger = logging.getLogger(__name__)
 
 GOALS_PATH = Path("data/memory/goals.json")
 
+# Canonical path for active-goals persistence (survives restarts)
+_GOAL_PATH = Path("data/memory/active_goals.json")
+
+_GOAL_MAX_AGE_SECONDS = 7 * 86400  # 7 days
+
 
 class GoalStatus(str, Enum):
     ACTIVE   = "active"
@@ -101,6 +106,7 @@ class GoalSetter:
     def __init__(self) -> None:
         self._goals:      Dict[str, Goal] = {}
         self._goal_count: int = 0
+        self.load()
 
     # ── Goal creation helpers ──────────────────────────────────────────────
     def _new_id(self) -> str:
@@ -125,6 +131,7 @@ class GoalSetter:
         )
         self._goals[goal.id] = goal
         logger.info("[GoalSetter] New goal: %s (%s)", goal.id, description)
+        self.save()
         return goal
 
     # ── Auto-generation from SelfModel report ─────────────────────────────
@@ -179,6 +186,7 @@ class GoalSetter:
                 g = self._goals["calibration"]
                 g.update_progress(max(0.0, g.target - calib_err))
 
+        self.save()
         return new_goals
 
     def _goal_exists(self, goal_id: str) -> bool:
@@ -222,38 +230,69 @@ class GoalSetter:
 
     # ── Persistence ───────────────────────────────────────────────────────
     def save(self) -> None:
-        GOALS_PATH.parent.mkdir(parents=True, exist_ok=True)
-        payload = {
-            "goal_count": self._goal_count,
-            "goals": {k: v.to_dict() for k, v in self._goals.items()},
-        }
-        with open(GOALS_PATH, "w") as f:
-            json.dump(payload, f, indent=2)
-        logger.debug("[GoalSetter] Saved %d goals", len(self._goals))
+        try:
+            _GOAL_PATH.parent.mkdir(parents=True, exist_ok=True)
+            payload = {
+                "goal_count": self._goal_count,
+                "goals": {k: v.to_dict() for k, v in self._goals.items()},
+            }
+            tmp = _GOAL_PATH.with_suffix(".tmp")
+            with open(tmp, "w") as f:
+                json.dump(payload, f, indent=2)
+            tmp.replace(_GOAL_PATH)
+            logger.debug("[GoalSetter] Saved %d goals to %s", len(self._goals), _GOAL_PATH)
+        except Exception as e:
+            logger.warning("[GoalSetter] Save failed: %s", e)
 
     def load(self) -> None:
-        if not GOALS_PATH.exists():
+        # Prefer the new canonical path; fall back to legacy GOALS_PATH
+        path = _GOAL_PATH if _GOAL_PATH.exists() else GOALS_PATH
+        if not path.exists():
             return
         try:
-            with open(GOALS_PATH) as f:
+            with open(path) as f:
                 payload = json.load(f)
+            # Detect legacy active_goals.json format (list of sub-goal dicts, not our schema)
+            if not isinstance(payload, dict) or "goals" not in payload:
+                logger.debug("[GoalSetter] Skipping incompatible file at %s", path)
+                return
             self._goal_count = payload.get("goal_count", 0)
             self._goals = {}
+            now = time.time()
+            skipped = 0
             for k, d in payload.get("goals", {}).items():
-                g = Goal(
-                    id=d["id"],
-                    type=GoalType(d["type"]),
-                    description=d["description"],
-                    domain=d.get("domain"),
-                    target=d["target"],
-                    current=d.get("current", 0.0),
-                    status=GoalStatus(d.get("status", "active")),
-                    priority=d.get("priority", 5),
-                    created_at=d.get("created_at", time.time()),
-                    updated_at=d.get("updated_at", time.time()),
-                    achieved_at=d.get("achieved_at"),
-                )
-                self._goals[k] = g
-            logger.info("[GoalSetter] Restored %d goals", len(self._goals))
+                created_at = d.get("created_at", now)
+                # Filter out goals older than 7 days
+                if now - created_at > _GOAL_MAX_AGE_SECONDS:
+                    skipped += 1
+                    continue
+                try:
+                    g = Goal(
+                        id=d["id"],
+                        type=GoalType(d["type"]),
+                        description=d["description"],
+                        domain=d.get("domain"),
+                        target=d["target"],
+                        current=d.get("current", 0.0),
+                        status=GoalStatus(d.get("status", "active")),
+                        priority=d.get("priority", 5),
+                        created_at=created_at,
+                        updated_at=d.get("updated_at", now),
+                        achieved_at=d.get("achieved_at"),
+                    )
+                    self._goals[k] = g
+                except Exception as _ge:
+                    logger.debug("[GoalSetter] Skipping malformed goal %s: %s", k, _ge)
+                    skipped += 1
+            logger.info("[GoalSetter] Restored %d goals (%d expired/skipped) from %s",
+                        len(self._goals), skipped, path)
         except Exception as e:
             logger.warning("[GoalSetter] Load failed: %s", e)
+
+    def active_goal_domains(self) -> List[str]:
+        """Return domains targeted by active goals (for curriculum weighting)."""
+        domains = []
+        for g in self._goals.values():
+            if g.status == GoalStatus.ACTIVE and g.domain:
+                domains.append(g.domain)
+        return domains

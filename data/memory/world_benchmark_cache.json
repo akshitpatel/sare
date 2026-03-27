@@ -1,0 +1,44 @@
+{
+  "last_world_pass_rate": 1.0,
+  "last_world_run": "2026-03-10T11:49:19Z",
+  "world_benchmark_cases": 6,
+  "world_benchmark_passed": 6,
+  "world_benchmark_categories": {
+    "blocked_access": {
+      "category": "blocked_access",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0
+    },
+    "containment": {
+      "category": "containment",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0
+    },
+    "false_belief": {
+      "category": "false_belief",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0
+    },
+    "multi_room_retrieval": {
+      "category": "multi_room_retrieval",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0
+    },
+    "object_permanence": {
+      "category": "object_permanence",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0
+    },
+    "transfer": {
+      "category": "transfer",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0
+    }
+  }
+}

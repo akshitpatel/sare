@@ -18,6 +18,7 @@ definition, but from seeing hundreds of dogs and clustering their features.
 import logging
 import json
 import math
+import re
 from typing import List, Dict, Optional, Tuple
 from pathlib import Path
 from sare.engine import Graph
@@ -213,32 +214,42 @@ class ConceptFormation:
         return self._concepts
 
     def _name_cluster(self, c_id: int, members: List[dict], centroid: List[float]) -> str:
-        """Ask LLM to give this cluster a human-readable concept name."""
+        """Ask LLM to give this cluster a human-readable concept name (Language Grounding)."""
         sample_problems = [m["problem_id"] for m in members[:4]]
         common_t = self._common_transforms(members)
 
         # Try LLM naming first (Feature 3: Online Concept Naming)
         try:
-            from sare.interface.llm_bridge import _call_llm
-            prompt = (
-                "You are a math/logic ontology builder. "
-                "Given a cluster of similar reasoning problems solved by an AI, "
-                "infer the underlying mathematical concept these problems share.\n\n"
-                f"Sample problems: {sample_problems}\n"
-                f"Common solution transforms: {common_t}\n\n"
-                "Return ONLY a JSON object with two keys:\n"
-                '{"concept_name": "short_snake_case_name", "description": "one sentence"}\n'
-                "Examples: identity_law, distributive_property, commutativity, modus_ponens"
-            )
-            raw = _call_llm(prompt)
-            raw = re.sub(r"```(?:json)?", "", raw).strip("`").strip()
-            data = json.loads(raw)
-            name = str(data.get("concept_name", "")).strip().lower().replace(" ", "_")
-            if name:
-                log.info(f"LLM named cluster {c_id}: '{name}'")
-                return name
+            if self.llm_namer:
+                # If a custom callable is provided, use it
+                name = self.llm_namer(sample_problems, common_t)
+                if name:
+                    return name
+            else:
+                from sare.interface.llm_bridge import _call_llm
+                prompt = (
+                    "You are the Teacher/Oracle of a self-learning symbolic AI (SARE-HX).\n"
+                    "SARE-HX has just formed a new cognitive concept by clustering the following mathematical problems "
+                    "that it solved using similar structural transformations.\n\n"
+                    f"Sample problems in this cluster: {sample_problems}\n"
+                    f"Common structural transforms used: {common_t}\n\n"
+                    "Teach SARE the established human natural language vocabulary for this concept.\n"
+                    "Return ONLY a JSON object with two keys:\n"
+                    '{"concept_name": "short_snake_case_name", "description": "one sentence"}\n'
+                    "Examples: 'additive_identity', 'distributive_property', 'modus_ponens', 'cancellation_pattern'"
+                )
+                raw = _call_llm(prompt)
+                raw = re.sub(r"```(?:json)?", "", raw).strip("`").strip()
+                
+                m = re.search(r"\{.*\}", raw, re.DOTALL)
+                if m:
+                    data = json.loads(m.group(0))
+                    name = str(data.get("concept_name", "")).strip().lower().replace(" ", "_")
+                    if name:
+                        log.info(f"LLM Teacher grounded cluster {c_id} as: '{name}'")
+                        return name
         except Exception as e:
-            log.debug(f"LLM concept naming failed for cluster {c_id}: {e}")
+            log.warning(f"LLM Language Grounding failed for cluster {c_id}: {e}")
 
         # Structural fallback
         op_idx = centroid[:len(_OPERATOR_VOCAB)]

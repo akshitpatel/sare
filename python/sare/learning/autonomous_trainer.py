@@ -25,17 +25,22 @@ Key design choices:
 
 from __future__ import annotations
 
+import json
 import logging
 import math
+import os
 import random
 import threading
 import time
 import concurrent.futures
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 log = logging.getLogger(__name__)
+
+_STATS_PATH = Path(__file__).resolve().parents[3] / "data" / "memory" / "autonomous_trainer_stats.json"
 
 
 # ── Problem sources ────────────────────────────────────────────────────────────
@@ -142,6 +147,7 @@ class AutonomousTrainer:
         self._current_difficulty: float = 0.3
         self._running: bool = False
         self._thread: Optional[threading.Thread] = None
+        self._batch_count: int = 0  # for periodic disk persistence
         self._brain_ref = None
         self._start_time: Optional[float] = None
         self._last_problem: Optional[TrainingProblem] = None
@@ -204,8 +210,11 @@ class AutonomousTrainer:
                     
                     # Wait for the swarm batch to finish
                     concurrent.futures.wait(futures, timeout=self._interval * 2)
-                    
+
                     self._adapt_difficulty()
+                    self._batch_count += 1
+                    if self._batch_count % 5 == 0:
+                        self.save_stats()
                 except Exception as e:
                     log.debug(f"AutonomousTrainer loop error: {e}")
                 # Sleep remaining interval time
@@ -477,3 +486,15 @@ class AutonomousTrainer:
             "failure_queue": len(self._failure_replay),
             "recent_results": [r.to_dict() for r in list(self._history)[-6:]],
         }
+
+    def save_stats(self) -> None:
+        """Persist current summary to disk atomically (for web server to read)."""
+        try:
+            data = self.summary()
+            data["saved_at"] = time.time()
+            _STATS_PATH.parent.mkdir(parents=True, exist_ok=True)
+            _tmp = _STATS_PATH.parent / f"autonomous_trainer_stats.{os.getpid()}.tmp"
+            _tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
+            os.replace(_tmp, _STATS_PATH)
+        except Exception as e:
+            log.debug("AutonomousTrainer save_stats error: %s", e)

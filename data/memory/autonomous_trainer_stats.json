@@ -1,0 +1,109 @@
+{
+  "running": true,
+  "total_problems": 1099,
+  "total_successes": 735,
+  "recent_rate": 0.5,
+  "current_difficulty": 1.0,
+  "uptime_seconds": 50580.6,
+  "source_stats": {
+    "generated_problems": {
+      "problems": 0,
+      "successes": 0,
+      "rate": 0.0
+    },
+    "seed_library": {
+      "problems": 1054,
+      "successes": 735,
+      "rate": 0.697
+    },
+    "knowledge_concepts": {
+      "problems": 0,
+      "successes": 0,
+      "rate": 0.0
+    },
+    "failure_replay": {
+      "problems": 45,
+      "successes": 0,
+      "rate": 0.0
+    },
+    "physics_expressions": {
+      "problems": 0,
+      "successes": 0,
+      "rate": 0.0
+    }
+  },
+  "domain_stats": {
+    "algebra": {
+      "problems": 149,
+      "rate": 0.732
+    },
+    "arithmetic": {
+      "problems": 399,
+      "rate": 0.684
+    },
+    "calculus": {
+      "problems": 97,
+      "rate": 0.928
+    },
+    "logic": {
+      "problems": 330,
+      "rate": 0.797
+    },
+    "thermodynamics": {
+      "problems": 124,
+      "rate": 0.0
+    }
+  },
+  "failure_queue": 50,
+  "recent_results": [
+    {
+      "expression": "x + y - y",
+      "domain": "arithmetic",
+      "source": "failure_replay",
+      "success": false,
+      "delta": 0.0,
+      "elapsed_ms": 268286.6
+    },
+    {
+      "expression": "(x * y) / y",
+      "domain": "arithmetic",
+      "source": "failure_replay",
+      "success": false,
+      "delta": 0.0,
+      "elapsed_ms": 357137.3
+    },
+    {
+      "expression": "(x + 0) * (y * 1)",
+      "domain": "arithmetic",
+      "source": "seed_library",
+      "success": true,
+      "delta": 0.0,
+      "elapsed_ms": 879802.2
+    },
+    {
+      "expression": "NOT (A OR B)",
+      "domain": "logic",
+      "source": "seed_library",
+      "success": false,
+      "delta": 0.0,
+      "elapsed_ms": 865428.4
+    },
+    {
+      "expression": "(x * y) / y",
+      "domain": "arithmetic",
+      "source": "seed_library",
+      "success": false,
+      "delta": 0.0,
+      "elapsed_ms": 363439.8
+    },
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic",
+      "source": "seed_library",
+      "success": true,
+      "delta": 0.0,
+      "elapsed_ms": 628688.5
+    }
+  ],
+  "saved_at": 1774583802.565684
+}

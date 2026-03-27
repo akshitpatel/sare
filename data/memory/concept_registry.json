@@ -1,0 +1,624 @@
+{
+  "learned": [
+    {
+      "name": "additive_identity",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "additive_identity_commuted",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "multiplicative_identity",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "multiplicative_identity_comm",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "multiplicative_zero",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "multiplicative_zero_comm",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "double_negation",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "subtractive_self",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 5000
+    },
+    {
+      "name": "division_self",
+      "domain": "arithmetic",
+      "confidence": 0.95,
+      "observations": 5000
+    },
+    {
+      "name": "constant_folding",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "additive_inverse",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 5000
+    },
+    {
+      "name": "zero_exponent",
+      "domain": "arithmetic",
+      "confidence": 0.95,
+      "observations": 5000
+    },
+    {
+      "name": "one_exponent",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 5000
+    },
+    {
+      "name": "zero_exponent_base",
+      "domain": "arithmetic",
+      "confidence": 0.95,
+      "observations": 3000
+    },
+    {
+      "name": "one_exponent_base",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 3000
+    },
+    {
+      "name": "division_by_one",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 5000
+    },
+    {
+      "name": "subtraction_zero",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 5000
+    },
+    {
+      "name": "commutativity_add",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "commutativity_mul",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "associativity_add",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 8000
+    },
+    {
+      "name": "associativity_mul",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 8000
+    },
+    {
+      "name": "double_negation_logic",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "and_true",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "and_false",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "or_false",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "or_true",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "de_morgan_and",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 3000
+    },
+    {
+      "name": "de_morgan_or",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 3000
+    },
+    {
+      "name": "idempotent_and",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 5000
+    },
+    {
+      "name": "idempotent_or",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 5000
+    },
+    {
+      "name": "absorption_and",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "absorption_or",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "excluded_middle",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "contradiction",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "implication_elim",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 3000
+    },
+    {
+      "name": "contrapositive",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "modus_ponens",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 5000
+    },
+    {
+      "name": "xor_self",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "xor_false",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "xor_true",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "distributive_and_or",
+      "domain": "algebra",
+      "confidence": 1.0,
+      "observations": 3000
+    },
+    {
+      "name": "distributive_mul_add",
+      "domain": "algebra",
+      "confidence": 1.0,
+      "observations": 5000
+    },
+    {
+      "name": "factor_common",
+      "domain": "algebra",
+      "confidence": 0.9,
+      "observations": 3000
+    },
+    {
+      "name": "difference_of_squares",
+      "domain": "algebra",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "perfect_square_add",
+      "domain": "algebra",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "perfect_square_sub",
+      "domain": "algebra",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "exponent_product",
+      "domain": "algebra",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "exponent_power",
+      "domain": "algebra",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "exponent_quotient",
+      "domain": "algebra",
+      "confidence": 0.95,
+      "observations": 2000
+    },
+    {
+      "name": "fraction_simplify",
+      "domain": "algebra",
+      "confidence": 0.9,
+      "observations": 2000
+    },
+    {
+      "name": "negative_fraction",
+      "domain": "algebra",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "qa_distribution",
+      "domain": "qa",
+      "confidence": 0.893,
+      "observations": 10,
+      "source": "transfer_bootstrap"
+    },
+    {
+      "name": "additive_identity",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "additive_identity_commuted",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "multiplicative_identity",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "multiplicative_identity_comm",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "multiplicative_zero",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "multiplicative_zero_comm",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "double_negation",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "subtractive_self",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 5000
+    },
+    {
+      "name": "division_self",
+      "domain": "arithmetic",
+      "confidence": 0.95,
+      "observations": 5000
+    },
+    {
+      "name": "constant_folding",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "additive_inverse",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 5000
+    },
+    {
+      "name": "zero_exponent",
+      "domain": "arithmetic",
+      "confidence": 0.95,
+      "observations": 5000
+    },
+    {
+      "name": "one_exponent",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 5000
+    },
+    {
+      "name": "zero_exponent_base",
+      "domain": "arithmetic",
+      "confidence": 0.95,
+      "observations": 3000
+    },
+    {
+      "name": "one_exponent_base",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 3000
+    },
+    {
+      "name": "division_by_one",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 5000
+    },
+    {
+      "name": "subtraction_zero",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 5000
+    },
+    {
+      "name": "commutativity_add",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "commutativity_mul",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "associativity_add",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 8000
+    },
+    {
+      "name": "associativity_mul",
+      "domain": "arithmetic",
+      "confidence": 1.0,
+      "observations": 8000
+    },
+    {
+      "name": "double_negation_logic",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "and_true",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "and_false",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "or_false",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "or_true",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 10000
+    },
+    {
+      "name": "de_morgan_and",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 3000
+    },
+    {
+      "name": "de_morgan_or",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 3000
+    },
+    {
+      "name": "idempotent_and",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 5000
+    },
+    {
+      "name": "idempotent_or",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 5000
+    },
+    {
+      "name": "absorption_and",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "absorption_or",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "excluded_middle",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "contradiction",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "implication_elim",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 3000
+    },
+    {
+      "name": "contrapositive",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "modus_ponens",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 5000
+    },
+    {
+      "name": "xor_self",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "xor_false",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "xor_true",
+      "domain": "logic",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "distributive_and_or",
+      "domain": "algebra",
+      "confidence": 1.0,
+      "observations": 3000
+    },
+    {
+      "name": "distributive_mul_add",
+      "domain": "algebra",
+      "confidence": 1.0,
+      "observations": 5000
+    },
+    {
+      "name": "factor_common",
+      "domain": "algebra",
+      "confidence": 0.9,
+      "observations": 3000
+    },
+    {
+      "name": "difference_of_squares",
+      "domain": "algebra",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "perfect_square_add",
+      "domain": "algebra",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "perfect_square_sub",
+      "domain": "algebra",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "exponent_product",
+      "domain": "algebra",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "exponent_power",
+      "domain": "algebra",
+      "confidence": 1.0,
+      "observations": 2000
+    },
+    {
+      "name": "exponent_quotient",
+      "domain": "algebra",
+      "confidence": 0.95,
+      "observations": 2000
+    },
+    {
+      "name": "fraction_simplify",
+      "domain": "algebra",
+      "confidence": 0.9,
+      "observations": 2000
+    },
+    {
+      "name": "negative_fraction",
+      "domain": "algebra",
+      "confidence": 1.0,
+      "observations": 2000
+    }
+  ],
+  "synthetic": []
+}

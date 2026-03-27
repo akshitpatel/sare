@@ -1,0 +1,1 @@
+{"goal_count": 1, "goals": {"g0001": {"id": "g0001", "type": "domain_mastery", "description": "Test: master algebra", "domain": "algebra", "target": 0.8, "current": 0.0, "status": "active", "priority": 2, "created_at": 1773633290.778008, "updated_at": 1774324490.77498, "achieved_at": null, "progress": 0.0}}}

@@ -1,0 +1,1177 @@
+[
+  {
+    "cycle": 1,
+    "timestamp": "2026-03-20T05:09:21Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "additive_identity"
+      ],
+      [
+        "x * 1",
+        "x",
+        "multiplicative_identity"
+      ],
+      [
+        "x * 0",
+        "0",
+        "multiplicative_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "additive_identity_commutative"
+      ],
+      [
+        "1 * x",
+        "x",
+        "multiplicative_identity_commutative"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 262
+  },
+  {
+    "cycle": 17,
+    "timestamp": "2026-03-20T05:22:06Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "additive_identity"
+      ],
+      [
+        "x * 1",
+        "x",
+        "multiplicative_identity"
+      ],
+      [
+        "x * 0",
+        "0",
+        "multiplicative_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "additive_identity_commutative"
+      ],
+      [
+        "1 * x",
+        "x",
+        "multiplicative_identity_commutative"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 262
+  },
+  {
+    "cycle": 41,
+    "timestamp": "2026-03-20T05:49:23Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "additive_identity"
+      ],
+      [
+        "x * 1",
+        "x",
+        "multiplicative_identity"
+      ],
+      [
+        "x * 0",
+        "0",
+        "multiplicative_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "additive_identity_commutative"
+      ],
+      [
+        "1 * x",
+        "x",
+        "multiplicative_identity_commutative"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 262
+  },
+  {
+    "cycle": 93,
+    "timestamp": "2026-03-20T06:38:35Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "add_zero"
+      ],
+      [
+        "x * 1",
+        "x",
+        "mul_identity"
+      ],
+      [
+        "x * 0",
+        "0",
+        "mul_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "add_zero_comm"
+      ],
+      [
+        "1 * x",
+        "x",
+        "mul_identity_comm"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 197
+  },
+  {
+    "cycle": 156,
+    "timestamp": "2026-03-20T09:56:05Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "add_zero"
+      ],
+      [
+        "x * 1",
+        "x",
+        "mul_identity"
+      ],
+      [
+        "x * 0",
+        "0",
+        "mul_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "add_zero_comm"
+      ],
+      [
+        "1 * x",
+        "x",
+        "mul_identity_comm"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 197
+  },
+  {
+    "cycle": 154,
+    "timestamp": "2026-03-20T09:56:07Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "additive_identity"
+      ],
+      [
+        "x * 1",
+        "x",
+        "multiplicative_identity"
+      ],
+      [
+        "x * 0",
+        "0",
+        "multiplicative_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "additive_identity_commutative"
+      ],
+      [
+        "1 * x",
+        "x",
+        "multiplicative_identity_commutative"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 262
+  },
+  {
+    "cycle": 155,
+    "timestamp": "2026-03-20T09:56:13Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "add_zero"
+      ],
+      [
+        "x * 1",
+        "x",
+        "mul_identity"
+      ],
+      [
+        "x * 0",
+        "0",
+        "mul_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "add_zero_comm"
+      ],
+      [
+        "1 * x",
+        "x",
+        "mul_identity_comm"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 197
+  },
+  {
+    "cycle": 215,
+    "timestamp": "2026-03-20T15:50:02Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "add_zero"
+      ],
+      [
+        "x * 1",
+        "x",
+        "mul_one"
+      ],
+      [
+        "x * 0",
+        "0",
+        "mul_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "zero_add"
+      ],
+      [
+        "1 * x",
+        "x",
+        "one_mul"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 177
+  },
+  {
+    "cycle": 216,
+    "timestamp": "2026-03-20T15:50:04Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "add_zero"
+      ],
+      [
+        "x * 1",
+        "x",
+        "mul_one"
+      ],
+      [
+        "x * 0",
+        "0",
+        "mul_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "zero_add"
+      ],
+      [
+        "1 * x",
+        "x",
+        "one_mul"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 177
+  },
+  {
+    "cycle": 217,
+    "timestamp": "2026-03-20T15:50:34Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "add_zero"
+      ],
+      [
+        "x * 1",
+        "x",
+        "mul_one"
+      ],
+      [
+        "x * 0",
+        "0",
+        "mul_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "zero_add"
+      ],
+      [
+        "1 * x",
+        "x",
+        "one_mul"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 177
+  },
+  {
+    "cycle": 218,
+    "timestamp": "2026-03-20T15:50:55Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "add_zero"
+      ],
+      [
+        "x * 1",
+        "x",
+        "mul_one"
+      ],
+      [
+        "x * 0",
+        "0",
+        "mul_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "zero_add"
+      ],
+      [
+        "1 * x",
+        "x",
+        "one_mul"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 177
+  },
+  {
+    "cycle": 327,
+    "timestamp": "2026-03-20T18:02:02Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "add_zero"
+      ],
+      [
+        "x * 1",
+        "x",
+        "mult_one"
+      ],
+      [
+        "x * 0",
+        "0",
+        "mult_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "zero_add"
+      ],
+      [
+        "1 * x",
+        "x",
+        "one_mult"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 180
+  },
+  {
+    "cycle": 328,
+    "timestamp": "2026-03-20T18:03:31Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "additive_identity"
+      ],
+      [
+        "x * 1",
+        "x",
+        "multiplicative_identity"
+      ],
+      [
+        "x * 0",
+        "0",
+        "multiplicative_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "additive_identity"
+      ],
+      [
+        "1 * x",
+        "x",
+        "multiplicative_identity"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 238
+  },
+  {
+    "cycle": 406,
+    "timestamp": "2026-03-20T20:03:00Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "add_identity"
+      ],
+      [
+        "x * 1",
+        "x",
+        "mult_identity"
+      ],
+      [
+        "x * 0",
+        "0",
+        "mult_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "add_identity"
+      ],
+      [
+        "1 * x",
+        "x",
+        "mult_identity"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 198
+  },
+  {
+    "cycle": 405,
+    "timestamp": "2026-03-20T20:03:26Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "add_zero"
+      ],
+      [
+        "x * 1",
+        "x",
+        "mul_one"
+      ],
+      [
+        "x * 0",
+        "0",
+        "mul_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "add_zero"
+      ],
+      [
+        "1 * x",
+        "x",
+        "mul_one"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 177
+  },
+  {
+    "cycle": 486,
+    "timestamp": "2026-03-20T21:52:28Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "add_zero"
+      ],
+      [
+        "x * 1",
+        "x",
+        "mult_one"
+      ],
+      [
+        "x * 0",
+        "0",
+        "mult_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "add_zero"
+      ],
+      [
+        "1 * x",
+        "x",
+        "mult_one"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 180
+  },
+  {
+    "cycle": 547,
+    "timestamp": "2026-03-20T23:39:56Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "additive_identity"
+      ],
+      [
+        "x * 1",
+        "x",
+        "multiplicative_identity"
+      ],
+      [
+        "x * 0",
+        "0",
+        "multiplicative_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "additive_identity"
+      ],
+      [
+        "1 * x",
+        "x",
+        "multiplicative_identity"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 238
+  },
+  {
+    "cycle": 610,
+    "timestamp": "2026-03-21T01:37:19Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "additive_identity"
+      ],
+      [
+        "x * 1",
+        "x",
+        "multiplicative_identity"
+      ],
+      [
+        "x * 0",
+        "0",
+        "multiplicative_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "additive_identity"
+      ],
+      [
+        "1 * x",
+        "x",
+        "multiplicative_identity"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 238
+  },
+  {
+    "cycle": 613,
+    "timestamp": "2026-03-21T01:37:19Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "additive_identity"
+      ],
+      [
+        "x * 1",
+        "x",
+        "multiplicative_identity"
+      ],
+      [
+        "x * 0",
+        "0",
+        "zero_multiplication"
+      ],
+      [
+        "0 + x",
+        "x",
+        "additive_identity"
+      ],
+      [
+        "1 * x",
+        "x",
+        "multiplicative_identity"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 238
+  },
+  {
+    "cycle": 614,
+    "timestamp": "2026-03-21T01:40:13Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "additive_identity"
+      ],
+      [
+        "x * 1",
+        "x",
+        "multiplicative_identity"
+      ],
+      [
+        "x * 0",
+        "0",
+        "multiplicative_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "additive_identity"
+      ],
+      [
+        "1 * x",
+        "x",
+        "multiplicative_identity"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 238
+  },
+  {
+    "cycle": 686,
+    "timestamp": "2026-03-21T03:46:49Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "additive_identity"
+      ],
+      [
+        "x * 1",
+        "x",
+        "multiplicative_identity"
+      ],
+      [
+        "x * 0",
+        "0",
+        "multiplicative_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "additive_identity"
+      ],
+      [
+        "1 * x",
+        "x",
+        "multiplicative_identity"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 238
+  },
+  {
+    "cycle": 685,
+    "timestamp": "2026-03-21T03:46:56Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "add_zero"
+      ],
+      [
+        "x * 1",
+        "x",
+        "mul_one"
+      ],
+      [
+        "x * 0",
+        "0",
+        "mul_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "zero_add"
+      ],
+      [
+        "1 * x",
+        "x",
+        "one_mul"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 177
+  },
+  {
+    "cycle": 754,
+    "timestamp": "2026-03-21T08:01:44Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "add_zero"
+      ],
+      [
+        "x * 1",
+        "x",
+        "mult_one"
+      ],
+      [
+        "x * 0",
+        "0",
+        "mult_zero"
+      ],
+      [
+        "0 + x",
+        "x",
+        "add_zero"
+      ],
+      [
+        "1 * x",
+        "x",
+        "mult_one"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 180
+  },
+  {
+    "cycle": 755,
+    "timestamp": "2026-03-21T08:01:51Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "x + 0",
+        "x",
+        "add_zero_right"
+      ],
+      [
+        "x * 1",
+        "x",
+        "mul_one_right"
+      ],
+      [
+        "x * 0",
+        "0",
+        "mul_zero_right"
+      ],
+      [
+        "0 + x",
+        "x",
+        "add_zero_left"
+      ],
+      [
+        "1 * x",
+        "x",
+        "mul_one_left"
+      ],
+      [
+        "x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 205
+  },
+  {
+    "cycle": 822,
+    "timestamp": "2026-03-24T02:21:43Z",
+    "stuck_exprs": [
+      "x + 0",
+      "x * 1",
+      "x * 0",
+      "0 + x",
+      "1 * x",
+      "x + x"
+    ],
+    "rules_parsed": [
+      [
+        "- x + 0",
+        "x",
+        "constant_folding"
+      ],
+      [
+        "- x * 1",
+        "x",
+        "combine_like_terms"
+      ],
+      [
+        "- x * 0",
+        "0",
+        "constant_folding"
+      ],
+      [
+        "- 0 + x",
+        "x",
+        "constant_folding"
+      ],
+      [
+        "- 1 * x",
+        "1",
+        "combine_like_terms"
+      ],
+      [
+        "- x + x",
+        "2*x",
+        "combine_like_terms"
+      ]
+    ],
+    "rules_injected": 6,
+    "seeds_added": 6,
+    "raw_chars": 247
+  }
+]

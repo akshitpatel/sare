@@ -1,0 +1,25 @@
+{
+  "sare_hx": {
+    "agent_id": "sare_hx",
+    "beliefs": [
+      {
+        "content": "I am a reasoning system",
+        "truth": true,
+        "conf": 1.0
+      }
+    ],
+    "desires": [
+      {
+        "content": "solve problems correctly",
+        "truth": null,
+        "conf": 1.0
+      },
+      {
+        "content": "learn from every experience",
+        "truth": null,
+        "conf": 1.0
+      }
+    ],
+    "intentions": []
+  }
+}

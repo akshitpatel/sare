@@ -1,0 +1,2049 @@
+{
+  "synthesized": {
+    "synth_distribution_*_annihilation": {
+      "name": "synth_distribution_*_annihilation",
+      "domain": "distribution",
+      "role": "annihilation",
+      "operator_labels": [
+        "*"
+      ],
+      "element_label": "0",
+      "rewrite_action": "replace_with_absorbing",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x * 0",
+          "matched": true,
+          "passed": false
+        },
+        {
+          "expression": "0 * x",
+          "matched": true,
+          "passed": false
+        },
+        {
+          "expression": "x and false",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x or true",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x * 0) + y",
+          "matched": true,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729203
+    },
+    "synth_distribution_+_identity": {
+      "name": "synth_distribution_+_identity",
+      "domain": "distribution",
+      "role": "identity",
+      "operator_labels": [
+        "+"
+      ],
+      "element_label": "0",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "0 + x",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "x * 1",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "1 * x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": true,
+          "passed": true
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.7292092
+    },
+    "synth_distribution_-_identity": {
+      "name": "synth_distribution_-_identity",
+      "domain": "distribution",
+      "role": "identity",
+      "operator_labels": [
+        "-"
+      ],
+      "element_label": "0",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "0 + x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x * 1",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "1 * x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.7292109
+    },
+    "synth_distribution_*_identity": {
+      "name": "synth_distribution_*_identity",
+      "domain": "distribution",
+      "role": "identity",
+      "operator_labels": [
+        "*"
+      ],
+      "element_label": "1",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "0 + x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x * 1",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "1 * x",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729213
+    },
+    "synth_distribution_/_identity": {
+      "name": "synth_distribution_/_identity",
+      "domain": "distribution",
+      "role": "identity",
+      "operator_labels": [
+        "/"
+      ],
+      "element_label": "1",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "0 + x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x * 1",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "1 * x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729216
+    },
+    "synth_distribution_^_identity": {
+      "name": "synth_distribution_^_identity",
+      "domain": "distribution",
+      "role": "identity",
+      "operator_labels": [
+        "^"
+      ],
+      "element_label": "1",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "0 + x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x * 1",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "1 * x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729218
+    },
+    "synth_distribution_neg_involution": {
+      "name": "synth_distribution_neg_involution",
+      "domain": "distribution",
+      "role": "involution",
+      "operator_labels": [
+        "neg"
+      ],
+      "element_label": "",
+      "rewrite_action": "unwrap_double",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "-(-x)",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "-(-y)",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "not not x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "not(not y)",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "-(-3)",
+          "matched": true,
+          "passed": true
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729221
+    },
+    "synth_factoring_*_annihilation": {
+      "name": "synth_factoring_*_annihilation",
+      "domain": "factoring",
+      "role": "annihilation",
+      "operator_labels": [
+        "*"
+      ],
+      "element_label": "0",
+      "rewrite_action": "replace_with_absorbing",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x * 0",
+          "matched": true,
+          "passed": false
+        },
+        {
+          "expression": "0 * x",
+          "matched": true,
+          "passed": false
+        },
+        {
+          "expression": "x and false",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x or true",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x * 0) + y",
+          "matched": true,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.7292259
+    },
+    "synth_factoring_+_identity": {
+      "name": "synth_factoring_+_identity",
+      "domain": "factoring",
+      "role": "identity",
+      "operator_labels": [
+        "+"
+      ],
+      "element_label": "0",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "0 + x",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "x * 1",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "1 * x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": true,
+          "passed": true
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.7292302
+    },
+    "synth_factoring_-_identity": {
+      "name": "synth_factoring_-_identity",
+      "domain": "factoring",
+      "role": "identity",
+      "operator_labels": [
+        "-"
+      ],
+      "element_label": "0",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "0 + x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x * 1",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "1 * x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.7292318
+    },
+    "synth_factoring_*_identity": {
+      "name": "synth_factoring_*_identity",
+      "domain": "factoring",
+      "role": "identity",
+      "operator_labels": [
+        "*"
+      ],
+      "element_label": "1",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "0 + x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x * 1",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "1 * x",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729234
+    },
+    "synth_factoring_/_identity": {
+      "name": "synth_factoring_/_identity",
+      "domain": "factoring",
+      "role": "identity",
+      "operator_labels": [
+        "/"
+      ],
+      "element_label": "1",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "0 + x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x * 1",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "1 * x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729236
+    },
+    "synth_factoring_^_identity": {
+      "name": "synth_factoring_^_identity",
+      "domain": "factoring",
+      "role": "identity",
+      "operator_labels": [
+        "^"
+      ],
+      "element_label": "1",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "0 + x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x * 1",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "1 * x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729238
+    },
+    "synth_factoring_neg_involution": {
+      "name": "synth_factoring_neg_involution",
+      "domain": "factoring",
+      "role": "involution",
+      "operator_labels": [
+        "neg"
+      ],
+      "element_label": "",
+      "rewrite_action": "unwrap_double",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "-(-x)",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "-(-y)",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "not not x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "not(not y)",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "-(-3)",
+          "matched": true,
+          "passed": true
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.7292411
+    },
+    "synth_algebra_*_annihilation": {
+      "name": "synth_algebra_*_annihilation",
+      "domain": "algebra",
+      "role": "annihilation",
+      "operator_labels": [
+        "*"
+      ],
+      "element_label": "0",
+      "rewrite_action": "replace_with_absorbing",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x * 0",
+          "matched": true,
+          "passed": false
+        },
+        {
+          "expression": "0 * x",
+          "matched": true,
+          "passed": false
+        },
+        {
+          "expression": "x and false",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x or true",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x * 0) + y",
+          "matched": true,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729245
+    },
+    "synth_algebra_+_identity": {
+      "name": "synth_algebra_+_identity",
+      "domain": "algebra",
+      "role": "identity",
+      "operator_labels": [
+        "+"
+      ],
+      "element_label": "0",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "0 + x",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "x * 1",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "1 * x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": true,
+          "passed": true
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729248
+    },
+    "synth_algebra_-_identity": {
+      "name": "synth_algebra_-_identity",
+      "domain": "algebra",
+      "role": "identity",
+      "operator_labels": [
+        "-"
+      ],
+      "element_label": "0",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "0 + x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x * 1",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "1 * x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.72925
+    },
+    "synth_algebra_*_identity": {
+      "name": "synth_algebra_*_identity",
+      "domain": "algebra",
+      "role": "identity",
+      "operator_labels": [
+        "*"
+      ],
+      "element_label": "1",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "0 + x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x * 1",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "1 * x",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729253
+    },
+    "synth_algebra_/_identity": {
+      "name": "synth_algebra_/_identity",
+      "domain": "algebra",
+      "role": "identity",
+      "operator_labels": [
+        "/"
+      ],
+      "element_label": "1",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "0 + x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x * 1",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "1 * x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729255
+    },
+    "synth_algebra_^_identity": {
+      "name": "synth_algebra_^_identity",
+      "domain": "algebra",
+      "role": "identity",
+      "operator_labels": [
+        "^"
+      ],
+      "element_label": "1",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "0 + x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x * 1",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "1 * x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.7292569
+    },
+    "synth_algebra_neg_involution": {
+      "name": "synth_algebra_neg_involution",
+      "domain": "algebra",
+      "role": "involution",
+      "operator_labels": [
+        "neg"
+      ],
+      "element_label": "",
+      "rewrite_action": "unwrap_double",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "-(-x)",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "-(-y)",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "not not x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "not(not y)",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "-(-3)",
+          "matched": true,
+          "passed": true
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.72926
+    },
+    "synth_logic_basics_and_identity": {
+      "name": "synth_logic_basics_and_identity",
+      "domain": "logic_basics",
+      "role": "identity",
+      "operator_labels": [
+        "and"
+      ],
+      "element_label": "true",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "0 + x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x * 1",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "1 * x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729264
+    },
+    "synth_logic_basics_or_identity": {
+      "name": "synth_logic_basics_or_identity",
+      "domain": "logic_basics",
+      "role": "identity",
+      "operator_labels": [
+        "or"
+      ],
+      "element_label": "false",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "0 + x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x * 1",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "1 * x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729267
+    },
+    "synth_arithmetic_*_annihilation": {
+      "name": "synth_arithmetic_*_annihilation",
+      "domain": "arithmetic",
+      "role": "annihilation",
+      "operator_labels": [
+        "*"
+      ],
+      "element_label": "0",
+      "rewrite_action": "replace_with_absorbing",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x * 0",
+          "matched": true,
+          "passed": false
+        },
+        {
+          "expression": "0 * x",
+          "matched": true,
+          "passed": false
+        },
+        {
+          "expression": "x and false",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x or true",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x * 0) + y",
+          "matched": true,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.72927
+    },
+    "synth_logic_and_identity": {
+      "name": "synth_logic_and_identity",
+      "domain": "logic",
+      "role": "identity",
+      "operator_labels": [
+        "and"
+      ],
+      "element_label": "true",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x and true",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "true and x",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "x or false",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "false or x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x and true and true",
+          "matched": true,
+          "passed": true
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729277
+    },
+    "synth_logic_or_identity": {
+      "name": "synth_logic_or_identity",
+      "domain": "logic",
+      "role": "identity",
+      "operator_labels": [
+        "or"
+      ],
+      "element_label": "false",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x and true",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "true and x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x or false",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "false or x",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "x and true and true",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729279
+    },
+    "synth_logic_and_annihilation": {
+      "name": "synth_logic_and_annihilation",
+      "domain": "logic",
+      "role": "annihilation",
+      "operator_labels": [
+        "and"
+      ],
+      "element_label": "false",
+      "rewrite_action": "replace_with_absorbing",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x and false",
+          "matched": true,
+          "passed": false
+        },
+        {
+          "expression": "false and x",
+          "matched": true,
+          "passed": false
+        },
+        {
+          "expression": "x or true",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "true or x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x and false) or y",
+          "matched": true,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729281
+    },
+    "synth_logic_or_annihilation": {
+      "name": "synth_logic_or_annihilation",
+      "domain": "logic",
+      "role": "annihilation",
+      "operator_labels": [
+        "or"
+      ],
+      "element_label": "true",
+      "rewrite_action": "replace_with_absorbing",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x and false",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "false and x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x or true",
+          "matched": true,
+          "passed": false
+        },
+        {
+          "expression": "true or x",
+          "matched": true,
+          "passed": false
+        },
+        {
+          "expression": "(x and false) or y",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729283
+    },
+    "synth_logic_not_involution": {
+      "name": "synth_logic_not_involution",
+      "domain": "logic",
+      "role": "involution",
+      "operator_labels": [
+        "not"
+      ],
+      "element_label": "",
+      "rewrite_action": "unwrap_double",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "-(-x)",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "-(-y)",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "not not x",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "not(not y)",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "-(-3)",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729287
+    },
+    "synth_logic_and_self_inverse": {
+      "name": "synth_logic_and_self_inverse",
+      "domain": "logic",
+      "role": "self_inverse",
+      "operator_labels": [
+        "and"
+      ],
+      "element_label": "true",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x - x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "y - y",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "a - a",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "5 - 5",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "z - z",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729289
+    },
+    "synth_logic_or_self_inverse": {
+      "name": "synth_logic_or_self_inverse",
+      "domain": "logic",
+      "role": "self_inverse",
+      "operator_labels": [
+        "or"
+      ],
+      "element_label": "false",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x - x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "y - y",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "a - a",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "5 - 5",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "z - z",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729291
+    },
+    "synth_sets_union_identity": {
+      "name": "synth_sets_union_identity",
+      "domain": "sets",
+      "role": "identity",
+      "operator_labels": [
+        "union"
+      ],
+      "element_label": "empty",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "0 + x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x * 1",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "1 * x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729295
+    },
+    "synth_sets_intersect_identity": {
+      "name": "synth_sets_intersect_identity",
+      "domain": "sets",
+      "role": "identity",
+      "operator_labels": [
+        "intersect"
+      ],
+      "element_label": "universal",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x + 0",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "0 + x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x * 1",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "1 * x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x + 0) + 0",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729297
+    },
+    "synth_sets_union_annihilation": {
+      "name": "synth_sets_union_annihilation",
+      "domain": "sets",
+      "role": "annihilation",
+      "operator_labels": [
+        "union"
+      ],
+      "element_label": "universal",
+      "rewrite_action": "replace_with_absorbing",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x * 0",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "0 * x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x and false",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x or true",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x * 0) + y",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.7292988
+    },
+    "synth_sets_intersect_annihilation": {
+      "name": "synth_sets_intersect_annihilation",
+      "domain": "sets",
+      "role": "annihilation",
+      "operator_labels": [
+        "intersect"
+      ],
+      "element_label": "empty",
+      "rewrite_action": "replace_with_absorbing",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x * 0",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "0 * x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x and false",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x or true",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x * 0) + y",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729301
+    },
+    "synth_sets_complement_involution": {
+      "name": "synth_sets_complement_involution",
+      "domain": "sets",
+      "role": "involution",
+      "operator_labels": [
+        "complement"
+      ],
+      "element_label": "",
+      "rewrite_action": "unwrap_double",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "-(-x)",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "-(-y)",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "not not x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "not(not y)",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "-(-3)",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729304
+    },
+    "synth_sets_union_self_inverse": {
+      "name": "synth_sets_union_self_inverse",
+      "domain": "sets",
+      "role": "self_inverse",
+      "operator_labels": [
+        "union"
+      ],
+      "element_label": "empty",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x - x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "y - y",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "a - a",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "5 - 5",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "z - z",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.7293062
+    },
+    "synth_sets_intersect_self_inverse": {
+      "name": "synth_sets_intersect_self_inverse",
+      "domain": "sets",
+      "role": "self_inverse",
+      "operator_labels": [
+        "intersect"
+      ],
+      "element_label": "universal",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x - x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "y - y",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "a - a",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "5 - 5",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "z - z",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729308
+    },
+    "synth_propositional_implies_identity": {
+      "name": "synth_propositional_implies_identity",
+      "domain": "propositional",
+      "role": "identity",
+      "operator_labels": [
+        "implies"
+      ],
+      "element_label": "true",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x and true",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "true and x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x or false",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "false or x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x and true and true",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.72932
+    },
+    "synth_propositional_and_identity": {
+      "name": "synth_propositional_and_identity",
+      "domain": "propositional",
+      "role": "identity",
+      "operator_labels": [
+        "and"
+      ],
+      "element_label": "true",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x and true",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "true and x",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "x or false",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "false or x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x and true and true",
+          "matched": true,
+          "passed": true
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729322
+    },
+    "synth_propositional_or_identity": {
+      "name": "synth_propositional_or_identity",
+      "domain": "propositional",
+      "role": "identity",
+      "operator_labels": [
+        "or"
+      ],
+      "element_label": "false",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x and true",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "true and x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x or false",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "false or x",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "x and true and true",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729324
+    },
+    "synth_propositional_implies_annihilation": {
+      "name": "synth_propositional_implies_annihilation",
+      "domain": "propositional",
+      "role": "annihilation",
+      "operator_labels": [
+        "implies"
+      ],
+      "element_label": "false",
+      "rewrite_action": "replace_with_absorbing",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x and false",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "false and x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x or true",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "true or x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x and false) or y",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.7293272
+    },
+    "synth_propositional_and_annihilation": {
+      "name": "synth_propositional_and_annihilation",
+      "domain": "propositional",
+      "role": "annihilation",
+      "operator_labels": [
+        "and"
+      ],
+      "element_label": "false",
+      "rewrite_action": "replace_with_absorbing",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x and false",
+          "matched": true,
+          "passed": false
+        },
+        {
+          "expression": "false and x",
+          "matched": true,
+          "passed": false
+        },
+        {
+          "expression": "x or true",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "true or x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "(x and false) or y",
+          "matched": true,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.7293289
+    },
+    "synth_propositional_or_annihilation": {
+      "name": "synth_propositional_or_annihilation",
+      "domain": "propositional",
+      "role": "annihilation",
+      "operator_labels": [
+        "or"
+      ],
+      "element_label": "true",
+      "rewrite_action": "replace_with_absorbing",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x and false",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "false and x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "x or true",
+          "matched": true,
+          "passed": false
+        },
+        {
+          "expression": "true or x",
+          "matched": true,
+          "passed": false
+        },
+        {
+          "expression": "(x and false) or y",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729332
+    },
+    "synth_propositional_not_involution": {
+      "name": "synth_propositional_not_involution",
+      "domain": "propositional",
+      "role": "involution",
+      "operator_labels": [
+        "not"
+      ],
+      "element_label": "",
+      "rewrite_action": "unwrap_double",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "-(-x)",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "-(-y)",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "not not x",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "not(not y)",
+          "matched": true,
+          "passed": true
+        },
+        {
+          "expression": "-(-3)",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729336
+    },
+    "synth_propositional_implies_self_inverse": {
+      "name": "synth_propositional_implies_self_inverse",
+      "domain": "propositional",
+      "role": "self_inverse",
+      "operator_labels": [
+        "implies"
+      ],
+      "element_label": "true",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x - x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "y - y",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "a - a",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "5 - 5",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "z - z",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.7293382
+    },
+    "synth_propositional_and_self_inverse": {
+      "name": "synth_propositional_and_self_inverse",
+      "domain": "propositional",
+      "role": "self_inverse",
+      "operator_labels": [
+        "and"
+      ],
+      "element_label": "true",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x - x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "y - y",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "a - a",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "5 - 5",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "z - z",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.7293398
+    },
+    "synth_propositional_or_self_inverse": {
+      "name": "synth_propositional_or_self_inverse",
+      "domain": "propositional",
+      "role": "self_inverse",
+      "operator_labels": [
+        "or"
+      ],
+      "element_label": "false",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [
+        {
+          "expression": "x - x",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "y - y",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "a - a",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "5 - 5",
+          "matched": false,
+          "passed": false
+        },
+        {
+          "expression": "z - z",
+          "matched": false,
+          "passed": false
+        }
+      ],
+      "promoted": true,
+      "created_at": 1773424191.729342
+    },
+    "synth_arithmetic_+_self_inverse": {
+      "name": "synth_arithmetic_+_self_inverse",
+      "domain": "arithmetic",
+      "role": "self_inverse",
+      "operator_labels": [
+        "+"
+      ],
+      "element_label": "0",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [],
+      "promoted": true,
+      "created_at": 1773462125.61613
+    },
+    "synth_arithmetic_-_self_inverse": {
+      "name": "synth_arithmetic_-_self_inverse",
+      "domain": "arithmetic",
+      "role": "self_inverse",
+      "operator_labels": [
+        "-"
+      ],
+      "element_label": "0",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [],
+      "promoted": true,
+      "created_at": 1773462125.616137
+    },
+    "synth_arithmetic_*_self_inverse": {
+      "name": "synth_arithmetic_*_self_inverse",
+      "domain": "arithmetic",
+      "role": "self_inverse",
+      "operator_labels": [
+        "*"
+      ],
+      "element_label": "1",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [],
+      "promoted": true,
+      "created_at": 1773462125.6161401
+    },
+    "synth_arithmetic_/_self_inverse": {
+      "name": "synth_arithmetic_/_self_inverse",
+      "domain": "arithmetic",
+      "role": "self_inverse",
+      "operator_labels": [
+        "/"
+      ],
+      "element_label": "1",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [],
+      "promoted": true,
+      "created_at": 1773462125.616141
+    },
+    "synth_arithmetic_^_self_inverse": {
+      "name": "synth_arithmetic_^_self_inverse",
+      "domain": "arithmetic",
+      "role": "self_inverse",
+      "operator_labels": [
+        "^"
+      ],
+      "element_label": "1",
+      "rewrite_action": "replace_with_other_child",
+      "confidence": 0.9,
+      "test_results": [],
+      "promoted": true,
+      "created_at": 1773462125.616143
+    }
+  },
+  "promoted": [
+    "synth_distribution_+_identity",
+    "synth_distribution_neg_involution",
+    "synth_factoring_+_identity",
+    "synth_factoring_neg_involution",
+    "synth_algebra_+_identity",
+    "synth_algebra_neg_involution",
+    "synth_logic_and_identity",
+    "synth_propositional_and_identity",
+    "synth_distribution_*_annihilation",
+    "synth_distribution_-_identity",
+    "synth_distribution_*_identity",
+    "synth_distribution_/_identity",
+    "synth_distribution_^_identity",
+    "synth_factoring_*_annihilation",
+    "synth_factoring_-_identity",
+    "synth_factoring_*_identity",
+    "synth_factoring_/_identity",
+    "synth_factoring_^_identity",
+    "synth_algebra_*_annihilation",
+    "synth_algebra_-_identity",
+    "synth_algebra_*_identity",
+    "synth_algebra_/_identity",
+    "synth_algebra_^_identity",
+    "synth_logic_basics_and_identity",
+    "synth_logic_basics_or_identity",
+    "synth_arithmetic_*_annihilation",
+    "synth_logic_or_identity",
+    "synth_logic_and_annihilation",
+    "synth_logic_or_annihilation",
+    "synth_logic_not_involution",
+    "synth_logic_and_self_inverse",
+    "synth_logic_or_self_inverse",
+    "synth_sets_union_identity",
+    "synth_sets_intersect_identity",
+    "synth_sets_union_annihilation",
+    "synth_sets_intersect_annihilation",
+    "synth_sets_complement_involution",
+    "synth_sets_union_self_inverse",
+    "synth_sets_intersect_self_inverse",
+    "synth_propositional_implies_identity",
+    "synth_propositional_or_identity",
+    "synth_propositional_implies_annihilation",
+    "synth_propositional_and_annihilation",
+    "synth_propositional_or_annihilation",
+    "synth_propositional_not_involution",
+    "synth_propositional_implies_self_inverse",
+    "synth_propositional_and_self_inverse",
+    "synth_propositional_or_self_inverse",
+    "synth_arithmetic_+_self_inverse",
+    "synth_arithmetic_-_self_inverse",
+    "synth_arithmetic_*_self_inverse",
+    "synth_arithmetic_/_self_inverse",
+    "synth_arithmetic_^_self_inverse"
+  ]
+}

@@ -1,0 +1,1002 @@
+[
+  {
+    "question_id": "f4c14e3a",
+    "text": "Is this hypothesis true: 'The 'deriv_linear' transform was significantly more effective because the test expressions contained a higher proportion'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774192218.6646662,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "d8046a62",
+    "text": "Is this hypothesis true: 'The transform 'synth_distribution_^_identity' was expected to remove a single identity node, reducing complexity by 1.0.'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774191602.3419032,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "ad6c4d34",
+    "text": "Is this hypothesis true: 'The transform prob_complement_sum likely simplified a sum containing multiple complementary probability pairs, each pair'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774191602.341897,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "67e97078",
+    "text": "Is this hypothesis true: 'The chain_inference transform was executed in a loop that repeatedly applied the transformation until no further changes'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774191602.341888,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "349f3b09",
+    "text": "Is this hypothesis true: 'The transform 'commutativity_canonicalize' sorts arguments of commutative operators into a canonical order, which can ex'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774189939.8273869,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "bec845ba",
+    "text": "Is this hypothesis true: 'The commutativity_canonicalize transform flattens associative operations in addition to reordering, which reduces the nu'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774189939.827382,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "69807d45",
+    "text": "Is this hypothesis true: 'The transform 'perfect_square_trinomial' was applied to an expression that contained both an expanded perfect square tri'?",
+    "source": "surprise",
+    "domain": "algebra",
+    "priority": 0.65,
+    "generated_at": 1774189939.827372,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "85f9bbfe",
+    "text": "Is this hypothesis true: 'The expression contained multiple transcendental function calls (e.g., sin, cos, exp) with constant arguments, which con'?",
+    "source": "surprise",
+    "domain": "calculus",
+    "priority": 0.65,
+    "generated_at": 1774189546.347841,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "ab993a83",
+    "text": "Is this hypothesis true: 'The chain_inference transform collapsed a long chain of implications (e.g., A→B→C→...→H) into a single implication, redu'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774189318.920702,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "e5a43eae",
+    "text": "Is this hypothesis true: 'The transform 'synth_factoring_/_identity' is designed to eliminate identity operations (e.g., x*1). The expected reduct'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774189318.920683,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "aa3d2f35",
+    "text": "Is this hypothesis true: 'The transform flattens nested commutative operations (associative property), reducing node count significantly. The expe'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774188766.5882912,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "e2d333c5",
+    "text": "Is this hypothesis true: 'The commutativity_canonicalize transform reorders arguments of commutative operators to a canonical order, which can exp'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774188766.588276,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "b34fc879",
+    "text": "Is this hypothesis true: 'The linear_equation_solve transform was applied to an expression that contained a tightly coupled system of linear equat'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774188203.009384,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "169d863e",
+    "text": "Is this hypothesis true: 'The commutativity_canonicalize transform reorders operands of commutative operations into a canonical sorted order. In t'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774188203.009349,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "3e882640",
+    "text": "Is this hypothesis true: 'The chain_inference transform was applied 20 times in succession, either due to a recursive implementation or because th'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774187981.645366,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "e79fcf20",
+    "text": "Is this hypothesis true: 'The const_fold transform folds entire constant subtrees in one step, removing all nodes within that subtree. The expecte'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774187981.645358,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "f5f86f8e",
+    "text": "Is this hypothesis true: 'The expression contained a hidden common factor that, when factored out, collapsed a large number of terms, leading to a'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774187981.645344,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "1bf2b589",
+    "text": "Is this hypothesis true: 'The distributive_expand transform often reveals hidden common subexpressions that can be factored out, resulting in a la'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774187552.30724,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "6c83197f",
+    "text": "Is this hypothesis true: 'The equation contained multiple fractional terms that were eliminated by multiplying by the common denominator, leading '?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774187552.307235,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "97d30de9",
+    "text": "Is this hypothesis true: 'The distributive_expand transform reduced complexity far more than expected because the input expression contained multi'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774187552.307227,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "b32c99d4",
+    "text": "Is this hypothesis true: 'The transform reorders arguments of commutative operators into a canonical order, which reduces complexity by eliminatin'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774187253.4079318,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "e3292838",
+    "text": "Is this hypothesis true: 'The expression contained many nested commutative operations with operands in non-canonical order; canonicalizing them fl'?",
+    "source": "surprise",
+    "domain": "algebra",
+    "priority": 0.65,
+    "generated_at": 1774187253.4079192,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "cb433b64",
+    "text": "Is this hypothesis true: 'The distributive_expand transform, when applied to expressions containing complementary literals within disjoined conjun'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774184788.0489259,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "cc7cd051",
+    "text": "Is this hypothesis true: 'The commutativity_canonicalize transform enables common subexpression elimination by making identical subexpressions syn'?",
+    "source": "surprise",
+    "domain": "qa",
+    "priority": 0.65,
+    "generated_at": 1774184788.0488598,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "5055032e",
+    "text": "Is this hypothesis true: 'The commutativity_canonicalize transform sorts arguments of commutative operators, which can expose additional simplific'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774184788.0488389,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "32ee9abf",
+    "text": "Is this hypothesis true: 'The transform 'synth_arithmetic_-_self_inverse' achieved a much larger complexity reduction (7.0 vs expected 0.9) becaus'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774177683.146893,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "04573386",
+    "text": "Is this hypothesis true: 'The distributive_expand transform likely over-expanded nested distributive structures, which then enabled extensive term'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774177683.1468868,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "773cb47d",
+    "text": "Is this hypothesis true: 'The transform 'commutativity_canonicalize' flattens nested commutative operators (e.g., Add) in addition to sorting argu'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774175895.994454,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "9f5f6627",
+    "text": "Is this hypothesis true: 'The transform 'synth_algebra_neg_involution' likely eliminated double negations that were blocking other simplification '?",
+    "source": "surprise",
+    "domain": "algebra",
+    "priority": 0.65,
+    "generated_at": 1774175895.994449,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "b1014d39",
+    "text": "Is this hypothesis true: 'The chain_inference transform was applied to an expression containing a long chain of logical implications, which were c'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774175895.994441,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "d4c236a5",
+    "text": "Is this hypothesis true: 'The 'synth_logic_and_annihilation' transform removed an AND gate with a high number of inputs (e.g., 10), which contribu'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774173368.845448,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "dabc11a9",
+    "text": "Is this hypothesis true: 'The commutativity_canonicalize transform sorts operands of commutative operators and merges like terms; the expression c'?",
+    "source": "surprise",
+    "domain": "algebra",
+    "priority": 0.65,
+    "generated_at": 1774173368.845442,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "4f1b3ed6",
+    "text": "Is this hypothesis true: 'The commutativity_canonicalize transform merges duplicate operands in commutative operations (e.g., x + x becomes 2*x), '?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774173368.845429,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "7bfbf03c",
+    "text": "Is this hypothesis true: 'The transform 'synth_logic_and_annihilation' may have been applied in a context where multiple AND terms were implicitly'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774163843.462728,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "bfe3b96f",
+    "text": "Is this hypothesis true: 'The transform 'synth_logic_and_annihilation' was applied to an expression with an unusually high number of annihilatable'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774163843.462723,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "b1969ffa",
+    "text": "Is this hypothesis true: 'The transform 'synth_algebra_/_identity' cancels identical subexpressions in numerator and denominator. The expected red'?",
+    "source": "surprise",
+    "domain": "algebra",
+    "priority": 0.65,
+    "generated_at": 1774163843.4627142,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "77f26bf4",
+    "text": "Is this hypothesis true: 'The transform recursively applied factoring and annihilation to multiple nested subexpressions, causing a cascade of sim'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774162951.1686049,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "3f71bec4",
+    "text": "Is this hypothesis true: 'The commutativity_canonicalize transform likely performs associative flattening of commutative operators in addition to '?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774162951.168592,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "bf25b8d4",
+    "text": "Is this hypothesis true: 'The power-zero elimination removed a subexpression with a large base, causing a much larger reduction in complexity than'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774162249.775191,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "b5260b2e",
+    "text": "Is this hypothesis true: 'The combine_like_terms transform was applied to an expression with an unusually high number of duplicate terms, far exce'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774162249.775182,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "47c71b7e",
+    "text": "Is this hypothesis true: 'The expression contained a long chain or deep tree of constant operations, causing constant folding to cascade and elimi'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774162249.77517,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "a2aac743",
+    "text": "Is this hypothesis true: 'The chain_inference transform reduced complexity by 8.1 instead of 0.9 because the input expression contained a long cha'?",
+    "source": "surprise",
+    "domain": "algebra",
+    "priority": 0.65,
+    "generated_at": 1774158920.831815,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "0ecd8c90",
+    "text": "Is this hypothesis true: 'The transform 'synth_arithmetic_-_self_inverse' likely encountered a deeply nested self-inverse arithmetic pattern (e.g.'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774158920.83181,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "5a1df71e",
+    "text": "Is this hypothesis true: 'The commutativity_canonicalize transform sorts the operands of commutative operations, which not only reduces the comple'?",
+    "source": "surprise",
+    "domain": "set_theory",
+    "priority": 0.65,
+    "generated_at": 1774158920.8318012,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "e039de7b",
+    "text": "Is this hypothesis true: 'The actual reduction was much higher because the expression contained a long chain of nested associative additions (e.g.'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774158755.558764,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "fdf24aa0",
+    "text": "Is this hypothesis true: 'The chain_inference transform was expected to reduce complexity by 0.9 based on a single-step model, but the actual expr'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774158755.5587509,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "78247c28",
+    "text": "Is this hypothesis true: 'The transform 'prob_complement_sum' applies De Morgan's law to convert complement of sums into products of complements, '?",
+    "source": "surprise",
+    "domain": "algebra",
+    "priority": 0.65,
+    "generated_at": 1774157152.772079,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "129e740c",
+    "text": "Is this hypothesis true: 'The 'power_zero_elim' transform replaces any term raised to the zero power with 1. In the given expression, this replace'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774157152.77207,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "ec5b9922",
+    "text": "Is this hypothesis true: 'The chain_inference transform was applied iteratively until no further simplification was possible, leading to a total r'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774157152.7720551,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "f186ada1",
+    "text": "Is this hypothesis true: 'The commutativity_canonicalize transform not only reorders terms but also merges identical operands and flattens nested '?",
+    "source": "surprise",
+    "domain": "algebra",
+    "priority": 0.65,
+    "generated_at": 1774153853.725211,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "b1b57983",
+    "text": "Is this hypothesis true: 'The commutativity_canonicalize transform includes associative flattening of commutative operators, which collapsed a dee'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774153853.725201,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "b52d56ef",
+    "text": "Is this hypothesis true: 'The commutativity_canonicalize transform flattens nested commutative operations and sorts operands; the expression conta'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774153853.725183,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "c99c0786",
+    "text": "Is this hypothesis true: 'The add_assoc_fold rule was applied transitively without a depth limit, causing it to fold not only immediate associativ'?",
+    "source": "surprise",
+    "domain": "qa",
+    "priority": 0.65,
+    "generated_at": 1774142865.513173,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "406a6477",
+    "text": "Is this hypothesis true: 'The const_fold pass folds not only explicit constant subexpressions but also propagates constant values through dependen'?",
+    "source": "surprise",
+    "domain": "qa",
+    "priority": 0.65,
+    "generated_at": 1774142865.5131469,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "7b7bedf1",
+    "text": "Is this hypothesis true: 'The double_neg transform also eliminates redundant parentheses and simplifies adjacent operators, leading to a larger co'?",
+    "source": "surprise",
+    "domain": "qa",
+    "priority": 0.65,
+    "generated_at": 1774131877.5476449,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "5c53a9a3",
+    "text": "Is this hypothesis true: 'The distributive_expand rule was applied recursively to all sub-expressions, causing exponential growth in term count an'?",
+    "source": "surprise",
+    "domain": "algebra",
+    "priority": 0.65,
+    "generated_at": 1774131877.54764,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "aa061ec1",
+    "text": "Is this hypothesis true: 'The transform incorrectly treats nested negative involutions as separate opportunities for simplification, applying the '?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774123218.7513971,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "b51c6cde",
+    "text": "Is this hypothesis true: 'The chain_inference transform applied multiple inference steps recursively, eliminating not only the targeted redundant '?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774123218.751391,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "55cdef2e",
+    "text": "Is this hypothesis true: 'The transform also performed constant folding and term cancellation beyond solving the linear equation, leading to great'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774123030.687639,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "0d4b8116",
+    "text": "Is this hypothesis true: 'The transform triggered additional simplification passes because its rule set overlapped with existing annihilation rule'?",
+    "source": "surprise",
+    "domain": "calculus",
+    "priority": 0.65,
+    "generated_at": 1774123030.687629,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "e7e5ad45",
+    "text": "Is this hypothesis true: 'The transform inadvertently applies additional simplifications such as constant folding and term cancellation beyond mer'?",
+    "source": "surprise",
+    "domain": "algebra",
+    "priority": 0.65,
+    "generated_at": 1774123030.687607,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "112f0aee",
+    "text": "Is this hypothesis true: 'The transform inadvertently applied additional simplifications due to nested term cancellations that were not accounted '?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774122792.374617,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "57d7e4cc",
+    "text": "Is this hypothesis true: 'The transform inadvertently targeted a broader class of subexpressions due to an overly general pattern, causing additio'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774122792.374607,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "2d671c0d",
+    "text": "Is this hypothesis true: 'Thetransform's pattern matching recursively applied to sub‑expressions, causing constant folding to cascade beyond the i'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774122792.374589,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "6cc9e037",
+    "text": "Is this hypothesis true: 'The transform 'synth_logic_or_annihilation' replaces an OR expression with true when one operand is constant true, elimi'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774122028.837024,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "894b7f13",
+    "text": "Is this hypothesis true: 'The self-inverse transform eliminates not only the direct target but also uncovers and removes nested self-inverse opera'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774122028.837012,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "2c01bf89",
+    "text": "Is this hypothesis true: 'The expression contained many occurrences of the power-zero pattern; the transform eliminated all of them in one pass, a'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774122028.836991,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "7d7aee4e",
+    "text": "Is this hypothesis true: 'The expected reduction of 1.0 assumed only the operator node would be removed, but the actual reduction of 5.5 indicates'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774119178.212376,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "cfa92677",
+    "text": "Is this hypothesis true: 'The transform 'power_zero_elim' triggered a cascade of simplifications: eliminating zero-exponent terms exposed new zero'?",
+    "source": "surprise",
+    "domain": "algebra",
+    "priority": 0.65,
+    "generated_at": 1774119178.212369,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "23b97fd6",
+    "text": "Is this hypothesis true: 'The expression contained a large number of constant terms within a derivative, causing the deriv_const_zero rule to be a'?",
+    "source": "surprise",
+    "domain": "algebra",
+    "priority": 0.65,
+    "generated_at": 1774119178.212357,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "14470986",
+    "text": "Is this hypothesis true: 'The expression contained many complementary literal pairs within distributive contexts, causing extensive simplification'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774118655.520698,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "addce2b4",
+    "text": "Is this hypothesis true: 'The distributive expansion caused many terms to cancel because the expression contained multiple instances where a produ'?",
+    "source": "surprise",
+    "domain": "calculus",
+    "priority": 0.65,
+    "generated_at": 1774118655.52069,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "322633ff",
+    "text": "Is this hypothesis true: 'The transform 'synth_logic_and_annihilation' replaces (false ∧ X) with false, eliminating the AND node and the entire su'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774118655.520679,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "1a7d01f1",
+    "text": "Is this hypothesis true: 'The expected reduction of 0.9 was derived from an average of one OR false occurrence per expression, but the actual expr'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774112780.951759,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "9dcd189e",
+    "text": "Is this hypothesis true: 'The transform 'power_product' matched a product of several powers with the same base, combining them into a single power'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774112780.951751,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "4ebf21a6",
+    "text": "Is this hypothesis true: 'The deriv_sum_rule was applied to factor a sum of eight derivative terms into a single derivative, reducing complexity b'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774112780.9517398,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "9d8a0931",
+    "text": "Is this hypothesis true: 'The mul_zero_elim transform replaces a multiplication by zero with zero, discarding the other operand. The expected redu'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774111402.2553039,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "77e4a6fe",
+    "text": "Is this hypothesis true: 'The commutativity_canonicalize transform reorders commutative operations into a canonical order, which unexpectedly expo'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774111402.2552981,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "85ca645c",
+    "text": "Is this hypothesis true: 'The mul_zero_elim transform replaces the entire multiplication subterm with 0, discarding the non-zero operand which may'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774111402.255289,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "cde05731",
+    "text": "Is this hypothesis true: 'The expression contained a large number of like terms (e.g., many occurrences of the same variable term) that were combi'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774107202.701609,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "6eb48abc",
+    "text": "Is this hypothesis true: 'The transform 'multiply_equation_solve' not only isolates the target variable but also introduces a common factor that e'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774107202.701569,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "5a028951",
+    "text": "Is this hypothesis true: 'The transform 'synth_logic_and_annihilation' detected a pair of complementary literals (e.g., A and ¬A) within a deep su'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774107202.701518,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "b52caa0a",
+    "text": "Is this hypothesis true: 'The transform 'synth_algebra_*_annihilation' matches any subexpression of the form X op X (where op is a binary operator'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774101834.397426,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "a91bfd75",
+    "text": "Is this hypothesis true: 'The distributive_expand transform likely exposed hidden complementary terms that, when expanded, allowed subsequent simp'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774101834.397417,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "79d08ef7",
+    "text": "Is this hypothesis true: 'The expression contained a perfect square trinomial that was raised to a power, such as (a^2+2ab+b^2)^2. Factoring the i'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774098255.826818,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "5b69b16f",
+    "text": "Is this hypothesis true: 'The equation contained a common multiplicative factor on both sides that was canceled during solving, leading to a much '?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774098255.8268118,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "296302db",
+    "text": "Is this hypothesis true: 'The transform 'synth_distribution_neg_involution' distributes negation and then applies involution to eliminate double n'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774089953.537326,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "8c15988f",
+    "text": "Is this hypothesis true: 'The transform 'multiply_equation_solve' was applied to an equation that was part of a larger expression; solving it not '?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774089953.53732,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "aeec2c94",
+    "text": "Is this hypothesis true: 'The expression contained a product of a function and its reciprocal, which simplifies to a constant (1). The derivative '?",
+    "source": "surprise",
+    "domain": "algebra",
+    "priority": 0.65,
+    "generated_at": 1774089953.537308,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "e9759d24",
+    "text": "Is this hypothesis true: 'Constant folding can recursively evaluate nested constant subexpressions, causing a cascade of simplifications that redu'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774089482.458878,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "1ecb84cd",
+    "text": "Is this hypothesis true: 'The const_fold transform was applied iteratively until no more constant expressions remained, causing a cascade of folds'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774089482.458868,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "2a78b280",
+    "text": "Is this hypothesis true: 'The transform was applied exhaustively to all matching subexpressions, and the expression contained multiple independent'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774089482.458857,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "64d5f960",
+    "text": "Is this hypothesis true: 'The double_neg transform removed two negation nodes and exposed a constant subexpression that could be folded, leading t'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774089325.679729,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "afa3f489",
+    "text": "Is this hypothesis true: 'The self-inverse property of 'synth_arithmetic_+_self_inverse' allowed it to be applied exhaustively to all matching sub'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774089325.6797152,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "be7ac050",
+    "text": "Is this hypothesis true: 'The distributive expansion unexpectedly exposed many hidden cancellations between opposite terms that were nested within'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774088212.149846,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "9620b18a",
+    "text": "Is this hypothesis true: 'The expression likely contained a structure where distributive expansion produced many terms that were exact opposites o'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774088212.0812118,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "4bb4fe20",
+    "text": "Is this hypothesis true: 'The distributive_expand transform likely exposed many hidden cancellations (e.g., terms that sum to zero) after expansio'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774088212.078455,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "67db3fd5",
+    "text": "Is this hypothesis true: 'The expression contained multiple layers of nested logical NOTs; applying the involution transform recursively removed a'?",
+    "source": "surprise",
+    "domain": "code",
+    "priority": 0.65,
+    "generated_at": 1774082299.562579,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "2426b3fd",
+    "text": "Is this hypothesis true: 'The add_assoc_fold transform recursively folds all nested additions in a single pass. The expected reduction of 1.0 assu'?",
+    "source": "surprise",
+    "domain": "arithmetic",
+    "priority": 0.65,
+    "generated_at": 1774082299.5625322,
+    "investigated": true,
+    "investigation_result": "investigating"
+  },
+  {
+    "question_id": "903b97d2",
+    "text": "Is this hypothesis true: 'The expression contained many overlapping distributive patterns with shared literals, such as (A∨B)∧(A∨C), which after e'?",
+    "source": "surprise",
+    "domain": "logic",
+    "priority": 0.65,
+    "generated_at": 1774082299.559607,
+    "investigated": true,
+    "investigation_result": "investigating"
+  }
+]

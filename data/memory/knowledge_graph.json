@@ -1,0 +1,1251 @@
+{
+  "nodes": {
+    "belief_00001": {
+      "id": "belief_00001",
+      "type": "belief",
+      "name": "france:capital",
+      "domain": "factual",
+      "confidence": 0.99,
+      "observations": 1,
+      "content": {
+        "description": "france capital: Paris"
+      },
+      "created_at": 1774007605.006569
+    },
+    "belief_00002": {
+      "id": "belief_00002",
+      "type": "belief",
+      "name": "light:speed",
+      "domain": "factual",
+      "confidence": 0.99,
+      "observations": 1,
+      "content": {
+        "description": "light speed: 299,792,458 m/s"
+      },
+      "created_at": 1774007902.3457122
+    },
+    "belief_00003": {
+      "id": "belief_00003",
+      "type": "belief",
+      "name": "2+2:answer",
+      "domain": "math",
+      "confidence": 0.99,
+      "observations": 1,
+      "content": {
+        "description": "2+2 answer: 4"
+      },
+      "created_at": 1774191875.6503732
+    },
+    "belief_00004": {
+      "id": "belief_00004",
+      "type": "belief",
+      "name": "kinetic energy:formula",
+      "domain": "science",
+      "confidence": 0.99,
+      "observations": 1,
+      "content": {
+        "description": "kinetic energy formula: KE = 0.5 * m * v^2"
+      },
+      "created_at": 1774192890.4451299
+    },
+    "belief_00005": {
+      "id": "belief_00005",
+      "type": "belief",
+      "name": "the telephone:who",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "the telephone who: Alexander Graham Bell"
+      },
+      "created_at": 1774241877.303306
+    },
+    "belief_00006": {
+      "id": "belief_00006",
+      "type": "belief",
+      "name": "the hardest natural mineral:definition",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "the hardest natural mineral definition: diamond"
+      },
+      "created_at": 1774242001.9973838
+    },
+    "belief_00007": {
+      "id": "belief_00007",
+      "type": "belief",
+      "name": "water at sea level:boiling_point",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "water at sea level boiling_point: 100 degrees Celsius"
+      },
+      "created_at": 1774242002.159936
+    },
+    "belief_00008": {
+      "id": "belief_00008",
+      "type": "belief",
+      "name": "sally puts her ball in a basket and leav:answer",
+      "domain": "social",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "sally puts her ball in a basket and leav answer: in the basket (Sally doesn't know Anne moved it)"
+      },
+      "created_at": 1774242002.2771652
+    },
+    "belief_00009": {
+      "id": "belief_00009",
+      "type": "belief",
+      "name": "no reptiles are mammals. snakes are rept:answer",
+      "domain": "reasoning",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "no reptiles are mammals. snakes are rept answer: no"
+      },
+      "created_at": 1774242002.298986
+    },
+    "belief_00010": {
+      "id": "belief_00010",
+      "type": "belief",
+      "name": "all birds have wings. penguins are birds:answer",
+      "domain": "reasoning",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "all birds have wings. penguins are birds answer: yes"
+      },
+      "created_at": 1774242002.340459
+    },
+    "belief_00011": {
+      "id": "belief_00011",
+      "type": "belief",
+      "name": "if half-life is 10 years, after 20 years:answer",
+      "domain": "science",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "if half-life is 10 years, after 20 years answer: 1/4"
+      },
+      "created_at": 1774242023.9120882
+    },
+    "belief_00012": {
+      "id": "belief_00012",
+      "type": "belief",
+      "name": "the current:definition",
+      "domain": "science",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "the current definition: 3 A"
+      },
+      "created_at": 1774242023.9644842
+    },
+    "belief_00013": {
+      "id": "belief_00013",
+      "type": "belief",
+      "name": "what element has atomic number 1?:answer",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "what element has atomic number 1? answer: Hydrogen"
+      },
+      "created_at": 1774242023.9813251
+    },
+    "belief_00014": {
+      "id": "belief_00014",
+      "type": "belief",
+      "name": "if it rains, the ground gets wet. the gr:answer",
+      "domain": "reasoning",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "if it rains, the ground gets wet. the gr answer: not necessarily"
+      },
+      "created_at": 1774242025.328914
+    },
+    "belief_00015": {
+      "id": "belief_00015",
+      "type": "belief",
+      "name": "in what year did world war ii end?:answer",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "in what year did world war ii end? answer: 1945"
+      },
+      "created_at": 1774242025.8252318
+    },
+    "belief_00016": {
+      "id": "belief_00016",
+      "type": "belief",
+      "name": "addition is to sum as multiplication is:answer",
+      "domain": "analogy",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "addition is to sum as multiplication is answer: product"
+      },
+      "created_at": 1774242025.917595
+    },
+    "belief_00017": {
+      "id": "belief_00017",
+      "type": "belief",
+      "name": "photosynthesis:definition",
+      "domain": "science",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "photosynthesis definition: Process by which plants convert sunlight to food"
+      },
+      "created_at": 1774242111.7242198
+    },
+    "belief_00018": {
+      "id": "belief_00018",
+      "type": "belief",
+      "name": "newton second law:definition",
+      "domain": "science",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "newton second law definition: F = ma (Force = mass \u00d7 acceleration)"
+      },
+      "created_at": 1774242111.757731
+    },
+    "belief_00019": {
+      "id": "belief_00019",
+      "type": "belief",
+      "name": "its speed:definition",
+      "domain": "science",
+      "confidence": 0.562,
+      "observations": 1,
+      "content": {
+        "description": "its speed definition: 5. Answer: <60>"
+      },
+      "created_at": 1774242255.162088
+    },
+    "belief_00020": {
+      "id": "belief_00020",
+      "type": "belief",
+      "name": "the steps to solve a quadratic equation:definition",
+      "domain": "planning",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "the steps to solve a quadratic equation definition: write in standard form, compute discriminant, apply quadratic formula, simplify"
+      },
+      "created_at": 1774242275.45137
+    },
+    "belief_00021": {
+      "id": "belief_00021",
+      "type": "belief",
+      "name": "use the function above to calculate the:answer",
+      "domain": "code",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "use the function above to calculate the answer: def factorial(n): if n == 0: return 1 else: return n * factorial(n-1)"
+      },
+      "created_at": 1774242275.464671
+    },
+    "belief_00022": {
+      "id": "belief_00022",
+      "type": "belief",
+      "name": "the steps to make a cup of tea:definition",
+      "domain": "planning",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "the steps to make a cup of tea definition: boil water, add tea bag, pour water, steep, remove bag, add milk/sugar optionally"
+      },
+      "created_at": 1774242275.469753
+    },
+    "belief_00023": {
+      "id": "belief_00023",
+      "type": "belief",
+      "name": "144:square_root",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "144 square_root: 12"
+      },
+      "created_at": 1774242279.111845
+    },
+    "belief_00024": {
+      "id": "belief_00024",
+      "type": "belief",
+      "name": "dna an abbreviation for:definition",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "dna an abbreviation for definition: deoxyribonucleic acid"
+      },
+      "created_at": 1774242279.1173
+    },
+    "belief_00025": {
+      "id": "belief_00025",
+      "type": "belief",
+      "name": "keyboard is to type as brush is to ?:answer",
+      "domain": "analogy",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "keyboard is to type as brush is to ? answer: paint"
+      },
+      "created_at": 1774242279.12567
+    },
+    "belief_00026": {
+      "id": "belief_00026",
+      "type": "belief",
+      "name": "'hamlet':who",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "'hamlet' who: Shakespeare"
+      },
+      "created_at": 1774242279.132242
+    },
+    "belief_00027": {
+      "id": "belief_00027",
+      "type": "belief",
+      "name": "water:formula",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "water formula: H2O"
+      },
+      "created_at": 1774242282.8351629
+    },
+    "belief_00028": {
+      "id": "belief_00028",
+      "type": "belief",
+      "name": "what planet is closest to the sun?:answer",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "what planet is closest to the sun? answer: Mercury"
+      },
+      "created_at": 1774242282.874145
+    },
+    "belief_00029": {
+      "id": "belief_00029",
+      "type": "belief",
+      "name": "the cell:powerhouse",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "the cell powerhouse: mitochondria"
+      },
+      "created_at": 1774242282.8928409
+    },
+    "belief_00030": {
+      "id": "belief_00030",
+      "type": "belief",
+      "name": "what does 'benevolent' mean?:answer",
+      "domain": "language",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "what does 'benevolent' mean? answer: kind, well-meaning"
+      },
+      "created_at": 1774242282.909971
+    },
+    "belief_00031": {
+      "id": "belief_00031",
+      "type": "belief",
+      "name": "foot is to shoe as hand is to ?:answer",
+      "domain": "analogy",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "foot is to shoe as hand is to ? answer: glove"
+      },
+      "created_at": 1774242287.763689
+    },
+    "belief_00032": {
+      "id": "belief_00032",
+      "type": "belief",
+      "name": "the largest planet in our solar system:definition",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "the largest planet in our solar system definition: Jupiter"
+      },
+      "created_at": 1774242287.79842
+    },
+    "belief_00033": {
+      "id": "belief_00033",
+      "type": "belief",
+      "name": "'listen':an_anagram",
+      "domain": "language",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "'listen' an_anagram: silent"
+      },
+      "created_at": 1774242291.634882
+    },
+    "belief_00034": {
+      "id": "belief_00034",
+      "type": "belief",
+      "name": "'run':past_tense",
+      "domain": "language",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "'run' past_tense: ran"
+      },
+      "created_at": 1774242291.653717
+    },
+    "belief_00035": {
+      "id": "belief_00035",
+      "type": "belief",
+      "name": "why does ice float on water?:answer",
+      "domain": "science",
+      "confidence": 0.562,
+      "observations": 1,
+      "content": {
+        "description": "why does ice float on water? answer: <The ice floats on water due to its lower density than the water, creating a greater buoyant force compared to the weight of the ice.>"
+      },
+      "created_at": 1774242359.169482
+    },
+    "belief_00036": {
+      "id": "belief_00036",
+      "type": "belief",
+      "name": "all mammals are warm-blooded. dogs are m:answer",
+      "domain": "reasoning",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "all mammals are warm-blooded. dogs are m answer: yes"
+      },
+      "created_at": 1774242369.665056
+    },
+    "belief_00037": {
+      "id": "belief_00037",
+      "type": "belief",
+      "name": "all cats are animals. some animals are p:answer",
+      "domain": "reasoning",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "all cats are animals. some animals are p answer: not necessarily"
+      },
+      "created_at": 1774242369.671846
+    },
+    "belief_00038": {
+      "id": "belief_00038",
+      "type": "belief",
+      "name": "what steps do you take to debug a python:answer",
+      "domain": "planning",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "what steps do you take to debug a python answer: read error message, find line number, inspect code, add print statements, fix, retest"
+      },
+      "created_at": 1774242464.751717
+    },
+    "belief_00039": {
+      "id": "belief_00039",
+      "type": "belief",
+      "name": "a synonym for 'happy':definition",
+      "domain": "language",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "a synonym for 'happy' definition: joyful"
+      },
+      "created_at": 1774242464.775231
+    },
+    "belief_00040": {
+      "id": "belief_00040",
+      "type": "belief",
+      "name": "hot is to cold as day is to ?:answer",
+      "domain": "analogy",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "hot is to cold as day is to ? answer: night"
+      },
+      "created_at": 1774242473.3699598
+    },
+    "belief_00041": {
+      "id": "belief_00041",
+      "type": "belief",
+      "name": "bones are in the adult human body:count",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "bones are in the adult human body count: 206"
+      },
+      "created_at": 1774242748.124021
+    },
+    "belief_00042": {
+      "id": "belief_00042",
+      "type": "belief",
+      "name": "if today is monday, what day is tomorrow:answer",
+      "domain": "reasoning",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "if today is monday, what day is tomorrow answer: Tuesday"
+      },
+      "created_at": 1774242748.18527
+    },
+    "belief_00043": {
+      "id": "belief_00043",
+      "type": "belief",
+      "name": "dog is to puppy as cat is to ?:answer",
+      "domain": "analogy",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "dog is to puppy as cat is to ? answer: kitten"
+      },
+      "created_at": 1774242893.575445
+    },
+    "belief_00044": {
+      "id": "belief_00044",
+      "type": "belief",
+      "name": "what gas do plants absorb during photosy:answer",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "what gas do plants absorb during photosy answer: carbon dioxide"
+      },
+      "created_at": 1774242893.606692
+    },
+    "belief_00045": {
+      "id": "belief_00045",
+      "type": "belief",
+      "name": "if a implies b and b implies c, does a i:answer",
+      "domain": "reasoning",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "if a implies b and b implies c, does a i answer: yes"
+      },
+      "created_at": 1774242893.620302
+    },
+    "belief_00046": {
+      "id": "belief_00046",
+      "type": "belief",
+      "name": "socrates is a man. all men are mortal. i:answer",
+      "domain": "reasoning",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "socrates is a man. all men are mortal. i answer: yes"
+      },
+      "created_at": 1774242915.9990149
+    },
+    "belief_00047": {
+      "id": "belief_00047",
+      "type": "belief",
+      "name": "ear is to hear as eye is to ?:answer",
+      "domain": "analogy",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "ear is to hear as eye is to ? answer: see"
+      },
+      "created_at": 1774242916.037523
+    },
+    "belief_00048": {
+      "id": "belief_00048",
+      "type": "belief",
+      "name": "'mouse':plural",
+      "domain": "language",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "'mouse' plural: mice"
+      },
+      "created_at": 1774243120.407661
+    },
+    "belief_00049": {
+      "id": "belief_00049",
+      "type": "belief",
+      "name": "all prime numbers greater than 2 are odd:answer",
+      "domain": "reasoning",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "all prime numbers greater than 2 are odd answer: yes"
+      },
+      "created_at": 1774243120.553671
+    },
+    "belief_00050": {
+      "id": "belief_00050",
+      "type": "belief",
+      "name": "newton's second law:definition",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "newton's second law definition: F = ma"
+      },
+      "created_at": 1774243357.087868
+    },
+    "belief_00051": {
+      "id": "belief_00051",
+      "type": "belief",
+      "name": "paris is to france as rome is to ?:answer",
+      "domain": "analogy",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "paris is to france as rome is to ? answer: Italy"
+      },
+      "created_at": 1774243952.734904
+    },
+    "belief_00052": {
+      "id": "belief_00052",
+      "type": "belief",
+      "name": "'ancient':opposite",
+      "domain": "language",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "'ancient' opposite: modern"
+      },
+      "created_at": 1774243984.5491462
+    },
+    "belief_00053": {
+      "id": "belief_00053",
+      "type": "belief",
+      "name": "japan:currency",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "japan currency: yen"
+      },
+      "created_at": 1774244051.433172
+    },
+    "belief_00054": {
+      "id": "belief_00054",
+      "type": "belief",
+      "name": "what color is a rare 2d3e9b07 dragon?:answer",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "what color is a rare 2d3e9b07 dragon? answer: purple"
+      },
+      "created_at": 1774244146.976632
+    },
+    "belief_00055": {
+      "id": "belief_00055",
+      "type": "belief",
+      "name": "what color is a rare 65d30b67 dragon?:answer",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "what color is a rare 65d30b67 dragon? answer: purple"
+      },
+      "created_at": 1774244210.16743
+    },
+    "belief_00056": {
+      "id": "belief_00056",
+      "type": "belief",
+      "name": "fish is to water as bird is to ?:answer",
+      "domain": "analogy",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "fish is to water as bird is to ? answer: air"
+      },
+      "created_at": 1774245109.962942
+    },
+    "belief_00057": {
+      "id": "belief_00057",
+      "type": "belief",
+      "name": "doctor is to hospital as teacher is to ?:answer",
+      "domain": "analogy",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "doctor is to hospital as teacher is to ? answer: school"
+      },
+      "created_at": 1774245140.5643892
+    },
+    "belief_00058": {
+      "id": "belief_00058",
+      "type": "belief",
+      "name": "the largest organ in the human body:definition",
+      "domain": "factual",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "the largest organ in the human body definition: skin"
+      },
+      "created_at": 1774245286.482424
+    },
+    "belief_00059": {
+      "id": "belief_00059",
+      "type": "belief",
+      "name": "book is to library as painting is to ?:answer",
+      "domain": "analogy",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "book is to library as painting is to ? answer: museum"
+      },
+      "created_at": 1774259580.922923
+    },
+    "belief_00060": {
+      "id": "belief_00060",
+      "type": "belief",
+      "name": "john thinks the meeting is at 3pm. it wa:answer",
+      "domain": "social",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "john thinks the meeting is at 3pm. it wa answer: 3pm"
+      },
+      "created_at": 1774259888.8960981
+    },
+    "belief_00061": {
+      "id": "belief_00061",
+      "type": "belief",
+      "name": "if someone smiles while saying 'i'm fine:answer",
+      "domain": "social",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "if someone smiles while saying 'i'm fine answer: possibly not fine; the smile may mask distress"
+      },
+      "created_at": 1774259902.0879202
+    },
+    "belief_00062": {
+      "id": "belief_00062",
+      "type": "belief",
+      "name": "the high-level steps to train a machine learning model:definition",
+      "domain": "planning",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "the high-level steps to train a machine learning model definition: collect data, preprocess, choose model, train, evaluate, tune, deploy"
+      },
+      "created_at": 1774260241.122444
+    },
+    "belief_00063": {
+      "id": "belief_00063",
+      "type": "belief",
+      "name": "rearrange: 'lazy the dog fox quick brown:answer",
+      "domain": "language",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "rearrange: 'lazy the dog fox quick brown answer: the quick brown fox jumps over the lazy dog"
+      },
+      "created_at": 1774262258.864932
+    },
+    "belief_00064": {
+      "id": "belief_00064",
+      "type": "belief",
+      "name": "write python to: calculate the factorial:answer",
+      "domain": "code",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "write python to: calculate the factorial answer: def factorial(n): if n == 0: return 1 else: return n * factorial(n-1)"
+      },
+      "created_at": 1774278607.8220968
+    },
+    "belief_00065": {
+      "id": "belief_00065",
+      "type": "belief",
+      "name": "commutativity_canonicalize related to:definition",
+      "domain": "reasoning",
+      "confidence": 0.506,
+      "observations": 1,
+      "content": {
+        "description": "commutativity_canonicalize related to definition: Commutativity_canonicalize"
+      },
+      "created_at": 1774319810.4638982
+    },
+    "belief_00066": {
+      "id": "belief_00066",
+      "type": "belief",
+      "name": "where does commutativity_canonicalize li:answer",
+      "domain": "factual",
+      "confidence": 0.478,
+      "observations": 1,
+      "content": {
+        "description": "where does commutativity_canonicalize li answer: Answer: The Commutativity Canonical resides within the realm of category theory, specifically in the definition and analysis of left-right diagrams."
+      },
+      "created_at": 1774325169.54022
+    },
+    "belief_00067": {
+      "id": "belief_00067",
+      "type": "belief",
+      "name": "what does commutativity_canonicalize do?:answer",
+      "domain": "factual",
+      "confidence": 0.478,
+      "observations": 1,
+      "content": {
+        "description": "what does commutativity_canonicalize do? answer: Commutativity_canonicalize does precisely that \u2013 it defines equivalence relations between sets by establishing a mapping operation that preserves the definition of commutativity."
+      },
+      "created_at": 1774325184.187646
+    },
+    "belief_00068": {
+      "id": "belief_00068",
+      "type": "belief",
+      "name": "synth_distribution_*_identity related to:definition",
+      "domain": "reasoning",
+      "confidence": 0.506,
+      "observations": 1,
+      "content": {
+        "description": "synth_distribution_*_identity related to definition: A function or operation that creates a unique identifier based on some input data."
+      },
+      "created_at": 1774327487.792288
+    },
+    "belief_00069": {
+      "id": "belief_00069",
+      "type": "belief",
+      "name": "what does synth_distribution_*_identity:answer",
+      "domain": "factual",
+      "confidence": 0.478,
+      "observations": 1,
+      "content": {
+        "description": "what does synth_distribution_*_identity answer: synth_distribution__identity"
+      },
+      "created_at": 1774327556.709045
+    },
+    "belief_00070": {
+      "id": "belief_00070",
+      "type": "belief",
+      "name": "where does self_subtraction live?:answer",
+      "domain": "factual",
+      "confidence": 0.478,
+      "observations": 1,
+      "content": {
+        "description": "where does self_subtraction live? answer: Answer: `self_subtraction` is likely used within a data manipulation or processing library, such as an image processing library (e.g., OpenCV, Pillow) or a game engine's data handling system."
+      },
+      "created_at": 1774329112.391063
+    },
+    "belief_00071": {
+      "id": "belief_00071",
+      "type": "belief",
+      "name": "self_subtraction related to:definition",
+      "domain": "reasoning",
+      "confidence": 0.506,
+      "observations": 1,
+      "content": {
+        "description": "self_subtraction related to definition: self_subtraction"
+      },
+      "created_at": 1774329204.4093251
+    },
+    "belief_00072": {
+      "id": "belief_00072",
+      "type": "belief",
+      "name": "what does self_subtraction do?:answer",
+      "domain": "factual",
+      "confidence": 0.478,
+      "observations": 1,
+      "content": {
+        "description": "what does self_subtraction do? answer: self_subtraction"
+      },
+      "created_at": 1774335736.161641
+    },
+    "belief_00073": {
+      "id": "belief_00073",
+      "type": "belief",
+      "name": "where does synth_distribution_*_identity:answer",
+      "domain": "factual",
+      "confidence": 0.478,
+      "observations": 1,
+      "content": {
+        "description": "where does synth_distribution_*_identity answer: The `synth_distribution__identity` variable lives in the dictionary associated with the key \"example_1\"."
+      },
+      "created_at": 1774337660.6366239
+    },
+    "causal_00074": {
+      "id": "causal_00074",
+      "type": "causal",
+      "name": "const_fold\u2192energy_reduction:arithmetic",
+      "domain": "arithmetic",
+      "confidence": 0.6,
+      "observations": 10,
+      "content": {
+        "cause": "const_fold",
+        "effect": "energy_reduction",
+        "mechanism": "arithmetic"
+      },
+      "created_at": 1774349218.344734
+    },
+    "causal_00075": {
+      "id": "causal_00075",
+      "type": "causal",
+      "name": "synth_factoring_*_identity\u2192energy_reduction:arithmetic",
+      "domain": "arithmetic",
+      "confidence": 0.6,
+      "observations": 5,
+      "content": {
+        "cause": "synth_factoring_*_identity",
+        "effect": "energy_reduction",
+        "mechanism": "arithmetic"
+      },
+      "created_at": 1774349218.3452742
+    },
+    "causal_00076": {
+      "id": "causal_00076",
+      "type": "causal",
+      "name": "prior:const_fold\u2192Transform 'const_fold' was applied during this solve.:arithmetic",
+      "domain": "arithmetic",
+      "confidence": 0.63,
+      "observations": 10,
+      "content": {
+        "cause": "prior:const_fold",
+        "effect": "Transform 'const_fold' was applied during this solve.",
+        "mechanism": "arithmetic"
+      },
+      "created_at": 1774349218.3496
+    },
+    "causal_00077": {
+      "id": "causal_00077",
+      "type": "causal",
+      "name": "prior:const_fold\u2192Domain 'arithmetic': expected ~1.50 energy per rule step.:arithmetic",
+      "domain": "arithmetic",
+      "confidence": 0.63,
+      "observations": 10,
+      "content": {
+        "cause": "prior:const_fold",
+        "effect": "Domain 'arithmetic': expected ~1.50 energy per rule step.",
+        "mechanism": "arithmetic"
+      },
+      "created_at": 1774349218.349608
+    },
+    "causal_00078": {
+      "id": "causal_00078",
+      "type": "causal",
+      "name": "commutativity_canonicalize\u2192energy_reduction:algebra",
+      "domain": "algebra",
+      "confidence": 0.6,
+      "observations": 1,
+      "content": {
+        "cause": "commutativity_canonicalize",
+        "effect": "energy_reduction",
+        "mechanism": "algebra"
+      },
+      "created_at": 1774349219.101986
+    },
+    "causal_00079": {
+      "id": "causal_00079",
+      "type": "causal",
+      "name": "perfect_square_trinomial\u2192energy_reduction:algebra",
+      "domain": "algebra",
+      "confidence": 0.6,
+      "observations": 1,
+      "content": {
+        "cause": "perfect_square_trinomial",
+        "effect": "energy_reduction",
+        "mechanism": "algebra"
+      },
+      "created_at": 1774349219.1019928
+    },
+    "causal_00080": {
+      "id": "causal_00080",
+      "type": "causal",
+      "name": "prior:commutativity_canonicalize\u2192Transform 'commutativity_canonicalize' was applied during this solve.:algebra",
+      "domain": "algebra",
+      "confidence": 0.409,
+      "observations": 1,
+      "content": {
+        "cause": "prior:commutativity_canonicalize",
+        "effect": "Transform 'commutativity_canonicalize' was applied during this solve.",
+        "mechanism": "algebra"
+      },
+      "created_at": 1774349219.1059
+    },
+    "causal_00081": {
+      "id": "causal_00081",
+      "type": "causal",
+      "name": "prior:commutativity_canonicalize\u2192Domain 'algebra': expected ~2.00 energy per rule step.:algebra",
+      "domain": "algebra",
+      "confidence": 0.409,
+      "observations": 1,
+      "content": {
+        "cause": "prior:commutativity_canonicalize",
+        "effect": "Domain 'algebra': expected ~2.00 energy per rule step.",
+        "mechanism": "algebra"
+      },
+      "created_at": 1774349219.105908
+    },
+    "causal_00082": {
+      "id": "causal_00082",
+      "type": "causal",
+      "name": "synth_distribution_+_identity\u2192energy_reduction:arithmetic",
+      "domain": "arithmetic",
+      "confidence": 0.6,
+      "observations": 6,
+      "content": {
+        "cause": "synth_distribution_+_identity",
+        "effect": "energy_reduction",
+        "mechanism": "arithmetic"
+      },
+      "created_at": 1774349219.3779368
+    },
+    "causal_00083": {
+      "id": "causal_00083",
+      "type": "causal",
+      "name": "synth_distribution_*_identity\u2192energy_reduction:distribution",
+      "domain": "distribution",
+      "confidence": 0.6,
+      "observations": 2,
+      "content": {
+        "cause": "synth_distribution_*_identity",
+        "effect": "energy_reduction",
+        "mechanism": "distribution"
+      },
+      "created_at": 1774349219.386322
+    },
+    "causal_00084": {
+      "id": "causal_00084",
+      "type": "causal",
+      "name": "synth_logic_not_involution\u2192energy_reduction:logic_basics",
+      "domain": "logic_basics",
+      "confidence": 0.6,
+      "observations": 2,
+      "content": {
+        "cause": "synth_logic_not_involution",
+        "effect": "energy_reduction",
+        "mechanism": "logic_basics"
+      },
+      "created_at": 1774349219.412172
+    },
+    "causal_00085": {
+      "id": "causal_00085",
+      "type": "causal",
+      "name": "synth_logic_basics_and_identity\u2192energy_reduction:logic_basics",
+      "domain": "logic_basics",
+      "confidence": 0.6,
+      "observations": 3,
+      "content": {
+        "cause": "synth_logic_basics_and_identity",
+        "effect": "energy_reduction",
+        "mechanism": "logic_basics"
+      },
+      "created_at": 1774349219.457691
+    },
+    "causal_00086": {
+      "id": "causal_00086",
+      "type": "causal",
+      "name": "synth_logic_basics_or_identity\u2192energy_reduction:logic_basics",
+      "domain": "logic_basics",
+      "confidence": 0.6,
+      "observations": 3,
+      "content": {
+        "cause": "synth_logic_basics_or_identity",
+        "effect": "energy_reduction",
+        "mechanism": "logic_basics"
+      },
+      "created_at": 1774349219.481239
+    },
+    "causal_00087": {
+      "id": "causal_00087",
+      "type": "causal",
+      "name": "deriv_power_rule\u2192energy_reduction:calculus",
+      "domain": "calculus",
+      "confidence": 0.6,
+      "observations": 2,
+      "content": {
+        "cause": "deriv_power_rule",
+        "effect": "energy_reduction",
+        "mechanism": "calculus"
+      },
+      "created_at": 1774349219.576262
+    },
+    "causal_00088": {
+      "id": "causal_00088",
+      "type": "causal",
+      "name": "macro_add_mul_8da76e79\u2192energy_reduction:distribution",
+      "domain": "distribution",
+      "confidence": 0.6,
+      "observations": 1,
+      "content": {
+        "cause": "macro_add_mul_8da76e79",
+        "effect": "energy_reduction",
+        "mechanism": "distribution"
+      },
+      "created_at": 1774349219.7012532
+    },
+    "causal_00089": {
+      "id": "causal_00089",
+      "type": "causal",
+      "name": "trig_zero\u2192energy_reduction:trigonometry",
+      "domain": "trigonometry",
+      "confidence": 0.6,
+      "observations": 1,
+      "content": {
+        "cause": "trig_zero",
+        "effect": "energy_reduction",
+        "mechanism": "trigonometry"
+      },
+      "created_at": 1774349220.321785
+    },
+    "causal_00090": {
+      "id": "causal_00090",
+      "type": "causal",
+      "name": "synth_distribution_*_annihilation\u2192energy_reduction:factoring",
+      "domain": "factoring",
+      "confidence": 0.6,
+      "observations": 1,
+      "content": {
+        "cause": "synth_distribution_*_annihilation",
+        "effect": "energy_reduction",
+        "mechanism": "factoring"
+      },
+      "created_at": 1774349220.330349
+    },
+    "causal_00091": {
+      "id": "causal_00091",
+      "type": "causal",
+      "name": "algebraic_factor\u2192energy_reduction:factoring",
+      "domain": "factoring",
+      "confidence": 0.6,
+      "observations": 1,
+      "content": {
+        "cause": "algebraic_factor",
+        "effect": "energy_reduction",
+        "mechanism": "factoring"
+      },
+      "created_at": 1774349220.33037
+    },
+    "causal_00092": {
+      "id": "causal_00092",
+      "type": "causal",
+      "name": "deriv_linear\u2192energy_reduction:calculus",
+      "domain": "calculus",
+      "confidence": 0.6,
+      "observations": 1,
+      "content": {
+        "cause": "deriv_linear",
+        "effect": "energy_reduction",
+        "mechanism": "calculus"
+      },
+      "created_at": 1774349220.538125
+    },
+    "causal_00093": {
+      "id": "causal_00093",
+      "type": "causal",
+      "name": "distributive_expand\u2192energy_reduction:distribution",
+      "domain": "distribution",
+      "confidence": 0.6,
+      "observations": 2,
+      "content": {
+        "cause": "distributive_expand",
+        "effect": "energy_reduction",
+        "mechanism": "distribution"
+      },
+      "created_at": 1774349220.614305
+    },
+    "causal_00094": {
+      "id": "causal_00094",
+      "type": "causal",
+      "name": "algebraic_factor\u2192energy_reduction:distribution",
+      "domain": "distribution",
+      "confidence": 0.6,
+      "observations": 2,
+      "content": {
+        "cause": "algebraic_factor",
+        "effect": "energy_reduction",
+        "mechanism": "distribution"
+      },
+      "created_at": 1774349220.614344
+    },
+    "causal_00095": {
+      "id": "causal_00095",
+      "type": "causal",
+      "name": "add_zero_elim\u2192energy_reduction:logic_basics",
+      "domain": "logic_basics",
+      "confidence": 0.6,
+      "observations": 1,
+      "content": {
+        "cause": "add_zero_elim",
+        "effect": "energy_reduction",
+        "mechanism": "logic_basics"
+      },
+      "created_at": 1774349222.305673
+    },
+    "causal_00096": {
+      "id": "causal_00096",
+      "type": "causal",
+      "name": "const_fold\u2192energy_reduction:distribution",
+      "domain": "distribution",
+      "confidence": 0.6,
+      "observations": 1,
+      "content": {
+        "cause": "const_fold",
+        "effect": "energy_reduction",
+        "mechanism": "distribution"
+      },
+      "created_at": 1774349223.0491
+    },
+    "belief_00097": {
+      "id": "belief_00097",
+      "type": "belief",
+      "name": "the force:definition",
+      "domain": "science",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "the force definition: 2000 N"
+      },
+      "created_at": 1774383898.867903
+    },
+    "belief_00098": {
+      "id": "belief_00098",
+      "type": "belief",
+      "name": "write python to:  use the `if` statement:answer",
+      "domain": "code",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "write python to:  use the `if` statement answer: def factorial(n): if n == 0: return 1 else: return n * factorial(n-1)"
+      },
+      "created_at": 1774453159.8713212
+    },
+    "belief_00099": {
+      "id": "belief_00099",
+      "type": "belief",
+      "name": "synth_distribution_*_identity made of:definition",
+      "domain": "science",
+      "confidence": 0.506,
+      "observations": 1,
+      "content": {
+        "description": "synth_distribution_*_identity made of definition: synth_distribution__identity"
+      },
+      "created_at": 1774529615.727755
+    },
+    "belief_00100": {
+      "id": "belief_00100",
+      "type": "belief",
+      "name": "its period:definition",
+      "domain": "science",
+      "confidence": 0.95,
+      "observations": 1,
+      "content": {
+        "description": "its period definition: 0.2 s"
+      },
+      "created_at": 1774540254.467149
+    }
+  },
+  "edges": []
+}

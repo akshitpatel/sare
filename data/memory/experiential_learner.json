@@ -1,0 +1,14 @@
+{
+  "correct_predictions": 1786,
+  "counterfactuals_added": 6465,
+  "domain_surprise_ema": {
+    "algebra": 11.866884397874616,
+    "arithmetic": 19.61214786124038,
+    "calculus": 57.87634840468755,
+    "code": 65.68784333333333,
+    "logic": 0.8176366462838724,
+    "qa": 53.743308820768235,
+    "set_theory": 18.599624837043642
+  },
+  "total_experiences": 13200
+}

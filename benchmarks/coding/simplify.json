@@ -1,0 +1,31 @@
+{
+  "suite": "coding_simplify",
+  "description": "Code simplification smoke tests for constant folding and dead code elimination.",
+  "cases": [
+    {
+      "id": "const_fold_add",
+      "expression": "3 + 5",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "const_fold_mul",
+      "expression": "4 * 6",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "mul_zero",
+      "expression": "x * 0",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "add_zero",
+      "expression": "x + 0",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "mul_one",
+      "expression": "x * 1",
+      "min_reduction_pct": 20.0
+    }
+  ]
+}

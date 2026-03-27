@@ -287,6 +287,17 @@ def run_daemon(interval: float = 15.0, batch_size: int = 10, verbose: bool = Fal
     _seed_curriculum(curriculum_gen)
     _load_hard_problems(curriculum_gen, REPO_ROOT)
 
+    # ── External datasets (curated + GSM8K) ───────────────────────────────────
+    try:
+        from sare.knowledge.external_datasets import get_dataset_ingester
+        _ext = get_dataset_ingester()
+        _ext.load_curated()
+        _ext.load_gsm8k_sample(max_problems=100)
+        _ext_n = _ext.inject_into_curriculum(curriculum_gen)
+        log.info("External datasets: %d problems injected into curriculum", _ext_n)
+    except Exception as _ext_exc:
+        log.debug("External dataset ingestion error: %s", _ext_exc)
+
     # ── Static world knowledge (no LLM) ──────────────────────────────────────
     try:
         from sare.knowledge.static_knowledge import get_static_loader
@@ -814,6 +825,18 @@ def run_daemon(interval: float = 15.0, batch_size: int = 10, verbose: bool = Fal
                     log.info("[MAML] fast_adapt launched for domain=%s", _weak_domain)
                 except Exception as _fa_exc:
                     log.debug("fast_adapt error: %s", _fa_exc)
+
+        # ── Analogy Transfer: sweep all domains every 10 cycles ─────────────
+        if cycle % 10 == 0:
+            try:
+                from sare.causal.analogy_transfer import AnalogyTransfer
+                from sare.memory.concept_seed_loader import get_concept_registry as _gcr
+                _at = AnalogyTransfer(_gcr())
+                _at_results = _at.sweep_all_domains()
+                if _at_results:
+                    log.info("[Transfer] cycle %d: %d new analogy transfers", cycle, len(_at_results))
+            except Exception as _ate:
+                log.debug("Analogy transfer error: %s", _ate)
 
         # ── MultiAgentArena: competitive self-play every 50 cycles ──────────
         if cycle % 50 == 0 and _arena is not None:

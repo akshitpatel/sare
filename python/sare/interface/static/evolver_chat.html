@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SARE-HX · Evolver Chat</title>
+<style>
+  :root {
+    --bg:       #0d0d12;
+    --surface:  #14141c;
+    --surface2: #1c1c28;
+    --border:   #2a2a3a;
+    --fg:       #e0e0f0;
+    --fg-dim:   #6b6b8a;
+    --accent1:  #7c3aed;
+    --accent2:  #db2777;
+    --accent3:  #0ea5e9;
+    --green:    #10b981;
+    --yellow:   #f59e0b;
+    --red:      #ef4444;
+    --orange:   #f97316;
+
+    /* turn colours */
+    --c-prescreen: #a78bfa;
+    --c-proposer:  #0ea5e9;
+    --c-planner:   #38bdf8;
+    --c-executor:  #4ade80;
+    --c-critic:    #fb923c;
+    --c-judge:     #c084fc;
+    --c-verifier:  #34d399;
+    --c-patch:     #10b981;
+    --c-rollback:  #ef4444;
+    --c-warn:      #f59e0b;
+    --c-error:     #ef4444;
+    --c-dim:       #4b5563;
+    --c-info:      #94a3b8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Top bar ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .logo { font-size: 15px; font-weight: 700; color: var(--accent1); }
+  .logo span { color: var(--accent3); }
+  .hdr-status { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+  .badge-pill {
+    padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600;
+    background: var(--surface2); border: 1px solid var(--border);
+  }
+  .badge-pill.green { border-color: var(--green); color: var(--green); }
+  .badge-pill.red   { border-color: var(--red);   color: var(--red); }
+  .badge-pill.dim   { color: var(--fg-dim); }
+
+  .btn {
+    padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--fg); cursor: pointer; font-size: 11px;
+    font-family: inherit; font-weight: 600; transition: all .15s;
+  }
+  .btn:hover { border-color: var(--accent3); color: var(--accent3); }
+  .btn.danger:hover { border-color: var(--red); color: var(--red); }
+  .btn.primary { background: var(--accent1); border-color: var(--accent1); color: #fff; }
+  .btn.primary:hover { background: #6d28d9; }
+
+  /* ── Main layout ── */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    gap: 0;
+  }
+
+  /* ── Log panel ── */
+  .log-panel {
+    width: 52%;
+    min-width: 380px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+  }
+  .panel-header {
+    padding: 8px 12px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .panel-title { font-size: 11px; font-weight: 700; color: var(--fg-dim); letter-spacing: .05em; text-transform: uppercase; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; flex-shrink: 0; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  #log-stream {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+    scroll-behavior: smooth;
+  }
+  #log-stream::-webkit-scrollbar { width: 4px; }
+  #log-stream::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .log-entry {
+    display: flex;
+    gap: 8px;
+    padding: 2px 12px;
+    line-height: 1.55;
+    font-size: 11.5px;
+  }
+  .log-entry:hover { background: var(--surface2); }
+  .log-ts   { color: var(--fg-dim); min-width: 55px; flex-shrink: 0; }
+  .log-src  { min-width: 60px; flex-shrink: 0; font-weight: 600; }
+  .log-msg  { word-break: break-word; flex: 1; }
+
+  /* tag colours */
+  .tag-prescreen { color: var(--c-prescreen); }
+  .tag-proposer  { color: var(--c-proposer); }
+  .tag-planner   { color: var(--c-planner); }
+  .tag-executor  { color: var(--c-executor); }
+  .tag-critic    { color: var(--c-critic); }
+  .tag-judge     { color: var(--c-judge); }
+  .tag-verifier  { color: var(--c-verifier); }
+  .tag-patch     { color: var(--c-patch); font-weight: 700; }
+  .tag-rollback  { color: var(--c-rollback); font-weight: 700; }
+  .tag-warn      { color: var(--c-warn); }
+  .tag-error     { color: var(--c-error); font-weight: 700; }
+  .tag-dim       { color: var(--c-dim); }
+  .tag-info      { color: var(--c-info); }
+  .tag-llm_send  { color: #22d3ee; }
+  .tag-llm_recv  { color: #86efac; }
+
+  /* ── LLM message cards ── */
+  .llm-card {
+    margin: 3px 8px 3px 0;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    font-size: 11.5px;
+  }
+  .llm-card.send { border-left: 3px solid #22d3ee; }
+  .llm-card.recv { border-left: 3px solid #86efac; }
+
+  .llm-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    background: var(--surface2);
+    cursor: pointer;
+    user-select: none;
+    flex-wrap: wrap;
+  }
+  .llm-header:hover { background: #232336; }
+
+  .llm-dir-badge {
+    font-size: 10px; font-weight: 700; padding: 1px 7px;
+    border-radius: 3px; flex-shrink: 0;
+  }
+  .llm-dir-badge.send { background: #083344; color: #22d3ee; }
+  .llm-dir-badge.recv { background: #052e16; color: #86efac; }
+
+  .llm-model  { font-weight: 600; color: var(--fg); font-size: 11px; }
+  .llm-role   { color: #a78bfa; font-size: 10px; padding: 1px 6px; background: #1e1a33; border-radius: 3px; }
+  .llm-cost   { margin-left: auto; font-size: 10px; color: var(--yellow); font-weight: 600; }
+  .llm-tokens { font-size: 10px; color: var(--fg-dim); }
+  .llm-chars  { font-size: 10px; color: var(--fg-dim); }
+  .llm-chevron { font-size: 10px; color: var(--fg-dim); transition: transform .2s; }
+  .llm-card.expanded .llm-chevron { transform: rotate(90deg); }
+
+  .llm-body {
+    display: none;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+  }
+  .llm-card.expanded .llm-body { display: block; }
+
+  .llm-section {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .llm-section:last-child { border-bottom: none; }
+  .llm-section-label {
+    font-size: 9px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--fg-dim);
+    margin-bottom: 4px;
+  }
+  .llm-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 11px;
+    line-height: 1.55;
+    color: #cbd5e1;
+    max-height: 380px;
+    overflow-y: auto;
+    background: var(--surface2);
+    padding: 8px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+  .llm-text::-webkit-scrollbar { width: 3px; }
+  .llm-text::-webkit-scrollbar-thumb { background: var(--border); }
+
+  /* ── Filter bar ── */
+  .filter-bar {
+    display: flex; gap: 5px; padding: 5px 10px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    flex-wrap: wrap; flex-shrink: 0; align-items: center;
+  }
+  .filter-label { font-size: 10px; color: var(--fg-dim); margin-right: 2px; }
+  .filter-chip {
+    padding: 2px 9px; border-radius: 999px; font-size: 10px;
+    border: 1px solid var(--border); background: var(--surface2);
+    cursor: pointer; font-family: inherit; color: var(--fg-dim);
+    transition: all .12s;
+  }
+  .filter-chip:hover { border-color: var(--accent3); color: var(--accent3); }
+  .filter-chip.active { border-color: var(--accent3); color: var(--accent3); background: #0c2233; }
+
+  /* ── Active debates strip ── */
+  #active-bar {
+    border-top: 1px solid var(--border);
+    padding: 6px 12px;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    background: var(--surface);
+  }
+  .debate-chip {
+    display: flex; align-items: center; gap: 5px;
+    padding: 3px 9px;
+    background: var(--surface2);
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    font-size: 10px;
+  }
+  .chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Chat panel ── */
+  .chat-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* chat messages */
+  #chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  #chat-messages::-webkit-scrollbar { width: 4px; }
+  #chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .chat-msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 90%;
+  }
+  .chat-msg.user { align-self: flex-end; align-items: flex-end; }
+  .chat-msg.assistant { align-self: flex-start; }
+  .chat-msg.system { align-self: center; max-width: 100%; }
+
+  .msg-bubble {
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .chat-msg.user .msg-bubble {
+    background: var(--accent1);
+    color: #fff;
+    border-bottom-right-radius: 3px;
+  }
+  .chat-msg.assistant .msg-bubble {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 3px;
+  }
+  .chat-msg.system .msg-bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--fg-dim);
+    font-size: 11.5px;
+    border-radius: 6px;
+    text-align: center;
+  }
+  .msg-ts {
+    font-size: 10px;
+    color: var(--fg-dim);
+    margin-top: 2px;
+  }
+
+  /* ── Suggestion cards ── */
+  .suggestion-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .sug-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+  }
+  .sug-card:hover { border-color: var(--accent3); }
+  .sug-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .sug-file { font-weight: 700; color: var(--fg); }
+  .sug-type {
+    padding: 1px 7px; border-radius: 999px; font-size: 10px; font-weight: 600;
+  }
+  .sug-type.optimize { background: #1e3a5f; color: var(--accent3); }
+  .sug-type.extend   { background: #1a2e1a; color: var(--green); }
+  .sug-type.fix      { background: #2d1515; color: var(--red); }
+  .sug-desc { color: var(--fg-dim); margin-bottom: 6px; }
+  .sug-score { font-size: 10px; color: var(--fg-dim); }
+  .sug-actions { display: flex; gap: 6px; margin-top: 6px; }
+  .sug-btn {
+    padding: 4px 10px; border-radius: 5px; font-size: 10px; font-weight: 700;
+    cursor: pointer; border: 1px solid; font-family: inherit;
+    transition: all .15s;
+  }
+  .sug-btn.yes { background: #14291a; color: var(--green); border-color: var(--green); }
+  .sug-btn.yes:hover { background: var(--green); color: #000; }
+  .sug-btn.no  { background: var(--surface2); color: var(--fg-dim); border-color: var(--border); }
+  .sug-btn.no:hover  { border-color: var(--red); color: var(--red); }
+
+  /* ── Feedback buttons ── */
+  .feedback-row {
+    display: flex; gap: 6px; margin-top: 6px; align-items: center;
+    font-size: 10px; color: var(--fg-dim);
+  }
+  .fb-btn {
+    padding: 3px 8px; border-radius: 5px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface2);
+    font-size: 12px; transition: all .15s;
+  }
+  .fb-btn:hover { border-color: var(--accent3); }
+  .fb-btn.active.up   { border-color: var(--green); background: #14291a; }
+  .fb-btn.active.down { border-color: var(--red);   background: #2d1515; }
+
+  /* ── Input area ── */
+  .input-area {
+    border-top: 1px solid var(--border);
+    padding: 10px 12px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    flex-shrink: 0;
+  }
+  .quick-pills {
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .pill {
+    padding: 2px 10px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--surface2);
+    font-size: 10px; cursor: pointer; color: var(--fg-dim);
+    font-family: inherit; transition: all .12s;
+  }
+  .pill:hover { border-color: var(--accent3); color: var(--accent3); }
+
+  .input-row { display: flex; gap: 8px; }
+  #chat-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--fg);
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+    resize: none;
+    min-height: 38px;
+    max-height: 100px;
+  }
+  #chat-input:focus { border-color: var(--accent3); }
+  #chat-input::placeholder { color: var(--fg-dim); }
+
+  /* ── Markdown-lite rendering ── */
+  .msg-bubble strong, .msg-bubble b { color: #c4b5fd; font-weight: 700; }
+  .msg-bubble code {
+    background: #1e1e2e; padding: 1px 5px; border-radius: 3px;
+    font-family: monospace; font-size: .93em; color: #93c5fd;
+  }
+
+  /* ── Empty state ── */
+  .empty-chat {
+    margin: auto;
+    text-align: center;
+    color: var(--fg-dim);
+    max-width: 340px;
+  }
+  .empty-chat h3 { color: var(--fg); margin-bottom: 8px; font-size: 15px; }
+  .empty-chat p  { font-size: 12px; line-height: 1.7; }
+
+  /* ── Scrollbar auto-follow toggle ── */
+  .autoscroll-btn {
+    margin-left: auto;
+    font-size: 10px;
+    cursor: pointer;
+    color: var(--fg-dim);
+    user-select: none;
+  }
+  .autoscroll-btn:hover { color: var(--fg); }
+
+  /* ── Typing indicator ── */
+  .typing-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--fg-dim); margin: 0 1px; animation: blink .9s infinite; }
+  .typing-dot:nth-child(2) { animation-delay: .2s; }
+  .typing-dot:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="logo">SARE-HX <span>Evolver</span> Chat</div>
+  <span id="daemon-badge" class="badge-pill dim">loading…</span>
+  <span id="patches-badge" class="badge-pill dim">—</span>
+  <span id="debates-badge" class="badge-pill dim">—</span>
+  <div class="hdr-status">
+    <button class="btn danger" onclick="interruptAll()">⛔ Interrupt All</button>
+    <button class="btn" onclick="window.location='/'">← Dashboard</button>
+  </div>
+</header>
+
+<!-- ── Main ── -->
+<div class="main">
+
+  <!-- ── Log Panel ── -->
+  <div class="log-panel">
+    <div class="panel-header">
+      <div class="dot" id="log-dot"></div>
+      <span class="panel-title">Live Evolver Log</span>
+      <button class="pill" style="margin-left:auto" onclick="clearLog()">Clear</button>
+      <span class="autoscroll-btn" id="autoscroll-toggle" onclick="toggleAutoScroll()">↓ Auto</span>
+    </div>
+    <div class="filter-bar">
+      <span class="filter-label">Show:</span>
+      <button class="filter-chip active" data-filter="all"     onclick="setFilter('all')">All</button>
+      <button class="filter-chip"        data-filter="llm"     onclick="setFilter('llm')">🤖 LLM only</button>
+      <button class="filter-chip"        data-filter="llm_send" onclick="setFilter('llm_send')">→ Send</button>
+      <button class="filter-chip"        data-filter="llm_recv" onclick="setFilter('llm_recv')">← Recv</button>
+      <button class="filter-chip"        data-filter="patch"   onclick="setFilter('patch')">✅ Patches</button>
+      <button class="filter-chip"        data-filter="error"   onclick="setFilter('error')">⚠ Errors</button>
+      <span id="log-count" style="margin-left:auto;font-size:10px;color:var(--fg-dim)">0 entries</span>
+    </div>
+    <div id="log-stream"></div>
+    <div id="active-bar">
+      <span style="color:var(--fg-dim);font-size:10px">No active debates</span>
+    </div>
+  </div>
+
+  <!-- ── Chat Panel ── -->
+  <div class="chat-panel">
+    <div class="panel-header">
+      <span class="panel-title">Evolver Assistant</span>
+      <span style="font-size:10px;color:var(--fg-dim);margin-left:4px">— ask me to suggest, apply, interrupt, or give feedback</span>
+    </div>
+
+    <div id="chat-messages">
+      <div class="empty-chat" id="empty-hint">
+        <h3>👋 Evolver Assistant</h3>
+        <p>I monitor the self-improvement pipeline and let you steer it.<br><br>
+        Try: <em>suggest improvements</em>, <em>show status</em>,<br>
+        <em>interrupt</em>, or <em>yes</em> to apply a suggestion.</p>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="quick-pills">
+        <button class="pill" onclick="sendQuick('suggest improvements')">🔍 Suggest</button>
+        <button class="pill" onclick="sendQuick('show status')">📊 Status</button>
+        <button class="pill" onclick="sendQuick('yes')">✅ Yes</button>
+        <button class="pill" onclick="sendQuick('no')">❌ No</button>
+        <button class="pill" onclick="sendQuick('interrupt')">⛔ Interrupt</button>
+        <button class="pill" onclick="sendQuick('good job')">👍 Good</button>
+        <button class="pill" onclick="sendQuick('bad result')">👎 Bad</button>
+        <button class="pill" onclick="sendQuick('rollback')">↩ Rollback</button>
+      </div>
+      <div class="input-row">
+        <textarea id="chat-input" rows="1" placeholder="Ask the evolver team anything…"
+          onkeydown="onInputKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="btn primary" onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const API = '';   // same origin
+let _autoScroll   = true;
+let _logLastId    = 0;
+let _msgLastId    = '';
+let _logSse       = null;
+let _msgSse       = null;
+let _typingEl     = null;
+let _seenMsgIds   = new Set();
+let _logFilter    = 'all';   // all | llm | llm_send | llm_recv | patch | error
+let _logCount     = 0;
+
+// ── Turn colour map ────────────────────────────────────────────────────────
+const TAG_COLOR = {
+  prescreen: 'var(--c-prescreen)', proposer: 'var(--c-proposer)',
+  planner:   'var(--c-planner)',   executor: 'var(--c-executor)',
+  critic:    'var(--c-critic)',    judge:    'var(--c-judge)',
+  verifier:  'var(--c-verifier)',  patch:    'var(--c-patch)',
+  rollback:  'var(--c-rollback)',  warn:     'var(--c-warn)',
+  error:     'var(--c-error)',     dim:      'var(--c-dim)',
+  info:      'var(--c-info)',
+};
+
+// ── Init ───────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  startLogStream();
+  startMsgStream();
+  loadInitialMessages();
+  setInterval(updateStatus, 4000);
+  updateStatus();
+
+  // Stop auto-scroll when user manually scrolls up
+  const logEl = document.getElementById('log-stream');
+  logEl.addEventListener('scroll', () => {
+    const atBottom = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 40;
+    if (!atBottom && _autoScroll) {
+      _autoScroll = false;
+      document.getElementById('autoscroll-toggle').textContent = '↓ Auto OFF';
+      document.getElementById('autoscroll-toggle').style.color = 'var(--red)';
+    } else if (atBottom && !_autoScroll) {
+      _autoScroll = true;
+      document.getElementById('autoscroll-toggle').textContent = '↓ Auto ON';
+      document.getElementById('autoscroll-toggle').style.color = '';
+    }
+  });
+});
+
+// ── SSE: log stream ────────────────────────────────────────────────────────
+function startLogStream() {
+  if (_logSse) _logSse.close();
+  _logSse = new EventSource(API + '/api/evolve/logs/stream');
+  _logSse.onopen    = () => { setLogDot(true); appendSysLine('✓ Log stream connected'); };
+  _logSse.onmessage = e => appendLog(JSON.parse(e.data));
+  _logSse.onerror   = () => { setLogDot(false); appendSysLine('⚠ Stream disconnected — reconnecting…'); setTimeout(startLogStream, 3000); };
+}
+
+function setLogDot(on) {
+  const d = document.getElementById('log-dot');
+  if (d) d.style.background = on ? 'var(--green)' : 'var(--red)';
+}
+
+function appendSysLine(msg) {
+  const el  = document.getElementById('log-stream');
+  const row = document.createElement('div');
+  row.className = 'log-entry tag-dim';
+  row.dataset.tag = 'dim';
+  row.style.color = 'var(--c-dim)';
+  const ts = new Date().toTimeString().slice(0,8);
+  row.innerHTML = `<span class="log-ts">${ts}</span><span class="log-src">stream</span><span class="log-msg">${escHtml(msg)}</span>`;
+  el.appendChild(row);
+  if (_autoScroll) el.scrollTop = el.scrollHeight;
+}
+
+function setFilter(f) {
+  _logFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.filter === f);
+  });
+  // Re-apply visibility to all existing rows
+  document.querySelectorAll('#log-stream > *').forEach(el => {
+    el.style.display = isVisible(el.dataset.tag || el.dataset.filter || '') ? '' : 'none';
+  });
+}
+
+function isVisible(tag) {
+  if (_logFilter === 'all')      return true;
+  if (_logFilter === 'llm')      return tag === 'llm_send' || tag === 'llm_recv';
+  if (_logFilter === 'llm_send') return tag === 'llm_send';
+  if (_logFilter === 'llm_recv') return tag === 'llm_recv';
+  if (_logFilter === 'patch')    return tag === 'patch';
+  if (_logFilter === 'error')    return tag === 'error' || tag === 'rollback';
+  return true;
+}
+
+function appendLog(entry) {
+  const el  = document.getElementById('log-stream');
+  const tag = entry.tag || 'info';
+  let   row;
+
+  if (tag === 'llm_send' || tag === 'llm_recv') {
+    row = buildLlmCard(entry);
+  } else {
+    row = document.createElement('div');
+    row.className = `log-entry tag-${tag}`;
+    row.dataset.tag = tag;
+    const ts = new Date(entry.ts * 1000).toTimeString().slice(0, 8);
+    row.innerHTML =
+      `<span class="log-ts">${ts}</span>` +
+      `<span class="log-src">${escHtml(entry.src || '')}</span>` +
+      `<span class="log-msg">${escHtml(entry.msg)}</span>`;
+    row.style.color = TAG_COLOR[tag] || 'var(--c-info)';
+  }
+
+  row.style.display = isVisible(tag) ? '' : 'none';
+  el.appendChild(row);
+  _logCount++;
+  document.getElementById('log-count').textContent = _logCount + ' entries';
+
+  // Trim to last 800 entries
+  while (el.children.length > 800) el.removeChild(el.firstChild);
+  if (_autoScroll) el.scrollTop = el.scrollHeight;
+}
+
+function buildLlmCard(e) {
+  const isSend  = e.llm_dir === 'send';
+  const dir     = isSend ? 'send' : 'recv';
+  const ts      = new Date(e.ts * 1000).toTimeString().slice(0, 8);
+  const model   = (e.llm_model || '').split('/').pop();
+  const role    = e.llm_role || '—';
+  const card    = document.createElement('div');
+  card.className = `llm-card ${dir}`;
+  card.dataset.tag = e.tag;
+
+  // Header summary line
+  let metaHtml = '';
+  if (!isSend) {
+    const cost   = e.llm_cost   != null ? `$${e.llm_cost.toFixed(5)}` : '';
+    const toks   = e.llm_in_tok != null ? `in=${e.llm_in_tok} out=${e.llm_out_tok}` : '';
+    const chars  = e.llm_response ? `${e.llm_response.length} chars` : '';
+    metaHtml = `<span class="llm-tokens">${toks}</span><span class="llm-chars">${chars}</span><span class="llm-cost">${cost}</span>`;
+  } else {
+    const chars = (e.llm_prompt||'').length;
+    metaHtml = `<span class="llm-chars">prompt ${chars} chars</span>`;
+  }
+
+  card.innerHTML = `
+    <div class="llm-header" onclick="this.parentElement.classList.toggle('expanded')">
+      <span class="llm-dir-badge ${dir}">${isSend ? '→ SEND' : '← RECV'}</span>
+      <span class="llm-model">${escHtml(model)}</span>
+      <span class="llm-role">${escHtml(role)}</span>
+      ${metaHtml}
+      <span style="color:var(--fg-dim);font-size:10px">${ts}</span>
+      <span class="llm-chevron">▶</span>
+    </div>
+    <div class="llm-body">${buildLlmBody(e, isSend)}</div>`;
+  return card;
+}
+
+function buildLlmBody(e, isSend) {
+  let html = '';
+  if (isSend) {
+    if (e.llm_system && e.llm_system.trim()) {
+      html += `<div class="llm-section">
+        <div class="llm-section-label">System Prompt (${e.llm_system.length} chars)</div>
+        <div class="llm-text">${escHtml(e.llm_system)}</div>
+      </div>`;
+    }
+    html += `<div class="llm-section">
+      <div class="llm-section-label">User Prompt (${(e.llm_prompt||'').length} chars)</div>
+      <div class="llm-text">${escHtml(e.llm_prompt || '')}</div>
+    </div>`;
+  } else {
+    html += `<div class="llm-section">
+      <div class="llm-section-label">Response (${(e.llm_response||'').length} chars · in=${e.llm_in_tok||0} out=${e.llm_out_tok||0} · $${(e.llm_cost||0).toFixed(5)})</div>
+      <div class="llm-text">${escHtml(e.llm_response || '')}</div>
+    </div>`;
+  }
+  return html;
+}
+
+function clearLog() {
+  document.getElementById('log-stream').innerHTML = '';
+  _logCount = 0;
+  document.getElementById('log-count').textContent = '0 entries';
+}
+
+// ── SSE: chat messages ─────────────────────────────────────────────────────
+function startMsgStream() {
+  if (_msgSse) _msgSse.close();
+  _msgSse = new EventSource(API + '/api/evolve/messages/stream');
+  _msgSse.onmessage = e => {
+    const m = JSON.parse(e.data);
+    // User messages are rendered optimistically on send; skip duplicates from SSE
+    if (m.role === 'user') { _seenMsgIds.add(m.id); return; }
+    renderMessage(m);
+  };
+  _msgSse.onerror   = () => { setTimeout(startMsgStream, 3000); };
+}
+
+async function loadInitialMessages() {
+  try {
+    const r = await fetch(API + '/api/evolve/messages');
+    const d = await r.json();
+    (d.messages || []).forEach(renderMessage);
+  } catch(e) {}
+}
+
+// ── Status polling ─────────────────────────────────────────────────────────
+async function updateStatus() {
+  try {
+    const r  = await fetch(API + '/api/self-improve/status');
+    const st = await r.json();
+
+    // header badges
+    const running = st.running;
+    const badge   = document.getElementById('daemon-badge');
+    badge.textContent = running ? '🟢 daemon running' : '🔴 daemon stopped';
+    badge.className   = 'badge-pill ' + (running ? 'green' : 'red');
+
+    document.getElementById('patches-badge').textContent =
+      `✅ ${st.patches_applied || 0} patches`;
+    document.getElementById('debates-badge').textContent =
+      `💬 ${st.total_debates || 0} debates`;
+
+    // active debates bar
+    const bar     = document.getElementById('active-bar');
+    const active  = st.active_debates || [];
+    if (active.length === 0) {
+      bar.innerHTML = '<span style="color:var(--fg-dim);font-size:10px">No active debates</span>';
+    } else {
+      bar.innerHTML = active.map(a => {
+        const col = TAG_COLOR[a.turn] || 'var(--accent3)';
+        return `<div class="debate-chip">
+          <div class="chip-dot" style="background:${col};animation:pulse 1s infinite"></div>
+          <span style="font-weight:600">${escHtml(a.file)}</span>
+          <span style="color:${col}">${a.turn.toUpperCase()}</span>
+          <span style="color:var(--fg-dim)">${a.elapsed_s}s</span>
+        </div>`;
+      }).join('');
+    }
+  } catch(e) {}
+}
+
+// ── Chat rendering ─────────────────────────────────────────────────────────
+function renderMessage(m) {
+  if (_seenMsgIds.has(m.id)) return;
+  _seenMsgIds.add(m.id);
+  _msgLastId = m.id;
+
+  removeTyping();
+  document.getElementById('empty-hint')?.remove();
+
+  const container = document.getElementById('chat-messages');
+  const wrap = document.createElement('div');
+  wrap.className = `chat-msg ${m.role}`;
+  wrap.dataset.id = m.id;
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.innerHTML = renderMarkdown(m.text || '');
+
+  // Suggestions payload
+  const sugs = m.data?.suggestions || [];
+  if (sugs.length) {
+    const sl = document.createElement('div');
+    sl.className = 'suggestion-list';
+    sugs.forEach(s => sl.appendChild(buildSugCard(s)));
+    bubble.appendChild(sl);
+  }
+
+  // Feedback buttons for assistant messages about outcomes
+  if (m.role === 'system' && m.data?.result) {
+    const fb = document.createElement('div');
+    fb.className = 'feedback-row';
+    fb.innerHTML = `
+      <span>Rate this patch:</span>
+      <button class="fb-btn up" onclick="rateDebate(this,1,'${m.id}')">👍</button>
+      <button class="fb-btn down" onclick="rateDebate(this,-1,'${m.id}')">👎</button>`;
+    bubble.appendChild(fb);
+  }
+
+  wrap.appendChild(bubble);
+  const ts = document.createElement('div');
+  ts.className = 'msg-ts';
+  ts.textContent = new Date(m.ts * 1000).toLocaleTimeString();
+  wrap.appendChild(ts);
+
+  container.appendChild(wrap);
+  container.scrollTop = container.scrollHeight;
+}
+
+function buildSugCard(s) {
+  const card = document.createElement('div');
+  card.className = 'sug-card';
+  card.dataset.sid = s.sid;
+  const typeClass = s.improvement_type || 'optimize';
+  card.innerHTML = `
+    <div class="sug-header">
+      <span class="sug-file">${escHtml(s.file_name)}</span>
+      <span class="sug-type ${typeClass}">${s.improvement_type}</span>
+      <span style="margin-left:auto;font-size:10px;color:var(--fg-dim)">score ${s.score}</span>
+    </div>
+    <div class="sug-desc">${escHtml(s.description.slice(0,180))}</div>
+    <div class="sug-score">ID: <code>${s.sid}</code></div>
+    <div class="sug-actions">
+      <button class="sug-btn yes" onclick="applySug('${s.sid}',this)">✅ Yes, improve this</button>
+      <button class="sug-btn no"  onclick="rejectSug('${s.sid}',this)">✕ Skip</button>
+    </div>`;
+  return card;
+}
+
+function showTyping() {
+  removeTyping();
+  const container = document.getElementById('chat-messages');
+  const wrap = document.createElement('div');
+  wrap.className = 'chat-msg assistant';
+  wrap.id = '_typing';
+  wrap.innerHTML = `<div class="msg-bubble">
+    <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
+  </div>`;
+  container.appendChild(wrap);
+  container.scrollTop = container.scrollHeight;
+}
+
+function removeTyping() {
+  document.getElementById('_typing')?.remove();
+}
+
+// ── User actions ───────────────────────────────────────────────────────────
+async function sendMessage() {
+  const inp  = document.getElementById('chat-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  inp.style.height = '';
+  // Render user message immediately (optimistic)
+  renderMessage({id: 'local_' + Date.now(), role: 'user', text, data: {}, ts: Date.now()/1000});
+  showTyping();
+  try {
+    const r = await fetch(API + '/api/evolve/chat', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({message: text}),
+    });
+    if (!r.ok) removeTyping();
+  } catch(e) {
+    removeTyping();
+    renderMessage({id: 'err_' + Date.now(), role: 'system',
+      text: '⚠ Network error — server unreachable.', data: {}, ts: Date.now()/1000});
+  }
+}
+
+function sendQuick(text) {
+  document.getElementById('chat-input').value = text;
+  sendMessage();
+}
+
+async function applySug(sid, btn) {
+  btn.disabled = true;
+  btn.textContent = '⏳ Queued…';
+  try {
+    await fetch(API + '/api/evolve/apply', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({sid}),
+    });
+  } catch(e) { btn.textContent = '⚠ Error'; }
+}
+
+async function rejectSug(sid, btn) {
+  btn.disabled = true;
+  btn.closest('.sug-card').style.opacity = '0.4';
+  try {
+    await fetch(API + '/api/evolve/chat', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({message: `no ${sid}`}),
+    });
+  } catch(e) {}
+}
+
+async function interruptAll() {
+  try {
+    await fetch(API + '/api/evolve/interrupt', {method: 'POST'});
+  } catch(e) {}
+}
+
+async function rateDebate(btn, rating, msgId) {
+  btn.classList.add('active', rating > 0 ? 'up' : 'down');
+  btn.closest('.feedback-row').querySelectorAll('.fb-btn').forEach(b => {
+    if (b !== btn) b.disabled = true;
+  });
+  try {
+    await fetch(API + '/api/evolve/feedback', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({rating, comment: `Rated from chat (msg ${msgId})`}),
+    });
+  } catch(e) {}
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function onInputKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function toggleAutoScroll() {
+  _autoScroll = !_autoScroll;
+  const btn = document.getElementById('autoscroll-toggle');
+  btn.textContent = `↓ Auto ${_autoScroll ? 'ON' : 'OFF'}`;
+  btn.style.color  = _autoScroll ? '' : 'var(--red)';
+  if (_autoScroll) {
+    const logEl = document.getElementById('log-stream');
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+}
+
+function renderMarkdown(text) {
+  return escHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\n/g, '<br>');
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

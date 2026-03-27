@@ -24,8 +24,8 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import time
-from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -41,283 +41,373 @@ class DomainCompetence:
     avg_delta: float = 0.0        # average energy reduction achieved
     avg_steps: float = 0.0        # average steps to solution
     total_attempts: int = 0
-    recent_successes: int = 0     # last 20 attempts
-    recent_attempts: int = 0      # last 20 attempts
+    recent_successes: int = 0     # last 20 attempts (approx)
+    recent_attempts: int = 0      # last 20 attempts (approx)
     confidence_error: float = 0.0 # |predicted_conf - actual_success|, calibration
     last_updated: float = field(default_factory=time.time)
 
     @property
     def recent_rate(self) -> float:
-        if self.recent_attempts == 0:
+        """
+        Recent success rate estimate.
+
+        Uses recent_attempts and recent_successes counters. If no recent attempts exist,
+        falls back to global solve_rate.
+        """
+        if self.recent_attempts <= 0:
             return self.solve_rate
         return self.recent_successes / self.recent_attempts
 
     @property
     def mastery_level(self) -> str:
         r = self.recent_rate
-        if r < 0.2:   return "novice"
-        elif r < 0.5: return "learning"
-        elif r < 0.8: return "competent"
-        else:          return "mastered"
+        if r < 0.2:
+            return "novice"
+        elif r < 0.5:
+            return "learning"
+        elif r < 0.8:
+            return "competent"
+        else:
+            return "mastered"
 
     @property
     def exploration_weight(self) -> float:
         """
         How much attention should curiosity devote to this domain?
         High weight = needs more practice.
+
         Uses a zone-of-proximal-development model:
           - Too easy (>0.9 rate) → low priority
           - Too hard (<0.1 rate) → low priority (out of reach)
           - 0.3-0.7 rate → high priority (learning zone)
         """
         r = self.recent_rate
-        if r <= 0.0:   return 0.3   # never tried — some baseline curiosity
-        elif r < 0.1:  return 0.2   # probably out of reach currently
-        elif r < 0.3:  return 0.6   # hard but maybe reachable
-        elif r < 0.7:  return 1.0   # optimal learning zone
-        elif r < 0.9:  return 0.5   # getting easier
-        else:          return 0.1   # mostly mastered
+        if r <= 0.0:
+            return 0.3  # never tried — some baseline curiosity
+        elif r < 0.1:
+            return 0.2  # probably out of reach currently
+        elif r < 0.3:
+            return 0.6  # hard but maybe reachable
+        elif r < 0.7:
+            return 1.0  # optimal learning zone
+        elif r < 0.9:
+            return 0.5  # getting easier
+        else:
+            return 0.1  # mostly mastered
 
-    def update(self, success: bool, delta: float, steps: int, predicted_confidence: float = 0.5):
+    def update(
+        self,
+        success: bool,
+        delta: float,
+        steps: int,
+        predicted_confidence: float = 0.5,
+    ):
+        """
+        Update competence statistics.
+
+        - Global solve_rate, avg_delta, avg_steps use an adaptive EMA:
+          alpha = 1/(n+1) until enough history, then fixed small alpha.
+        - Recent counters track a decayed sliding window (approx last ~20).
+        - Confidence calibration error tracks EMA of absolute error between
+          predicted_confidence and actual outcome.
+        """
         n = self.total_attempts
-        alpha = 1.0 / (n + 1) if n < 50 else 0.02  # EMA for older data
+        alpha = 1.0 / (n + 1) if n < 50 else 0.02
 
-        self.solve_rate = (1 - alpha) * self.solve_rate + alpha * float(success)
+        success_f = 1.0 if success else 0.0
+        predicted_confidence = float(predicted_confidence)
+        if not math.isfinite(predicted_confidence):
+            predicted_confidence = 0.5
+        predicted_confidence = max(0.0, min(1.0, predicted_confidence))
+
+        # Global aggregates
+        self.solve_rate = (1.0 - alpha) * self.solve_rate + alpha * success_f
         if success:
-            self.avg_delta = (1 - alpha) * self.avg_delta + alpha * delta
-            self.avg_steps = (1 - alpha) * self.avg_steps + alpha * steps
+            self.avg_delta = (1.0 - alpha) * self.avg_delta + alpha * float(delta)
+            self.avg_steps = (1.0 - alpha) * self.avg_steps + alpha * float(steps)
 
-        # Recent window (last 20)
+        # Recent window (approx last 20) using decay when exceeding the target window
         if self.recent_attempts >= 20:
-            # Slide window — approximate by decaying
             self.recent_successes = int(self.recent_successes * 0.9)
-            self.recent_attempts  = max(10, int(self.recent_attempts * 0.9))
-        self.recent_attempts  += 1
+            self.recent_attempts = max(10, int(self.recent_attempts * 0.9))
+
+        self.recent_attempts += 1
         self.recent_successes += int(success)
 
-        # Calibration error (EMA)
-        actual = 1.0 if success else 0.0
+        # Calibration error EMA
+        actual = success_f
         calib_error = abs(predicted_confidence - actual)
-        self.confidence_error = (1 - alpha) * self.confidence_error + alpha * calib_error
+        self.confidence_error = (1.0 - alpha) * self.confidence_error + alpha * calib_error
 
         self.total_attempts += 1
         self.last_updated = time.time()
 
     def to_dict(self) -> dict:
         return {
-            "domain":            self.domain,
-            "solve_rate":        round(self.solve_rate, 3),
-            "avg_delta":         round(self.avg_delta, 3),
-            "avg_steps":         round(self.avg_steps, 1),
-            "total_attempts":    self.total_attempts,
-            "recent_successes":  self.recent_successes,
-            "recent_attempts":   self.recent_attempts,
-            "confidence_error":  round(self.confidence_error, 3),
-            "mastery_level":     self.mastery_level,
+            "domain": self.domain,
+            "solve_rate": round(self.solve_rate, 3),
+            "avg_delta": round(self.avg_delta, 3),
+            "avg_steps": round(self.avg_steps, 1),
+            "total_attempts": int(self.total_attempts),
+            "recent_successes": int(self.recent_successes),
+            "recent_attempts": int(self.recent_attempts),
+            "confidence_error": round(self.confidence_error, 3),
+            "mastery_level": self.mastery_level,
             "exploration_weight": round(self.exploration_weight, 3),
-            "last_updated":      self.last_updated,
+            "last_updated": self.last_updated,
         }
 
     @classmethod
     def from_dict(cls, d: dict) -> "DomainCompetence":
         dc = cls(domain=d["domain"])
-        dc.solve_rate       = d.get("solve_rate", 0.0)
-        dc.avg_delta        = d.get("avg_delta", 0.0)
-        dc.avg_steps        = d.get("avg_steps", 0.0)
-        dc.total_attempts   = d.get("total_attempts", 0)
+        dc.solve_rate = d.get("solve_rate", 0.0)
+        dc.avg_delta = d.get("avg_delta", 0.0)
+        dc.avg_steps = d.get("avg_steps", 0.0)
+        dc.total_attempts = d.get("total_attempts", 0)
         dc.recent_successes = d.get("recent_successes", 0)
-        dc.recent_attempts  = d.get("recent_attempts", 0)
-        dc.confidence_error  = d.get("confidence_error", 0.0)
-        dc.last_updated     = d.get("last_updated", 0.0)
+        dc.recent_attempts = d.get("recent_attempts", 0)
+        dc.confidence_error = d.get("confidence_error", 0.0)
+        dc.last_updated = d.get("last_updated", time.time())
         return dc
-
-
-@dataclass
-class TransformUtility:
-    """Tracks how useful a specific transform has been."""
-    name: str
-    use_count: int = 0
-    success_count: int = 0
-    avg_delta: float = 0.0
-
-    @property
-    def utility(self) -> float:
-        if self.use_count == 0:
-            return 0.0
-        return (self.success_count / self.use_count) * self.avg_delta
-
-    def record(self, success: bool, delta: float):
-        alpha = 1.0 / (self.use_count + 1) if self.use_count < 50 else 0.02
-        self.use_count += 1
-        if success:
-            self.success_count += 1
-            self.avg_delta = (1 - alpha) * self.avg_delta + alpha * delta
 
 
 class SelfModel:
     """
-    SARE-HX's model of its own capabilities.
+    Metacognitive model of the system's own competence.
 
-    Provides:
-      - Per-domain competence scores
-      - Exploration priority weights (zone of proximal development)
-      - Transform utility rankings
-      - Confidence calibration error
-      - Self-assessment report
-
-    Updated after every solve attempt via observe().
-    Queried by ExperimentRunner to bias curriculum generation.
+    This is the system's "sense of self" in terms of what it knows.
+    It is used by:
+      - CurriculumGenerator to pick domains to study
+      - GoalSetter to set mastery goals
+      - HomeostaticSystem to adjust curiosity drive
+      - ExperimentRunner to allocate beam width
     """
 
-    DEFAULT_PATH = Path(__file__).resolve().parents[3] / "data" / "memory" / "self_model.json"
+    def __init__(self, data_dir: Optional[Path] = None):
+        self.data_dir = data_dir or Path("data/memory")
+        self.data_dir.mkdir(parents=True, exist_ok=True)
+        self.file_path = self.data_dir / "self_model.json"
 
-    def __init__(self, persist_path: Optional[Path] = None):
-        self._path = Path(persist_path or self.DEFAULT_PATH)
-        self._path.parent.mkdir(parents=True, exist_ok=True)
+        self.domains: Dict[str, DomainCompetence] = {}
+        self.last_save = time.time()
+        self.load()
 
-        self._domains: Dict[str, DomainCompetence] = {}
-        self._transforms: Dict[str, TransformUtility] = {}
-        self._total_solves: int = 0
-        self._created_at: float = time.time()
+    def load(self) -> None:
+        """Load from JSON file."""
+        if not self.file_path.exists():
+            log.info("No self_model.json found; starting fresh.")
+            return
 
-    # ── Core API ───────────────────────────────────────────────
+        try:
+            with open(self.file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            domains = data.get("domains", {})
+            for domain_str, d in domains.items():
+                dc = DomainCompetence.from_dict(d)
+                self.domains[domain_str] = dc
+            log.info(f"Loaded self-model with {len(self.domains)} domains.")
+        except Exception as e:
+            log.warning(f"Failed to load self_model.json: {e}")
 
-    def observe(self, domain: str, success: bool, delta: float,
-                steps: int, transforms_used: List[str],
-                predicted_confidence: float = 0.5):
-        """
-        Record the outcome of one solve attempt.
-        This is the main update function — call it after every solve.
-        """
-        # Update domain competence
-        if domain not in self._domains:
-            self._domains[domain] = DomainCompetence(domain=domain)
-        self._domains[domain].update(success, delta, steps, predicted_confidence)
-
-        # Update transform utilities
-        for t_name in transforms_used:
-            if t_name not in self._transforms:
-                self._transforms[t_name] = TransformUtility(name=t_name)
-            self._transforms[t_name].record(success, delta)
-
-        self._total_solves += 1
-
-        # Auto-save every 50 observations
-        if self._total_solves % 50 == 0:
-            self.save()
-
-    def infer_domain(self, expression: str) -> str:
-        """Infer the domain from an expression string."""
-        expr = expression.lower()
-        if any(tok in expr for tok in ("not", "and", "or", "true", "false", "¬", "∧", "∨", "⊤", "⊥")):
-            return "logic"
-        if any(tok in expr for tok in ("+", "-", "*", "/", "^")):
-            return "arithmetic"
-        return "general"
-
-    # ── Queries ────────────────────────────────────────────────
-
-    def competence(self, domain: str) -> DomainCompetence:
-        """Get competence model for a domain, creating if needed."""
-        if domain not in self._domains:
-            self._domains[domain] = DomainCompetence(domain=domain)
-        return self._domains[domain]
-
-    def curiosity_weights(self) -> Dict[str, float]:
-        """
-        Returns a probability distribution over domains for curriculum focus.
-        Implements zone-of-proximal-development: more weight to domains
-        where the system is currently learning (0.3-0.7 solve rate).
-        """
-        weights = {}
-        for domain, dc in self._domains.items():
-            weights[domain] = dc.exploration_weight
-
-        # Normalize to sum = 1
-        total = sum(weights.values()) or 1.0
-        return {d: w / total for d, w in weights.items()}
-
-    def prioritized_domain(self) -> str:
-        """Return the domain that most needs attention right now."""
-        weights = self.curiosity_weights()
-        if not weights:
-            return "arithmetic"  # default starting domain
-        return max(weights, key=weights.get)
-
-    def top_transforms(self, n: int = 10) -> List[TransformUtility]:
-        """Return the most useful transforms by utility score."""
-        return sorted(
-            self._transforms.values(),
-            key=lambda t: t.utility,
-            reverse=True,
-        )[:n]
-
-    def low_utility_transforms(self, threshold: float = 0.1) -> List[str]:
-        """Return transform names with very low utility (candidates for pruning)."""
-        return [
-            t.name for t in self._transforms.values()
-            if t.use_count >= 10 and t.utility < threshold
-        ]
-
-    def calibration_error(self) -> float:
-        """Global average confidence calibration error."""
-        if not self._domains:
-            return 0.0
-        return sum(dc.confidence_error for dc in self._domains.values()) / len(self._domains)
-
-    # ── Self-assessment ─────────────────────────────────────────
-
-    def self_report(self) -> dict:
-        """Full structured self-assessment."""
-        return {
-            "total_solves":         self._total_solves,
-            "domains":              {d: dc.to_dict() for d, dc in self._domains.items()},
-            "curiosity_weights":    self.curiosity_weights(),
-            "prioritized_domain":   self.prioritized_domain(),
-            "calibration_error":    round(self.calibration_error(), 3),
-            "top_transforms":       [
-                {"name": t.name, "utility": round(t.utility, 3), "uses": t.use_count}
-                for t in self.top_transforms(5)
-            ],
-            "low_utility":          self.low_utility_transforms(),
-        }
-
-    # ── Persistence ────────────────────────────────────────────
-
-    def save(self):
+    def save(self) -> None:
+        """Save to JSON file."""
         try:
             data = {
-                "total_solves": self._total_solves,
-                "created_at":   self._created_at,
-                "domains":      {d: dc.to_dict() for d, dc in self._domains.items()},
-                "transforms":   {
-                    n: {"name": t.name, "use_count": t.use_count,
-                        "success_count": t.success_count, "avg_delta": t.avg_delta}
-                    for n, t in self._transforms.items()
-                },
+                "domains": {d.domain: d.to_dict() for d in self.domains.values()},
+                "last_save": time.time(),
             }
-            with open(self._path, "w", encoding="utf-8") as f:
+            with open(self.file_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
-        except OSError as e:
-            log.warning("SelfModel save error: %s", e)
-
-    def load(self):
-        if not self._path.exists():
-            return
-        try:
-            with open(self._path, encoding="utf-8") as f:
-                data = json.load(f)
-            self._total_solves = data.get("total_solves", 0)
-            self._created_at   = data.get("created_at", time.time())
-            for domain, d in data.get("domains", {}).items():
-                self._domains[domain] = DomainCompetence.from_dict(d)
-            for name, t in data.get("transforms", {}).items():
-                tu = TransformUtility(name=name)
-                tu.use_count     = t.get("use_count", 0)
-                tu.success_count = t.get("success_count", 0)
-                tu.avg_delta     = t.get("avg_delta", 0.0)
-                self._transforms[name] = tu
-            log.info("SelfModel loaded: %d domains, %d transforms",
-                     len(self._domains), len(self._transforms))
+            self.last_save = time.time()
         except Exception as e:
-            log.warning("SelfModel load error: %s", e)
+            log.warning(f"Failed to save self_model.json: {e}")
+
+    def get_domain(self, domain: str) -> DomainCompetence:
+        """Get or create a DomainCompetence for the given domain."""
+        if domain not in self.domains:
+            self.domains[domain] = DomainCompetence(domain=domain)
+        return self.domains[domain]
+
+    def update(
+        self,
+        domain: str,
+        solved: bool,
+        energy_delta: float,
+        steps: int,
+        predicted_confidence: float = 0.5,
+    ) -> None:
+        """
+        Update the self-model after a problem attempt.
+
+        Args:
+            domain: The domain of the problem (e.g., "arithmetic", "logic").
+            solved: Whether the problem was solved.
+            energy_delta: Energy reduction achieved (positive = improvement).
+            steps: Number of steps taken in the proof.
+            predicted_confidence: The system's confidence before solving.
+        """
+        dc = self.get_domain(domain)
+        dc.update(solved, energy_delta, steps, predicted_confidence)
+
+        # Every 25 attempts, reflect on weak domains via LLM
+        if dc.total_attempts % 25 == 0:
+            import threading
+            threading.Thread(
+                target=self.reflect_on_weak_domain,
+                args=(domain,),
+                daemon=True,
+            ).start()
+
+        # Auto-save every 10 updates or after 60 seconds
+        if dc.total_attempts % 10 == 0 or time.time() - self.last_save > 60:
+            self.save()
+
+    def get_confidence(self, domain: str) -> float:
+        """
+        Return predicted solve rate for a domain.
+
+        This is the system's confidence that it can solve a random problem
+        from this domain. It is used by the GoalSetter and CurriculumGenerator
+        to decide what to study next.
+
+        Returns:
+            Float between 0 and 1.
+        """
+        dc = self.get_domain(domain)
+        return dc.recent_rate
+
+    def predicted_success(self, domain: str) -> float:
+        """
+        Alias for get_confidence, for compatibility with external callers.
+        """
+        return self.get_confidence(domain)
+
+    def get_weak_domains(self, min_attempts: int = 5, threshold: float = 0.3) -> List[str]:
+        """
+        Return domains where the system is weak (low solve rate).
+
+        Args:
+            min_attempts: Minimum number of attempts to consider a domain.
+            threshold: Solve rate below which a domain is considered weak.
+
+        Returns:
+            List of domain names sorted by exploration weight (highest first).
+        """
+        candidates = []
+        for dc in self.domains.values():
+            if dc.total_attempts < min_attempts:
+                continue
+            if dc.recent_rate < threshold:
+                candidates.append((dc.exploration_weight, dc.domain))
+        # Sort by exploration weight descending (highest priority first)
+        candidates.sort(key=lambda x: x[0], reverse=True)
+        return [domain for _, domain in candidates]
+
+    def suggest_focus_domain(self) -> str:
+        """
+        Suggest which domain to focus on next.
+
+        Uses exploration_weight to pick the domain that is in the optimal
+        learning zone (ZPD). If no domain has enough attempts, returns "general".
+        """
+        if not self.domains:
+            return "general"
+
+        # Build list of (weight, domain) for domains with at least 2 attempts
+        weighted = []
+        for dc in self.domains.values():
+            if dc.total_attempts >= 2:
+                weighted.append((dc.exploration_weight, dc.domain))
+
+        if not weighted:
+            # Pick the domain with the fewest attempts
+            return min(self.domains.values(), key=lambda d: d.total_attempts).domain
+
+        # Pick the highest weight
+        weighted.sort(key=lambda x: x[0], reverse=True)
+        return weighted[0][1]
+
+    def get_all_domains(self) -> List[str]:
+        """Return list of all known domains."""
+        return list(self.domains.keys())
+
+    def get_mastered_domains(self, threshold: float = 0.95, min_attempts: int = 10) -> List[str]:
+        """Return domains where solve_rate >= threshold (mastered — ready for harder problems)."""
+        return [
+            d for d, dc in self.domains.items()
+            if dc.recent_rate >= threshold and dc.total_attempts >= min_attempts
+        ]
+
+    def get_domain_stats(self, domain: str) -> Optional[Dict]:
+        """Return full statistics for a domain."""
+        dc = self.domains.get(domain)
+        if dc is None:
+            return None
+        return dc.to_dict()
+
+    def get_overall_stats(self) -> Dict:
+        """Return aggregated statistics across all domains."""
+        total_attempts = sum(dc.total_attempts for dc in self.domains.values())
+        if total_attempts == 0:
+            return {"total_attempts": 0, "avg_solve_rate": 0.0}
+
+        weighted_sum = sum(dc.solve_rate * dc.total_attempts for dc in self.domains.values())
+        avg_solve_rate = weighted_sum / total_attempts
+
+        return {
+            "total_attempts": total_attempts,
+            "avg_solve_rate": round(avg_solve_rate, 3),
+            "domain_count": len(self.domains),
+        }
+
+    def reflect_on_weak_domain(self, domain: str) -> Optional[str]:
+        """Call LLM to reason about why we're stuck and suggest strategies.
+
+        Returns the reflection text, or None if LLM unavailable / domain not weak.
+        Only fires when: solve_rate < 0.3 AND total_attempts >= 15.
+        """
+        dc = self.domains.get(domain)
+        if dc is None or dc.total_attempts < 15 or dc.recent_rate >= 0.3:
+            return None
+        try:
+            from sare.interface.llm_bridge import _call_llm
+            prompt = (
+                f"I am an AI reasoning system. Here are my performance stats for the '{domain}' domain:\n"
+                f"  - Solve rate: {dc.recent_rate:.1%}\n"
+                f"  - Average steps to solution: {dc.avg_steps:.1f}\n"
+                f"  - Confidence calibration error: {dc.confidence_error:.2f} (0=perfect)\n"
+                f"  - Total attempts: {dc.total_attempts}\n"
+                f"  - Mastery level: {dc.mastery_level}\n\n"
+                f"Suggest 2-3 concrete learning strategies I should try to improve. "
+                f"Be specific to {domain} math. Reply in 3 sentences max."
+            )
+            reflection = _call_llm(prompt).strip()
+            if reflection:
+                log.info("[SelfModel] LLM reflection for %s: %s", domain, reflection[:80])
+            return reflection or None
+        except Exception as exc:
+            log.debug("SelfModel LLM reflection failed: %s", exc)
+            return None
+
+    def to_dict(self) -> Dict:
+        """Return a JSON-serializable representation."""
+        return {
+            "domains": {d.domain: d.to_dict() for d in self.domains.values()},
+            "overall": self.get_overall_stats(),
+        }
+
+    def self_report(self) -> Dict:
+        """Alias for to_dict() — called by web.py /api/self endpoint."""
+        return self.to_dict()
+
+
+# Singleton pattern
+_self_model_instance: Optional[SelfModel] = None
+
+
+def get_self_model(data_dir: Optional[Path] = None) -> SelfModel:
+    """Return the singleton SelfModel instance."""
+    global _self_model_instance
+    if _self_model_instance is None:
+        _self_model_instance = SelfModel(data_dir)
+    return _self_model_instance

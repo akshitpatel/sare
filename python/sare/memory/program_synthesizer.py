@@ -2,7 +2,11 @@ import logging
 import ast
 import traceback
 from typing import Optional, Dict, Any, Tuple
-from sare.interface.llm_bridge import _call_llm
+from sare.interface.llm_bridge import _call_llm as _call_llm_base
+
+def _call_llm(prompt: str) -> str:
+    """Use the synthesis model for code generation (higher quality)."""
+    return _call_llm_base(prompt, use_synthesis_model=True)
 from sare.engine import Graph
 
 log = logging.getLogger(__name__)

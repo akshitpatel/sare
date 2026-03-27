@@ -3607,7 +3607,7 @@ async function refreshWorkspace() {
 
     // Autonomous Trainer bandit
     if(e('trainer-stats')) {
-      if(!trainer.running && !trainer.total_problems) {
+      if(!trainer.running && !trainer.total_problems && !trainer.from_disk) {
         e('trainer-stats').innerHTML = `<span style="color:#555">Trainer not running (daemon not active)</span>`;
       } else {
         const srcRows = Object.entries(trainer.source_stats||{}).map(([src, st]) => {
@@ -3617,8 +3617,9 @@ async function refreshWorkspace() {
                  `<span style="color:#4caf50;font-size:10px">${bar}</span> `+
                  `${(rate*100).toFixed(0)}% (${st.problems||0})`;
         }).join('<br>');
+        const diskNote = trainer.from_disk ? ` <span style="color:#888;font-size:10px">(last run)</span>` : '';
         e('trainer-stats').innerHTML =
-          `Running: ${trainer.running?'<span style="color:#4caf50">yes</span>':'<span style="color:#f44">no</span>'} &nbsp;`+
+          `Running: ${trainer.running?'<span style="color:#4caf50">yes</span>':'<span style="color:#f44">no</span>'}${diskNote} &nbsp;`+
           `Total: <b>${trainer.total_problems||0}</b> &nbsp;`+
           `Recent: <b>${((trainer.recent_rate||0)*100).toFixed(0)}%</b> solved<br><br>`+
           `<span style="color:#888;font-size:10px">SOURCE BANDIT (EMA solve rate)</span><br>`+

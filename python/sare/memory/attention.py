@@ -18,8 +18,9 @@ field at once; we focus on whichever part is most energetically uncertain.
 """
 
 import logging
-from typing import List, Optional, Set, Tuple
-from sare.engine import Graph, Node, Edge
+from typing import List, Set, Tuple
+
+from sare.engine import Graph, Node
 
 log = logging.getLogger(__name__)
 
@@ -38,24 +39,37 @@ class AttentionSelector:
         score = 0.0
 
         # 1. Uncertainty is the primary driver
-        score += getattr(node, "uncertainty", 0.0) * 3.0
+        score += float(getattr(node, "uncertainty", 0.0)) * 3.0
 
         # 2. Structural complexity: prefer operator nodes over leaf nodes
-        if getattr(node, "type", "") == "operator":
+        node_type = str(getattr(node, "type", "") or "")
+        if node_type == "operator":
             score += 1.5
-        elif getattr(node, "type", "") == "variable":
+        elif node_type == "variable":
             score += 1.0
 
         # 3. Reward nodes with more outgoing edges (higher arity = more complexity)
+        #    Also keep this robust to different Graph implementations.
         try:
             out_deg = len(graph.outgoing(node.id))
-            score += out_deg * 0.5
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("[AttentionSelector] outgoing() failed for node %s: %s", node.id, e)
+            out_deg = 0
+        score += float(out_deg) * 0.5
 
         # 4. Penalize leaf constants — they rarely need transformation
-        if getattr(node, "type", "") == "constant":
+        if node_type == "constant":
             score -= 0.5
+
+        # 5. Light recency modulation if available in node attributes.
+        #    (Does not assume WorkingMemory/recency is always present.)
+        try:
+            rec = float(getattr(node, "recency", 0.0))
+        except Exception as e:
+            log.debug("[AttentionSelector] recency read failed for node %s: %s", node.id, e)
+            rec = 0.0
+        if rec:
+            score += max(0.0, rec) * 0.25
 
         return score
 
@@ -65,25 +79,76 @@ class AttentionSelector:
         Selects the top-K nodes by attention score, then expands the window
         to include immediate neighbors so the sub-graph is contiguous.
         """
-        scored = [(AttentionSelector.score(n, graph), n) for n in graph.nodes]
+        nodes = list(getattr(graph, "nodes", []) or [])
+        if not nodes or window_size <= 0:
+            return []
+
+        # Score all nodes
+        scored: List[Tuple[float, Node]] = [(AttentionSelector.score(n, graph), n) for n in nodes]
         scored.sort(key=lambda x: x[0], reverse=True)
 
-        # Seed set: top-K anchors
-        anchors: List[Node] = [n for _, n in scored[:min(3, len(scored))]]
+        # Seed set: anchors are the top nodes, not a hard-coded 3.
+        # Ensure we can still reach window_size through neighbor expansion.
+        seed_k = min(max(2, int(window_size // 2)), len(scored))
+        anchors: List[Node] = [n for _, n in scored[:seed_k]]
+
         window_ids: Set[int] = {n.id for n in anchors}
 
-        # Expand to immediate neighbors
-        for anchor in anchors:
-            try:
-                for edge in graph.outgoing(anchor.id):
-                    neighbor = graph.get_node(edge.target)
-                    if neighbor and len(window_ids) < window_size:
-                        window_ids.add(neighbor.id)
-            except Exception:
-                pass
+        # Expand to immediate neighbors until we reach window_size.
+        # Use a bounded BFS-like growth: alternate across anchors fairly by iterating
+        # through anchors repeatedly as needed.
+        anchors_queue: List[Node] = list(anchors)
+        idx = 0
+        # Safety cap on expansion attempts to prevent pathological graph edge iteration.
+        max_rounds = max(1, window_size * 3)
 
-        window_nodes = [n for n in graph.nodes if n.id in window_ids]
-        log.debug(f"AttentionWindow: {len(window_nodes)} nodes selected from {len(graph.nodes)} total.")
+        rounds = 0
+        while len(window_ids) < min(window_size, len(nodes)) and rounds < max_rounds and anchors_queue:
+            anchor = anchors_queue[idx % len(anchors_queue)]
+            idx += 1
+            rounds += 1
+
+            try:
+                outgoing_edges = graph.outgoing(anchor.id)
+            except Exception:
+                outgoing_edges = []
+
+            for edge in outgoing_edges:
+                try:
+                    target_id = edge.target
+                except Exception:
+                    continue
+
+                if target_id in window_ids:
+                    continue
+
+                neighbor = None
+                try:
+                    neighbor = graph.get_node(target_id)
+                except Exception:
+                    neighbor = None
+
+                if neighbor is None:
+                    continue
+
+                window_ids.add(neighbor.id)
+                if len(window_ids) >= min(window_size, len(nodes)):
+                    break
+
+            if not getattr(graph, "nodes", None):
+                break
+
+        # If the window is still undersized (e.g., missing edges), fill with next best nodes.
+        target_n = min(window_size, len(nodes))
+        if len(window_ids) < target_n:
+            for _, n in scored:
+                if n.id not in window_ids:
+                    window_ids.add(n.id)
+                    if len(window_ids) >= target_n:
+                        break
+
+        window_nodes = [n for n in nodes if n.id in window_ids]
+        log.debug(f"AttentionWindow: {len(window_nodes)} nodes selected from {len(nodes)} total.")
         return window_nodes
 
 
@@ -102,7 +167,9 @@ class WorkingMemoryWorkspace:
         if isinstance(n, dict):
             return n
         return {
-            "id": n.id, "type": getattr(n, "type", ""), "label": getattr(n, "label", ""),
+            "id": n.id,
+            "type": getattr(n, "type", ""),
+            "label": getattr(n, "label", ""),
             "attributes": getattr(n, "attributes", {}),
         }
 
@@ -141,17 +208,13 @@ class WorkingMemoryWorkspace:
                 WorkingMemoryWorkspace._node_to_dict(n)
                 for n in self.parent.nodes
                 if n.id not in self.window_ids
-            ] + [
-                WorkingMemoryWorkspace._node_to_dict(n)
-                for n in mutated_subgraph.nodes
-            ],
+            ]
+            + [WorkingMemoryWorkspace._node_to_dict(n) for n in mutated_subgraph.nodes],
             "edges": [
                 WorkingMemoryWorkspace._edge_to_dict(e)
                 for e in self.parent.edges
                 if e.source not in self.window_ids or e.target not in self.window_ids
-            ] + [
-                WorkingMemoryWorkspace._edge_to_dict(e)
-                for e in mutated_subgraph.edges
-            ],
+            ]
+            + [WorkingMemoryWorkspace._edge_to_dict(e) for e in mutated_subgraph.edges],
         }
         return Graph.from_dict(parent_dict)

@@ -1,0 +1,37 @@
+{
+  "math": {
+    "task_type": "math",
+    "solve_rate": 1.0,
+    "total_attempts": 52402,
+    "novelty_score": 0.4999999999999997,
+    "last_updated": 1773312595.4058828
+  },
+  "code": {
+    "task_type": "code",
+    "solve_rate": 0.5,
+    "total_attempts": 0,
+    "novelty_score": 1.0,
+    "last_updated": 1773045129.897034
+  },
+  "language": {
+    "task_type": "language",
+    "solve_rate": 0.5,
+    "total_attempts": 0,
+    "novelty_score": 1.0,
+    "last_updated": 1773045129.8970351
+  },
+  "planning": {
+    "task_type": "planning",
+    "solve_rate": 0.5,
+    "total_attempts": 0,
+    "novelty_score": 1.0,
+    "last_updated": 1773045129.897036
+  },
+  "social": {
+    "task_type": "social",
+    "solve_rate": 0.5,
+    "total_attempts": 0,
+    "novelty_score": 1.0,
+    "last_updated": 1773045129.897036
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "version": "1.0",
+  "description": "SARE-HX Hard Benchmark — 50 problems requiring 3+ transform steps",
+  "categories": {
+    "multi_step_algebra": [
+      {"id": "alg_001", "expression": "2*(3*x + 0) + 1*y - y",   "expected_delta_min": 1.0, "description": "zero elim + identity + cancel"},
+      {"id": "alg_002", "expression": "1*x + 0 + 1*y + 0",       "expected_delta_min": 2.0, "description": "mul identity + add zero x2"},
+      {"id": "alg_003", "expression": "3*x + 0 + 2*x + 0",       "expected_delta_min": 1.5, "description": "combine + zero elim"},
+      {"id": "alg_004", "expression": "x*x - 1*x*1",             "expected_delta_min": 0.5, "description": "mul identity chain"},
+      {"id": "alg_005", "expression": "x^2 + 2*x + 1",           "expected_delta_min": 0.5, "description": "perfect square trinomial"},
+      {"id": "alg_006", "expression": "(a+b) + (a+b)",           "expected_delta_min": 0.5, "description": "combine sum"},
+      {"id": "alg_007", "expression": "x^0 + b*1 + c*0",         "expected_delta_min": 1.5, "description": "three identity chain"},
+      {"id": "alg_008", "expression": "x/1 + y*1 - z*0",         "expected_delta_min": 1.5, "description": "div+mul identity+zero"},
+      {"id": "alg_009", "expression": "2*x^0 + 3*x^1",           "expected_delta_min": 1.0, "description": "power zero + power one"},
+      {"id": "alg_010", "expression": "1*F = 1*m*1*a",           "expected_delta_min": 1.5, "description": "triple identity"}
+    ],
+    "logic_proofs": [
+      {"id": "log_001", "expression": "NOT NOT NOT NOT A",        "expected_delta_min": 1.5, "description": "quad double negation"},
+      {"id": "log_002", "expression": "A AND TRUE AND TRUE",      "expected_delta_min": 1.5, "description": "chained and identity"},
+      {"id": "log_003", "expression": "A OR FALSE OR FALSE",      "expected_delta_min": 1.5, "description": "chained or identity"},
+      {"id": "log_004", "expression": "NOT (NOT (A AND TRUE))",   "expected_delta_min": 1.5, "description": "nested double neg + identity"},
+      {"id": "log_005", "expression": "A AND A AND A",            "expected_delta_min": 1.0, "description": "idempotent chain"},
+      {"id": "log_006", "expression": "(A AND TRUE) OR FALSE",    "expected_delta_min": 1.5, "description": "identity chain"},
+      {"id": "log_007", "expression": "NOT (A OR FALSE)",         "expected_delta_min": 0.5, "description": "or identity then simplify"},
+      {"id": "log_008", "expression": "A AND (TRUE AND TRUE)",    "expected_delta_min": 1.0, "description": "nested and identity"},
+      {"id": "log_009", "expression": "NOT NOT (A AND TRUE)",     "expected_delta_min": 1.0, "description": "double neg + identity"},
+      {"id": "log_010", "expression": "(NOT NOT A) AND (NOT NOT B)", "expected_delta_min": 1.0, "description": "double neg both sides"}
+    ],
+    "calculus_chains": [
+      {"id": "cal_001", "expression": "d/dx(x^2 + x + 1)",        "expected_delta_min": 0.5, "description": "sum rule + power rule"},
+      {"id": "cal_002", "expression": "d/dx(3*x^3)",              "expected_delta_min": 0.5, "description": "constant factor + power rule"},
+      {"id": "cal_003", "expression": "d/dx(x^1 + x^0)",          "expected_delta_min": 1.0, "description": "power rule + zero"},
+      {"id": "cal_004", "expression": "d/dx(sin(x) + cos(x))",    "expected_delta_min": 0.5, "description": "sin+cos derivative"},
+      {"id": "cal_005", "expression": "d/dx(e^x + ln(x))",        "expected_delta_min": 0.5, "description": "exp+ln derivative"},
+      {"id": "cal_006", "expression": "integral(x^2 + x)",        "expected_delta_min": 0.5, "description": "sum rule integration"},
+      {"id": "cal_007", "expression": "d/dx(x^3 + 0)",            "expected_delta_min": 1.0, "description": "power rule + zero elim"},
+      {"id": "cal_008", "expression": "d/dx(1*x^2)",              "expected_delta_min": 1.0, "description": "identity + power rule"},
+      {"id": "cal_009", "expression": "d/dx(x^0 + x^1 + x^2)",   "expected_delta_min": 1.5, "description": "three-term power rule"},
+      {"id": "cal_010", "expression": "d/dx(sin(x)*cos(x))",      "expected_delta_min": 0.5, "description": "product rule + trig"}
+    ],
+    "physics_equations": [
+      {"id": "phy_001", "expression": "F = 1*m*a",                "expected_delta_min": 0.5, "description": "newton + identity"},
+      {"id": "phy_002", "expression": "KE = 0.5*1*v^2",           "expected_delta_min": 0.5, "description": "kinetic energy + identity"},
+      {"id": "phy_003", "expression": "V = 1*I*R",                "expected_delta_min": 0.5, "description": "ohms law + identity"},
+      {"id": "phy_004", "expression": "PE = m*g*0",               "expected_delta_min": 1.0, "description": "zero height"},
+      {"id": "phy_005", "expression": "F = m*0",                  "expected_delta_min": 1.0, "description": "zero acceleration"},
+      {"id": "phy_006", "expression": "v = v0 + 0*t",             "expected_delta_min": 0.5, "description": "kinematics zero accel"},
+      {"id": "phy_007", "expression": "1*F = 1*m*1*a",            "expected_delta_min": 1.5, "description": "newton with identities"},
+      {"id": "phy_008", "expression": "E = m*c^2*1",              "expected_delta_min": 0.5, "description": "mass energy identity"},
+      {"id": "phy_009", "expression": "F_net = F1 + 0",           "expected_delta_min": 0.5, "description": "force zero elim"},
+      {"id": "phy_010", "expression": "P = 1*V*I",                "expected_delta_min": 0.5, "description": "power identity"}
+    ],
+    "analogical_reasoning": [
+      {"id": "ana_001", "expression": "a + 0",                    "expected_delta_min": 0.5, "description": "additive identity"},
+      {"id": "ana_002", "expression": "a * 1",                    "expected_delta_min": 0.5, "description": "multiplicative identity"},
+      {"id": "ana_003", "expression": "a - a",                    "expected_delta_min": 0.5, "description": "self subtraction"},
+      {"id": "ana_004", "expression": "a / a",                    "expected_delta_min": 0.5, "description": "self division"},
+      {"id": "ana_005", "expression": "0 * a",                    "expected_delta_min": 0.5, "description": "zero multiplication"},
+      {"id": "ana_006", "expression": "a ^ 1",                    "expected_delta_min": 0.5, "description": "power one"},
+      {"id": "ana_007", "expression": "a ^ 0",                    "expected_delta_min": 0.5, "description": "power zero"},
+      {"id": "ana_008", "expression": "a + b + 0",                "expected_delta_min": 0.5, "description": "zero in chain"},
+      {"id": "ana_009", "expression": "1*a*1",                    "expected_delta_min": 1.0, "description": "double identity"},
+      {"id": "ana_010", "expression": "x^0 + b*1 + c*0",         "expected_delta_min": 1.5, "description": "three identity chain"}
+    ]
+  }
+}

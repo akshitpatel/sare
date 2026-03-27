@@ -1,0 +1,52 @@
+{
+  "analogy": {
+    "attempts": 3702,
+    "solved": 3702,
+    "total_confidence": 3532.22999999989
+  },
+  "reasoning": {
+    "attempts": 3624,
+    "solved": 3624,
+    "total_confidence": 3448.183999999894
+  },
+  "factual": {
+    "attempts": 7363,
+    "solved": 7363,
+    "total_confidence": 7012.423999998876
+  },
+  "language": {
+    "attempts": 1764,
+    "solved": 1764,
+    "total_confidence": 1682.9400000000448
+  },
+  "planning": {
+    "attempts": 1865,
+    "solved": 1865,
+    "total_confidence": 1781.9800000000466
+  },
+  "logic": {
+    "attempts": 3653,
+    "solved": 3653,
+    "total_confidence": 3470.3499999997966
+  },
+  "science": {
+    "attempts": 3704,
+    "solved": 3704,
+    "total_confidence": 3530.2189999999096
+  },
+  "math": {
+    "attempts": 7255,
+    "solved": 7255,
+    "total_confidence": 2332.5100000000903
+  },
+  "social": {
+    "attempts": 1782,
+    "solved": 1782,
+    "total_confidence": 1694.08200000005
+  },
+  "code": {
+    "attempts": 488,
+    "solved": 488,
+    "total_confidence": 466.9299999999997
+  }
+}
