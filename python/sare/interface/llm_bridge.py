@@ -393,11 +393,13 @@ def _call_fast_llm(prompt: str) -> str:
     return _call_model(prompt, role="prescreen")
 
 
-def _call_llm(prompt: str, use_synthesis_model: bool = False, system_prompt: str = "", **kwargs) -> str:
+def _call_llm(prompt: str, use_synthesis_model: bool = False, system_prompt: str = "",
+              max_tokens_override: Optional[int] = None, **kwargs) -> str:
     """Dispatch to the configured LLM. Returns the text response.
 
     use_synthesis_model=True uses the larger `synthesis_model` from config.
     system_prompt is injected as a system-role message when provided.
+    max_tokens_override overrides the config value (e.g. for synthesis calls needing more tokens).
     """
     # T2-5: Few-shot adaptation — enrich prompt with relevant solved examples
     try:
@@ -430,7 +432,7 @@ def _call_llm(prompt: str, use_synthesis_model: bool = False, system_prompt: str
     synthesis_model = cfg.get("synthesis_model", default_model)
     model = synthesis_model if use_synthesis_model else default_model
     temperature = float(cfg.get("temperature", 0.1))
-    max_tokens = int(cfg.get("max_tokens", 1024))
+    max_tokens = max_tokens_override if max_tokens_override else int(cfg.get("max_tokens", 1024))
 
     if provider == "lmstudio":
         return _call_lmstudio(prompt, model, temperature, max_tokens, system_prompt=system_prompt)

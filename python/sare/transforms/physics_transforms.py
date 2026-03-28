@@ -573,3 +573,81 @@ class WorkEnergyTransfer(Transform):
         if node is not None:
             node.value = "recognized:work"
         return g, -2.0
+
+
+class HookesLaw(Transform):
+    """F = k * x — Hooke's spring law recognition."""
+
+    def name(self) -> str:
+        return "physics_hookes_law"
+
+    def match(self, graph: Graph) -> List[dict]:
+        for n in graph.nodes:
+            if n.type == "operator" and n.label == "=":
+                lhs, rhs = _eq_operands(graph, n.id)
+                if lhs and rhs and lhs.type == "variable" and lhs.label == "F":
+                    if rhs.type == "operator" and rhs.label == "*":
+                        rhs_kids = _children(graph, rhs.id)
+                        labels = {_label(k) for k in rhs_kids}
+                        if "k" in labels and "x" in labels:
+                            return [{"eq_id": n.id, "lhs_id": lhs.id, "rhs_id": rhs.id}]
+        return []
+
+    def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
+        g = graph.clone()
+        node = g.get_node(context.get("lhs_id") or context.get("eq_id"))
+        if node is not None:
+            node.value = "recognized:hookes_law"
+        return g, -2.0
+
+
+class OhmsLawDiv(Transform):
+    """I = V / R — Ohm's law in division form."""
+
+    def name(self) -> str:
+        return "physics_ohm_div"
+
+    def match(self, graph: Graph) -> List[dict]:
+        for n in graph.nodes:
+            if n.type == "operator" and n.label == "=":
+                lhs, rhs = _eq_operands(graph, n.id)
+                if lhs and rhs and lhs.type == "variable" and lhs.label == "I":
+                    if rhs.type == "operator" and rhs.label == "/":
+                        rhs_kids = _children(graph, rhs.id)
+                        labels = {_label(k) for k in rhs_kids}
+                        if "V" in labels and "R" in labels:
+                            return [{"eq_id": n.id, "lhs_id": lhs.id, "rhs_id": rhs.id}]
+        return []
+
+    def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
+        g = graph.clone()
+        node = g.get_node(context.get("lhs_id") or context.get("eq_id"))
+        if node is not None:
+            node.value = "recognized:ohm_div"
+        return g, -2.0
+
+
+class NewtonAccel(Transform):
+    """a = F / m — Newton's second law (acceleration form)."""
+
+    def name(self) -> str:
+        return "physics_newton_accel"
+
+    def match(self, graph: Graph) -> List[dict]:
+        for n in graph.nodes:
+            if n.type == "operator" and n.label == "=":
+                lhs, rhs = _eq_operands(graph, n.id)
+                if lhs and rhs and lhs.type == "variable" and lhs.label == "a":
+                    if rhs.type == "operator" and rhs.label == "/":
+                        rhs_kids = _children(graph, rhs.id)
+                        labels = {_label(k) for k in rhs_kids}
+                        if "F" in labels and "m" in labels:
+                            return [{"eq_id": n.id, "lhs_id": lhs.id, "rhs_id": rhs.id}]
+        return []
+
+    def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
+        g = graph.clone()
+        node = g.get_node(context.get("lhs_id") or context.get("eq_id"))
+        if node is not None:
+            node.value = "recognized:newton_accel"
+        return g, -2.0

@@ -3578,12 +3578,14 @@ def _base_transforms() -> List[Transform]:
         from sare.transforms.physics_transforms import (
             NewtonsSecondLaw, OhmsLaw, KinematicVelocity, KinematicDisplacement,
             EnergyKinetic, EnergyPotential, PVnRT,
-            KineticEnergy, GravitationalForce, Momentum, WorkEnergyTransfer
+            KineticEnergy, GravitationalForce, Momentum, WorkEnergyTransfer,
+            HookesLaw, OhmsLawDiv, NewtonAccel
         )
         transforms += [
             NewtonsSecondLaw(), OhmsLaw(), KinematicVelocity(),
             KinematicDisplacement(), EnergyKinetic(), EnergyPotential(), PVnRT(),
-            KineticEnergy(), GravitationalForce(), Momentum(), WorkEnergyTransfer()
+            KineticEnergy(), GravitationalForce(), Momentum(), WorkEnergyTransfer(),
+            HookesLaw(), OhmsLawDiv(), NewtonAccel()
         ]
     except Exception:
         pass
@@ -3592,11 +3594,13 @@ def _base_transforms() -> List[Transform]:
     try:
         from sare.transforms.chemistry_transforms import (
             IdealGasLaw, StoichiometryCoefficients, AvogadroConversion,
-            ConservationOfMass, ChemicalReactionStoichiometry, MassBalance
+            ConservationOfMass, ChemicalReactionStoichiometry, MassBalance,
+            MolarMassEquation, PHDefinition, GibbsFreeEnergy
         )
         transforms += [
             IdealGasLaw(), StoichiometryCoefficients(), AvogadroConversion(),
-            ConservationOfMass(), ChemicalReactionStoichiometry(), MassBalance()
+            ConservationOfMass(), ChemicalReactionStoichiometry(), MassBalance(),
+            MolarMassEquation(), PHDefinition(), GibbsFreeEnergy()
         ]
     except Exception:
         pass

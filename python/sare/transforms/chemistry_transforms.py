@@ -113,10 +113,22 @@ class ChemicalReactionStoichiometry(Transform):
 
     def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
         g = graph.clone()
-        node = g.get_node(context["plus_id"])
-        if node is not None:
-            node.value = "recognized:reaction"
-        return g, -2.0
+        plus_id = context["plus_id"]
+        plus_node = g.get_node(plus_id)
+        if plus_node is None:
+            return g, 0.0
+        # Remove direct children (reactant subtrees) to reduce complexity
+        for edge in list(g.outgoing(plus_id)):
+            child = g.get_node(edge.target)
+            if child is not None:
+                try:
+                    g.remove_node(child.id)
+                except Exception:
+                    pass
+        # Replace + with a constant "reaction" node
+        plus_node.type = "constant"
+        plus_node.label = "reaction"
+        return g, -3.0
 
 
 class MassBalance(Transform):
@@ -130,14 +142,25 @@ class MassBalance(Transform):
             if n.type == "operator" and n.label == "=":
                 lhs, rhs = _eq_operands(graph, n.id)
                 if lhs and rhs and lhs.type == "variable" and rhs.type == "variable":
-                    return [{"eq_id": n.id, "lhs_id": lhs.id}]
+                    return [{"eq_id": n.id, "lhs_id": lhs.id, "rhs_id": rhs.id}]
         return []
 
     def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
         g = graph.clone()
-        node = g.get_node(context.get("lhs_id") or context["eq_id"])
-        if node is not None:
-            node.value = "recognized:mass_balance"
+        lhs_id = context.get("lhs_id")
+        rhs_id = context.get("rhs_id")
+        eq_id = context["eq_id"]
+        # Remove lhs/rhs variable nodes, replace = with True constant
+        for nid in (lhs_id, rhs_id):
+            if nid is not None:
+                try:
+                    g.remove_node(nid)
+                except Exception:
+                    pass
+        eq_node = g.get_node(eq_id)
+        if eq_node is not None:
+            eq_node.type = "constant"
+            eq_node.label = "True"
         return g, -2.0
 
 
@@ -197,10 +220,20 @@ class AvogadroConversion(Transform):
 
     def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
         g = graph.clone()
-        node = g.get_node(context["mul_id"])
-        if node is not None:
-            node.value = "recognized:avogadro"
-        return g, -1.0
+        mul_id = context["mul_id"]
+        na_id = context["na_id"]
+        # Redirect parents of mul to a new "molecule_count" variable, removing N_A
+        new_node_id = g.add_node("variable", "molecule_count")
+        _redirect_parents(g, mul_id, new_node_id)
+        try:
+            g.remove_node(na_id)
+        except Exception:
+            pass
+        try:
+            g.remove_node(mul_id)
+        except Exception:
+            pass
+        return g, -3.0
 
 
 class ConservationOfMass(Transform):
@@ -227,3 +260,76 @@ class ConservationOfMass(Transform):
         if node is not None:
             node.value = "recognized:conservation_mass"
         return g, -1.5
+
+
+class MolarMassEquation(Transform):
+    """n = m / M — moles = mass / molar_mass recognition."""
+
+    def name(self) -> str:
+        return "chemistry_molar_mass"
+
+    def match(self, graph: Graph) -> List[dict]:
+        for n in graph.nodes:
+            if n.type == "operator" and n.label == "=":
+                lhs, rhs = _eq_operands(graph, n.id)
+                if lhs and rhs and lhs.type == "variable" and lhs.label == "n":
+                    if rhs.type == "operator" and rhs.label == "/":
+                        return [{"eq_id": n.id, "lhs_id": lhs.id, "rhs_id": rhs.id}]
+        return []
+
+    def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
+        g = graph.clone()
+        node = g.get_node(context.get("lhs_id") or context["eq_id"])
+        if node is not None:
+            node.value = "recognized:molar_mass"
+        return g, -2.0
+
+
+class PHDefinition(Transform):
+    """pH = -log[H+] — pH definition recognition."""
+
+    def name(self) -> str:
+        return "chemistry_ph_definition"
+
+    def match(self, graph: Graph) -> List[dict]:
+        for n in graph.nodes:
+            if n.type == "operator" and n.label == "=":
+                lhs, rhs = _eq_operands(graph, n.id)
+                if lhs and rhs and lhs.type == "variable" and lhs.label == "pH":
+                    # rhs should be neg/negation operator or log
+                    if rhs.type == "operator" and rhs.label in ("neg", "-", "log", "negate"):
+                        return [{"eq_id": n.id, "lhs_id": lhs.id, "rhs_id": rhs.id}]
+                    # or rhs is a variable with "log" in it
+                    if rhs.type == "variable" and "log" in rhs.label.lower():
+                        return [{"eq_id": n.id, "lhs_id": lhs.id, "rhs_id": rhs.id}]
+        return []
+
+    def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
+        g = graph.clone()
+        node = g.get_node(context.get("lhs_id") or context["eq_id"])
+        if node is not None:
+            node.value = "recognized:ph_definition"
+        return g, -2.0
+
+
+class GibbsFreeEnergy(Transform):
+    """delta_G = delta_H - T * delta_S — Gibbs free energy recognition."""
+
+    def name(self) -> str:
+        return "chemistry_gibbs"
+
+    def match(self, graph: Graph) -> List[dict]:
+        for n in graph.nodes:
+            if n.type == "operator" and n.label == "=":
+                lhs, rhs = _eq_operands(graph, n.id)
+                if lhs and rhs and lhs.type == "variable" and lhs.label in ("delta_G", "G", "dG"):
+                    if rhs.type == "operator" and rhs.label == "-":
+                        return [{"eq_id": n.id, "lhs_id": lhs.id, "rhs_id": rhs.id}]
+        return []
+
+    def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
+        g = graph.clone()
+        node = g.get_node(context.get("lhs_id") or context["eq_id"])
+        if node is not None:
+            node.value = "recognized:gibbs"
+        return g, -2.0

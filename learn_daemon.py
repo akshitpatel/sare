@@ -965,8 +965,9 @@ def run_daemon(interval: float = 15.0, batch_size: int = 10, verbose: bool = Fal
                         else:
                             _stuck_by_domain[_dom].append(_expr)
 
-            # Only synthesize for symbolic domains — others use general solver
-            _SYNTH_DOMAINS = {"algebra", "arithmetic", "calculus", "logic", "general"}
+            # Synthesize for symbolic + science domains
+            _SYNTH_DOMAINS = {"algebra", "arithmetic", "calculus", "logic", "general",
+                              "chemistry", "physics"}
             for _dom, _stuck_exprs in list(_stuck_by_domain.items()):
                 if _dom not in _SYNTH_DOMAINS:
                     _stuck_by_domain[_dom] = []  # clear non-symbolic accumulator
@@ -1003,13 +1004,14 @@ def run_daemon(interval: float = 15.0, batch_size: int = 10, verbose: bool = Fal
                                             _val_graphs.append(_vg)
                                     except Exception:
                                         pass
-                        # Fallback: use stuck exprs unpacked correctly
+                        # Fallback: use stuck exprs (strip slow-solve ~ prefix)
                         if len(_val_graphs) < 2:
                             for _e in _stuck_exprs[:6]:
                                 if len(_val_graphs) >= 6:
                                     break
+                                _e_clean = _e.lstrip("~")
                                 try:
-                                    _, _vg = _lp_val(_e)
+                                    _, _vg = _lp_val(_e_clean)
                                     if _vg is not None:
                                         _val_graphs.append(_vg)
                                 except Exception:
@@ -1040,9 +1042,10 @@ def run_daemon(interval: float = 15.0, batch_size: int = 10, verbose: bool = Fal
                                 log.info("[Synth] Synthesis failed for domain=%s: %s", _d, _res["message"])
                         except Exception as _se:
                             log.debug("[Synth] Thread error: %s", _se)
+                    _clean_stuck = [e.lstrip("~") for e in _stuck_exprs[:10]]
                     _threading.Thread(
                         target=_do_synthesis,
-                        args=(_synth, _dom, _stuck_exprs[:10], _val_graphs, _existing, experiment_runner),
+                        args=(_synth, _dom, _clean_stuck, _val_graphs, _existing, experiment_runner),
                         daemon=True, name=f"synth-{_dom}",
                     ).start()
                 except Exception as _se:

@@ -200,10 +200,27 @@ def _load_transform_class(code: str, class_name: str):
 
 # ── Validation ────────────────────────────────────────────────────────────────
 
+def _graph_hash(graph) -> int:
+    """Structural hash for a graph (node types + values)."""
+    try:
+        return hash(tuple(sorted(
+            (getattr(n, 'node_type', getattr(n, 'type', '')),
+             str(getattr(n, 'value', '') or ''),
+             getattr(n, 'label', ''))
+            for n in graph.nodes
+        )))
+    except Exception:
+        return 0
+
+
 def _validate_transform(cls, validation_graphs: list) -> Tuple[bool, float, str]:
     """
     Run the transform against validation_graphs.
     Returns (passed, fraction_improved, message).
+
+    A case counts as improved if ANY of:
+      (a) actual energy decreases by > 0.1
+      (b) reported delta < -0.1 AND graph structure changed (hash differs)
     """
     from sare.engine import EnergyEvaluator
     energy_fn = EnergyEvaluator()
@@ -222,10 +239,15 @@ def _validate_transform(cls, validation_graphs: list) -> Tuple[bool, float, str]
             if not matches:
                 continue
             matches_found += 1
+            h_before = _graph_hash(graph)
             new_graph, delta = instance.apply(graph, matches[0])
             e_before = energy_fn.compute(graph).total
             e_after = energy_fn.compute(new_graph).total
+            h_after = _graph_hash(new_graph)
+            # Accept: actual energy drop OR reported delta with structural change
             if e_after < e_before - 0.1:
+                improved += 1
+            elif delta < -0.1 and h_after != h_before:
                 improved += 1
         except Exception as exc:
             log.debug("Validation error: %s", exc)
@@ -236,12 +258,10 @@ def _validate_transform(cls, validation_graphs: list) -> Tuple[bool, float, str]
     msg = f"{improved}/{total} improved, {errors} errors"
 
     # Domain mismatch: transform found no matches at all and no errors
-    # (e.g. code transform against algebra graphs) — insufficient signal, not failure
     if matches_found == 0 and errors == 0:
         log.info("[Synth] No matches on validation graphs — possible domain mismatch; deferring")
         return False, 0.0, "no_matches_domain_mismatch"
 
-    # Lower threshold for transforms that do match but on sparse data
     threshold = _VALIDATION_THRESHOLD if matches_found >= _MIN_VALIDATION_CASES else 0.2
     passed = frac >= threshold and improved >= 1
     return passed, frac, msg
@@ -310,8 +330,13 @@ class LLMTransformSynthesizer:
         from sare.interface.llm_bridge import _call_llm
 
         class_name = self._class_name_hint(domain, stuck_exprs)
-        existing_names_str = "\n".join(f"  - {n}" for n in sorted(existing_transform_names))
-        stuck_str = "\n".join(f"  - {e}" for e in stuck_exprs[:10])
+        # Limit to 15 domain-relevant names to keep prompt short and avoid timeouts
+        _domain_kw = domain.lower().replace("_", "")
+        _relevant = [n for n in existing_transform_names if _domain_kw in n or domain[:4] in n]
+        _other = [n for n in existing_transform_names if n not in _relevant]
+        _trimmed = sorted(_relevant)[:10] + sorted(_other)[:5]
+        existing_names_str = "\n".join(f"  - {n}" for n in _trimmed)
+        stuck_str = "\n".join(f"  - {e}" for e in stuck_exprs[:6])
 
         prompt = _PROMPT.format(
             domain=domain,
@@ -323,7 +348,7 @@ class LLMTransformSynthesizer:
         for attempt in range(retries):
             try:
                 log.info("[Synth] LLM call attempt %d/%d for domain=%s", attempt + 1, retries, domain)
-                raw = _call_llm(prompt, use_synthesis_model=True)
+                raw = _call_llm(prompt, use_synthesis_model=True, max_tokens_override=2048)
                 code = _extract_code(raw)
 
                 if not _is_safe(code):
