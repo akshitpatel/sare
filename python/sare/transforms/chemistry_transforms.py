@@ -77,7 +77,11 @@ class IdealGasLaw(Transform):
         return []
 
     def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
-        return graph.clone(), -1.5
+        g = graph.clone()
+        node = g.get_node(context["eq_id"])
+        if node is not None:
+            node.value = "recognized:ideal_gas"
+        return g, -1.5
 
 
 class ChemicalReactionStoichiometry(Transform):
@@ -108,7 +112,11 @@ class ChemicalReactionStoichiometry(Transform):
         return results
 
     def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
-        return graph.clone(), -2.0
+        g = graph.clone()
+        node = g.get_node(context["plus_id"])
+        if node is not None:
+            node.value = "recognized:reaction"
+        return g, -2.0
 
 
 class MassBalance(Transform):
@@ -122,11 +130,15 @@ class MassBalance(Transform):
             if n.type == "operator" and n.label == "=":
                 lhs, rhs = _eq_operands(graph, n.id)
                 if lhs and rhs and lhs.type == "variable" and rhs.type == "variable":
-                    return [{"eq_id": n.id}]
+                    return [{"eq_id": n.id, "lhs_id": lhs.id}]
         return []
 
     def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
-        return graph.clone(), -2.0
+        g = graph.clone()
+        node = g.get_node(context.get("lhs_id") or context["eq_id"])
+        if node is not None:
+            node.value = "recognized:mass_balance"
+        return g, -2.0
 
 
 class StoichiometryCoefficients(Transform):
@@ -184,7 +196,11 @@ class AvogadroConversion(Transform):
         return []
 
     def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
-        return graph.clone(), -1.0
+        g = graph.clone()
+        node = g.get_node(context["mul_id"])
+        if node is not None:
+            node.value = "recognized:avogadro"
+        return g, -1.0
 
 
 class ConservationOfMass(Transform):
@@ -206,4 +222,8 @@ class ConservationOfMass(Transform):
         return []
 
     def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
-        return graph.clone(), -1.5
+        g = graph.clone()
+        node = g.get_node(context["eq_id"])
+        if node is not None:
+            node.value = "recognized:conservation_mass"
+        return g, -1.5

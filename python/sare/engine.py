@@ -1481,6 +1481,40 @@ class EquationSubtractConst(Transform):
         return g, -5.0
 
 
+class ReflexiveEquality(Transform):
+    """x = x  →  True  — reflexive equality tautology."""
+
+    def name(self) -> str:
+        return "reflexive_equality"
+
+    def match(self, graph: "Graph") -> list:
+        for n in graph.nodes:
+            if n.type == "operator" and n.label == "=":
+                kids = []
+                for e in graph.outgoing(n.id):
+                    c = graph.get_node(e.target)
+                    if c is not None:
+                        kids.append(c)
+                if len(kids) == 2 and kids[0].label == kids[1].label and kids[0].type == kids[1].type:
+                    return [{"eq_id": n.id, "lhs_id": kids[0].id, "rhs_id": kids[1].id}]
+        return []
+
+    def apply(self, graph: "Graph", context: dict):
+        g = graph.clone()
+        # Replace x = x with a single "True" constant node and rewire
+        eq_id  = context["eq_id"]
+        lhs_id = context["lhs_id"]
+        rhs_id = context["rhs_id"]
+        # Remove lhs, rhs, eq; add True node
+        for nid in (lhs_id, rhs_id, eq_id):
+            try:
+                g.remove_node(nid)
+            except Exception:
+                pass
+        g.add_node("constant", "True")
+        return g, -4.0
+
+
 class QuadraticSolver(Transform):
     """x^n = c  →  x = c^(1/n)  when c >= 0 and n is a positive integer.
     E.g. x^2 = 4 → x = 2"""
@@ -3633,6 +3667,7 @@ def get_transforms(include_macros: bool = True,
     # Equation-solving transforms must come BEFORE learned concept rules to prevent
     # identity rules (additive_identity etc.) from incorrectly simplifying equations
     _eq_solvers = [
+        ReflexiveEquality(),
         LinearEquationSolver(),
         MultiplyEquationSolver(),
         EquationSubtractConst(),

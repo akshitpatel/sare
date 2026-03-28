@@ -492,11 +492,15 @@ class KineticEnergy(Transform):
             if n.type == "operator" and n.label == "=":
                 lhs, rhs = _eq_operands(graph, n.id)
                 if lhs and rhs and lhs.type == "variable" and lhs.label in ("E", "KE", "E_k"):
-                    return [{"eq_id": n.id}]
+                    return [{"eq_id": n.id, "lhs_id": lhs.id, "rhs_id": rhs.id}]
         return []
 
     def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
-        return graph.clone(), -2.0
+        g = graph.clone()
+        node = g.get_node(context.get("lhs_id") or context.get("eq_id"))
+        if node is not None:
+            node.value = "recognized:kinetic_energy"
+        return g, -2.0
 
 
 class GravitationalForce(Transform):
@@ -507,12 +511,24 @@ class GravitationalForce(Transform):
 
     def match(self, graph: Graph) -> List[dict]:
         for n in graph.nodes:
-            if n.type == "variable" and n.label in ("G", "F_g", "F_gravity"):
-                return [{"node_id": n.id}]
+            if n.type == "operator" and n.label == "=":
+                lhs, rhs = _eq_operands(graph, n.id)
+                if lhs and rhs and lhs.type == "variable" and lhs.label in ("F_g", "F_gravity"):
+                    return [{"eq_id": n.id, "lhs_id": lhs.id, "rhs_id": rhs.id}]
+            if n.type == "variable" and n.label == "G":
+                for e in graph.incoming(n.id):
+                    parent = graph.get_node(e.source)
+                    if parent and parent.type == "operator" and parent.label == "*":
+                        return [{"node_id": n.id, "rhs_id": parent.id}]
         return []
 
     def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
-        return graph.clone(), -2.0
+        g = graph.clone()
+        nid = context.get("lhs_id") or context.get("node_id") or context.get("eq_id")
+        node = g.get_node(nid)
+        if node is not None:
+            node.value = "recognized:gravitational"
+        return g, -2.0
 
 
 class Momentum(Transform):
@@ -526,11 +542,15 @@ class Momentum(Transform):
             if n.type == "operator" and n.label == "=":
                 lhs, rhs = _eq_operands(graph, n.id)
                 if lhs and rhs and lhs.type == "variable" and lhs.label in ("p", "momentum"):
-                    return [{"eq_id": n.id}]
+                    return [{"eq_id": n.id, "lhs_id": lhs.id}]
         return []
 
     def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
-        return graph.clone(), -2.0
+        g = graph.clone()
+        node = g.get_node(context.get("lhs_id") or context.get("eq_id"))
+        if node is not None:
+            node.value = "recognized:momentum"
+        return g, -2.0
 
 
 class WorkEnergyTransfer(Transform):
@@ -544,8 +564,12 @@ class WorkEnergyTransfer(Transform):
             if n.type == "operator" and n.label == "=":
                 lhs, rhs = _eq_operands(graph, n.id)
                 if lhs and rhs and lhs.type == "variable" and lhs.label in ("W", "Work", "w"):
-                    return [{"eq_id": n.id}]
+                    return [{"eq_id": n.id, "lhs_id": lhs.id}]
         return []
 
     def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
-        return graph.clone(), -2.0
+        g = graph.clone()
+        node = g.get_node(context.get("lhs_id") or context.get("eq_id"))
+        if node is not None:
+            node.value = "recognized:work"
+        return g, -2.0
