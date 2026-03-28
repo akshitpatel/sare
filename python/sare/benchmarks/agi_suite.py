@@ -290,7 +290,10 @@ class AGISuite:
             try:
                 attempts = json.loads(attempts_path.read_text())
                 if isinstance(attempts, list):
-                    promoted_count = sum(1 for a in attempts if a.get("status") == "promoted")
+                    promoted_count = sum(
+                        1 for a in attempts
+                        if a.get("status") == "promoted" or a.get("promoted") is True
+                    )
             except Exception:
                 pass
         if promoted_count > 0:

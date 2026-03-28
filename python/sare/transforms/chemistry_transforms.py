@@ -80,6 +80,55 @@ class IdealGasLaw(Transform):
         return graph.clone(), -1.5
 
 
+class ChemicalReactionStoichiometry(Transform):
+    """Recognize stoichiometric reaction patterns: coeff * formula + formula."""
+
+    def name(self) -> str:
+        return "chemistry_stoich_reaction"
+
+    def match(self, graph: Graph) -> List[dict]:
+        results = []
+        for n in graph.nodes:
+            if n.type == "operator" and n.label == "+":
+                edges = graph.outgoing(n.id)
+                edge_map = {e.relationship_type: e.target for e in edges}
+                left = graph.get_node(edge_map.get("left_operand"))
+                right = graph.get_node(edge_map.get("right_operand"))
+                if left and right:
+                    has_coeff = (
+                        (left.type == "operator" and left.label == "*") or
+                        (right.type == "operator" and right.label == "*")
+                    )
+                    has_vars = (
+                        left.type in ("variable", "constant") or
+                        right.type in ("variable", "constant")
+                    )
+                    if has_coeff or has_vars:
+                        results.append({"plus_id": n.id})
+        return results
+
+    def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
+        return graph.clone(), -2.0
+
+
+class MassBalance(Transform):
+    """Recognize mass conservation equations: variable = variable."""
+
+    def name(self) -> str:
+        return "chemistry_mass_balance"
+
+    def match(self, graph: Graph) -> List[dict]:
+        for n in graph.nodes:
+            if n.type == "operator" and n.label == "=":
+                lhs, rhs = _eq_operands(graph, n.id)
+                if lhs and rhs and lhs.type == "variable" and rhs.type == "variable":
+                    return [{"eq_id": n.id}]
+        return []
+
+    def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
+        return graph.clone(), -2.0
+
+
 class StoichiometryCoefficients(Transform):
     """1 * formula → formula — remove unit stoichiometric coefficients."""
 

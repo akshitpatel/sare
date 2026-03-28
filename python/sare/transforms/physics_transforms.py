@@ -471,3 +471,81 @@ class PVnRT(Transform):
             return g, -2.0
         except Exception:
             return graph.clone(), 0.0
+
+
+def _eq_operands(graph: Graph, eq_id: int):
+    """Return (lhs_node, rhs_node) for an '=' operator node, or (None, None)."""
+    kids = _children(graph, eq_id)
+    if len(kids) >= 2:
+        return kids[0], kids[1]
+    return None, None
+
+
+class KineticEnergy(Transform):
+    """E = 0.5 * m * v^2 — kinetic energy recognition."""
+
+    def name(self) -> str:
+        return "physics_kinetic_energy"
+
+    def match(self, graph: Graph) -> List[dict]:
+        for n in graph.nodes:
+            if n.type == "operator" and n.label == "=":
+                lhs, rhs = _eq_operands(graph, n.id)
+                if lhs and rhs and lhs.type == "variable" and lhs.label in ("E", "KE", "E_k"):
+                    return [{"eq_id": n.id}]
+        return []
+
+    def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
+        return graph.clone(), -2.0
+
+
+class GravitationalForce(Transform):
+    """F_g = G * m1 * m2 / r^2 — gravitational force recognition."""
+
+    def name(self) -> str:
+        return "physics_gravitational"
+
+    def match(self, graph: Graph) -> List[dict]:
+        for n in graph.nodes:
+            if n.type == "variable" and n.label in ("G", "F_g", "F_gravity"):
+                return [{"node_id": n.id}]
+        return []
+
+    def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
+        return graph.clone(), -2.0
+
+
+class Momentum(Transform):
+    """p = m * v — momentum recognition."""
+
+    def name(self) -> str:
+        return "physics_momentum"
+
+    def match(self, graph: Graph) -> List[dict]:
+        for n in graph.nodes:
+            if n.type == "operator" and n.label == "=":
+                lhs, rhs = _eq_operands(graph, n.id)
+                if lhs and rhs and lhs.type == "variable" and lhs.label in ("p", "momentum"):
+                    return [{"eq_id": n.id}]
+        return []
+
+    def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
+        return graph.clone(), -2.0
+
+
+class WorkEnergyTransfer(Transform):
+    """W = F * d — work recognition."""
+
+    def name(self) -> str:
+        return "physics_work"
+
+    def match(self, graph: Graph) -> List[dict]:
+        for n in graph.nodes:
+            if n.type == "operator" and n.label == "=":
+                lhs, rhs = _eq_operands(graph, n.id)
+                if lhs and rhs and lhs.type == "variable" and lhs.label in ("W", "Work", "w"):
+                    return [{"eq_id": n.id}]
+        return []
+
+    def apply(self, graph: Graph, context: dict) -> Tuple[Graph, float]:
+        return graph.clone(), -2.0
