@@ -368,6 +368,11 @@
                 <button class="btn btn-cyan" id="solve-btn" onclick="doSolveUnified()">Solve</button>
                 <span class="badge b-amber" id="solve-status">IDLE</span>
               </div>
+              <!-- Answer box — shown prominently after solve -->
+              <div id="solve-answer-box" style="display:none;margin:10px 0;padding:10px 14px;background:#0d2137;border:1.5px solid #4fc3f7;border-radius:6px">
+                <div style="font-size:10px;color:#4fc3f7;letter-spacing:1px;margin-bottom:4px">ANSWER</div>
+                <div id="solve-answer-val" style="font-size:1.5em;font-weight:700;color:#e0f7ff;font-family:'JetBrains Mono',monospace">—</div>
+              </div>
               <div class="data-grid" style="grid-template-columns:1fr 1fr 1fr;margin-top:12px;display:none" id="solve-stats">
                 <div class="data-block"><span class="data-val c-cyan"  id="s-init">-</span><span class="data-lbl">Initial Energy</span></div>
                 <div class="data-block"><span class="data-val c-green" id="s-final">-</span><span class="data-lbl">Final Energy</span></div>
@@ -1749,9 +1754,11 @@ async function doSolveNL() {
     $('s-final').textContent = d.result?.energy?.total?.toFixed(2)  || '—';
     $('s-steps').textContent = d.steps_taken || '—';
     const parsedExpr = d.expression || d.parsed || '';
+    const nlAns = d.answer_display || d.answer || '';
+    if(nlAns) { $('solve-answer-box').style.display='block'; $('solve-answer-val').textContent=nlAns; }
     $('solve-explain').innerHTML =
       `<span class="c-amber">Parsed:</span> <span class="c-cyan">${parsedExpr}</span><br><br>` +
-      (d.answer_nl || d.nl_explanation || '<span class="muted">No explanation.</span>');
+      (d.nl_explanation || d.answer_nl || '<span class="muted">No explanation.</span>');
     if(d.transforms_applied?.length) {
       $('solve-proof').style.display = 'block'; $('lbl-proof').style.display = 'block';
       $('solve-proof').innerHTML = d.transforms_applied.map((t,i)=>`[${i+1}] <span class="c-cyan">${t}</span>`).join('<br>');
@@ -1768,6 +1775,7 @@ function _solveResetUI() {
   $('solve-stats').style.display='none'; $('solve-proof').style.display='none';
   $('lbl-proof').style.display='none'; $('solve-steps-list').style.display='none';
   $('solve-steps-list').innerHTML=''; $('solve-energy-bar-wrap').style.display='none';
+  $('solve-answer-box').style.display='none'; $('solve-answer-val').textContent='—';
   $('solve-memory').innerHTML='<span class="sys">&gt; Querying memory...</span>';
   $('solve-explain').innerHTML='<span class="muted">Solving...</span>';
 }
@@ -1815,6 +1823,14 @@ async function doSolve() {
 
   $('solve-status').textContent = d.solve_success === false ? 'UNSOLVED' : 'SOLVED';
   $('solve-status').className   = d.solve_success === false ? 'badge b-amber' : 'badge b-green';
+
+  // Show answer box prominently
+  const ans = d.answer_display || d.answer || '';
+  if(ans) {
+    $('solve-answer-box').style.display='block';
+    $('solve-answer-val').textContent = ans;
+  }
+
   $('solve-stats').style.display='grid';
   $('s-init').textContent  = d.initial?.energy?.total?.toFixed(2)  || '0';
   $('s-final').textContent = d.result?.energy?.total?.toFixed(2)   || '0';
@@ -1824,7 +1840,7 @@ async function doSolve() {
     $('solve-proof').style.display='block';
     $('solve-proof').innerHTML = d.transforms_applied.map((t,i)=>`[${i+1}] <span class="c-cyan">${t}</span>`).join('<br>');
   }
-  $('solve-explain').innerHTML = `<span class="c-cyan">${e}</span><br><br>${d.nl_explanation || '<span class="muted">No explanation available.</span>'}`;
+  $('solve-explain').innerHTML = d.nl_explanation || `<span class="c-cyan">${e}</span><br><span class="muted">No explanation available.</span>`;
 
   if(d.recalled_memory?.length) {
     let html = `<span class="c-green">\u2713 ${d.recalled_memory.length} similar episodes recalled</span><br><br>`;

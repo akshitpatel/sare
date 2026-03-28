@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading as _thr
 import time
 from pathlib import Path
 
@@ -383,7 +384,7 @@ class AGISuite:
             history.append(entry)
             # Keep last 500 entries
             history = history[-500:]
-            tmp = _BENCHMARK_HIST.parent / f"{_BENCHMARK_HIST.stem}.{os.getpid()}.tmp"
+            tmp = _BENCHMARK_HIST.parent / f"{_BENCHMARK_HIST.stem}.{os.getpid()}.{_thr.get_ident()}.tmp"
             tmp.write_text(json.dumps(history, indent=2))
             os.replace(tmp, _BENCHMARK_HIST)
         except Exception:

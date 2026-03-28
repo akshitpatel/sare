@@ -1478,7 +1478,7 @@ class EquationSubtractConst(Transform):
         new_rhs_id = g.add_node("constant", new_rhs_str)
         g.add_edge(eq_op_id, expr_id, "left_operand")
         g.add_edge(eq_op_id, new_rhs_id, "right_operand")
-        return g, -3.0
+        return g, -5.0
 
 
 class QuadraticSolver(Transform):
@@ -3624,9 +3624,17 @@ def get_transforms(include_macros: bool = True,
         except Exception as _e:
             pass  # graceful degradation
 
+    # Equation-solving transforms must come BEFORE learned concept rules to prevent
+    # identity rules (additive_identity etc.) from incorrectly simplifying equations
+    _eq_solvers = [
+        LinearEquationSolver(),
+        MultiplyEquationSolver(),
+        EquationSubtractConst(),
+    ]
+
     if not include_macros:
-        return concept_rules + synth_transforms + base
-    return concept_rules + synth_transforms + _macro_transforms(base) + base
+        return _eq_solvers + concept_rules + synth_transforms + base
+    return _eq_solvers + concept_rules + synth_transforms + _macro_transforms(base) + base
 
 
 def reload_transforms(include_macros: bool = True,

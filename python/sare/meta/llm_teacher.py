@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import threading as _thr
 import re
 import time
 from pathlib import Path
@@ -122,7 +123,7 @@ class LLMTeacher:
     def _save_log(self):
         try:
             _LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
-            tmp = _LOG_PATH.parent / f"{_LOG_PATH.stem}.{os.getpid()}.tmp"
+            tmp = _LOG_PATH.parent / f"{_LOG_PATH.stem}.{os.getpid()}.{_thr.get_ident()}.tmp"
             tmp.write_text(json.dumps(self._log[-200:], indent=2))
             os.replace(tmp, _LOG_PATH)
         except Exception as e:

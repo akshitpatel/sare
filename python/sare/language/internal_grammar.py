@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading as _thr
 import logging
 import time
 import uuid
@@ -426,12 +427,12 @@ class InternalGrammar:
         try:
             _MEMORY.mkdir(parents=True, exist_ok=True)
             syms_data = [s.to_dict() for s in self._symbols.values()]
-            tmp = self.PERSIST_PATH_SYMBOLS.parent / f"{self.PERSIST_PATH_SYMBOLS.stem}.{os.getpid()}.tmp"
+            tmp = self.PERSIST_PATH_SYMBOLS.parent / f"{self.PERSIST_PATH_SYMBOLS.stem}.{os.getpid()}.{_thr.get_ident()}.tmp"
             tmp.write_text(json.dumps(syms_data, indent=2), encoding="utf-8")
             tmp.replace(self.PERSIST_PATH_SYMBOLS)
 
             rules_data = [r.to_dict() for r in list(self._rules.values())[-500:]]
-            tmp2 = self.PERSIST_PATH_RULES.parent / f"{self.PERSIST_PATH_RULES.stem}.{os.getpid()}.tmp"
+            tmp2 = self.PERSIST_PATH_RULES.parent / f"{self.PERSIST_PATH_RULES.stem}.{os.getpid()}.{_thr.get_ident()}.tmp"
             tmp2.write_text(json.dumps(rules_data, indent=2), encoding="utf-8")
             tmp2.replace(self.PERSIST_PATH_RULES)
         except OSError as e:

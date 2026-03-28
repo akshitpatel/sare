@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading as _thr
 import logging
 import math
 import time
@@ -255,7 +256,7 @@ class ForgettingCurve:
     def _save(self):
         try:
             _MEMORY.mkdir(parents=True, exist_ok=True)
-            tmp = self.PERSIST_PATH_ITEMS.parent / f"{self.PERSIST_PATH_ITEMS.stem}.{os.getpid()}.tmp"
+            tmp = self.PERSIST_PATH_ITEMS.parent / f"{self.PERSIST_PATH_ITEMS.stem}.{os.getpid()}.{_thr.get_ident()}.tmp"
             data = {
                 "decay_rate": self._decay_rate,
                 "last_decay_time": self._last_decay_time,

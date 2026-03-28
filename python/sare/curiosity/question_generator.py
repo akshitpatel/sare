@@ -113,7 +113,7 @@ class QuestionGenerator:
         with self._lock:
             _MEMORY_DIR.mkdir(parents=True, exist_ok=True)
             data = [q.to_dict() for q in self._questions]
-            tmp_path = _QUESTIONS_PATH.parent / f"{_QUESTIONS_PATH.stem}.{os.getpid()}.tmp"
+            tmp_path = _QUESTIONS_PATH.parent / f"{_QUESTIONS_PATH.stem}.{os.getpid()}.{threading.get_ident()}.tmp"
             with open(tmp_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             tmp_path.replace(_QUESTIONS_PATH)

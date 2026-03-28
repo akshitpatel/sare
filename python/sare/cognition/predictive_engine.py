@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading as _thr
 import logging
 import math
 import time
@@ -253,7 +254,7 @@ class PredictiveEngine:
                 "correct_predictions": self._correct_predictions,
                 "saved_at": time.time(),
             }
-            tmp = self.PERSIST_PATH.parent / f"{self.PERSIST_PATH.stem}.{os.getpid()}.tmp"
+            tmp = self.PERSIST_PATH.parent / f"{self.PERSIST_PATH.stem}.{os.getpid()}.{_thr.get_ident()}.tmp"
             tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
             tmp.replace(self.PERSIST_PATH)
         except OSError as e:

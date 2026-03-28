@@ -405,7 +405,7 @@ class ConfusionDetector:
                 "answered": [q.to_dict() for q in self._answered_questions[-100:]],
                 "failure_counts": self._failure_counts,
             }
-            tmp = self._persist_path.parent / f"{self._persist_path.stem}.{os.getpid()}.tmp"
+            tmp = self._persist_path.parent / f"{self._persist_path.stem}.{os.getpid()}.{threading.get_ident()}.tmp"
             tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
             tmp.replace(self._persist_path)
         except OSError:
@@ -491,7 +491,7 @@ class TeacherRegistry:
                 tid: {"trust_scores": t._trust_scores, "total_answers": t.total_answers}
                 for tid, t in self._teachers.items()
             }
-            tmp = self.PERSIST_PATH.parent / f"{self.PERSIST_PATH.stem}.{os.getpid()}.tmp"
+            tmp = self.PERSIST_PATH.parent / f"{self.PERSIST_PATH.stem}.{os.getpid()}.{threading.get_ident()}.tmp"
             tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
             tmp.replace(self.PERSIST_PATH)
         except OSError:

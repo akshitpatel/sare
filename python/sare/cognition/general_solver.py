@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import threading as _thr
 import re
 import time
 import uuid
@@ -529,7 +530,7 @@ class GeneralSolver:
     def _save_stats(self):
         try:
             _STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-            tmp = _STATE_PATH.parent / f"{_STATE_PATH.stem}.{os.getpid()}.tmp"
+            tmp = _STATE_PATH.parent / f"{_STATE_PATH.stem}.{os.getpid()}.{_thr.get_ident()}.tmp"
             tmp.write_text(json.dumps(self._stats, indent=2))
             os.replace(tmp, _STATE_PATH)
         except Exception as e:

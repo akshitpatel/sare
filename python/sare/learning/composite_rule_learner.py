@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import threading as _thr
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -114,7 +115,7 @@ class CompositeRuleLearner:
                 "registered": self._registered,
                 "total_traces": self._total_traces,
             }
-            tmp = _PERSIST_PATH.parent / f"composite_rules.{os.getpid()}.tmp"
+            tmp = _PERSIST_PATH.parent / f"composite_rules.{os.getpid()}.{_thr.get_ident()}.tmp"
             tmp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
             os.replace(tmp, _PERSIST_PATH)
         except Exception as e:

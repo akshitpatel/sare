@@ -26,6 +26,7 @@ import ast
 import importlib.util
 import json
 import os
+import threading as _thr
 import logging
 import re
 import sys
@@ -277,7 +278,7 @@ class ArchitectureDesigner:
                 "brain_boot_layer": spec.brain_boot_layer,
                 "deployed_at": spec.deployed_at,
             })
-            tmp = manifest_path.parent / f"{manifest_path.stem}.{os.getpid()}.tmp"
+            tmp = manifest_path.parent / f"{manifest_path.stem}.{os.getpid()}.{_thr.get_ident()}.tmp"
             tmp.write_text(json.dumps(deployed, indent=2))
             tmp.replace(manifest_path)
             self._save()
@@ -386,7 +387,7 @@ class ArchitectureDesigner:
         try:
             _MEMORY.mkdir(parents=True, exist_ok=True)
             data = [p.to_dict() for p in self._proposals[-100:]]
-            tmp = _ARCH_MEMORY.parent / f"{_ARCH_MEMORY.stem}.{os.getpid()}.tmp"
+            tmp = _ARCH_MEMORY.parent / f"{_ARCH_MEMORY.stem}.{os.getpid()}.{_thr.get_ident()}.tmp"
             tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
             tmp.replace(_ARCH_MEMORY)
         except OSError:

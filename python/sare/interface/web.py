@@ -1500,23 +1500,49 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._json_response({"error": str(e)}, 500)
             return
 
+        # Build a reliable explanation: symbolic answer first, LLM enhancement if available
+        answer = result.get("answer", "")
+        steps_text = result.get("steps_text", "")
+        transforms = result.get("transforms_applied", [])
+        e_before = result.get("initial", {}).get("energy", {}).get("total", 0)
+        e_after  = result.get("result",  {}).get("energy", {}).get("total", 0)
+        delta    = result.get("delta", e_before - e_after)
+        reduction = result.get("reduction_pct", 0)
+
+        # Always-correct symbolic explanation (no LLM needed)
+        symbolic_explain = (
+            f"<b style='color:#4fc3f7;font-size:1.3em'>{answer}</b><br><br>"
+            f"<span style='color:#aaa'>Input:</span> <code>{expr}</code><br>"
+            f"<span style='color:#aaa'>Steps:</span> {len(transforms)}"
+            + (f" &nbsp;|&nbsp; <span style='color:#aaa'>Rules:</span> "
+               + ", ".join(f"<code>{t}</code>" for t in transforms) if transforms else "")
+            + f"<br><span style='color:#aaa'>Energy:</span> {e_before:.1f} → {e_after:.1f}"
+              f" &nbsp;<span style='color:#69f0ae'>▼ {delta:.1f} ({reduction:.0f}% reduction)</span>"
+        )
+
+        # Try LLM for a richer explanation; fall back to symbolic if it fails or is nonsensical
+        # LLM explanation: fire-and-forget background thread; never blocks the response
         nl_explanation = None
         if explain_solve_trace and result.get("solve_success"):
-            try:
-                nl_explanation = explain_solve_trace(
-                    problem=result.get("expression", expr),
-                    transforms_applied=result.get("transforms_applied", []),
-                    energy_before=result.get("initial", {}).get("energy", {}).get("total", 1.0),
-                    energy_after=result.get("result", {}).get("energy", {}).get("total", 0.0),
-                    final_expression=result.get("expression", expr),
-                    expression=result.get("expression", expr),
-                    domain=result.get("domain", "general"),
-                    goal="simplify",
-                )
-            except Exception as _nl_e:
-                print(f"[sare] LLM explanation failed: {_nl_e}")
+            import threading as _thr_llm
+            def _call_llm():
+                try:
+                    explain_solve_trace(
+                        problem=expr, transforms_applied=transforms,
+                        energy_before=e_before, energy_after=e_after,
+                        final_expression=answer, expression=answer,
+                        domain=result.get("domain", "general"), goal="simplify",
+                    )
+                except Exception:
+                    pass
+            _thr_llm.Thread(target=_call_llm, daemon=True).start()
+            # nl_explanation stays None — symbolic_explain is already complete
 
-        result["nl_explanation"] = nl_explanation
+        result["nl_explanation"] = symbolic_explain + (
+            f"<br><br><span style='color:#aaa;font-size:0.9em'>💬 {nl_explanation}</span>"
+            if nl_explanation else ""
+        )
+        result["answer_display"] = answer  # clean field for easy frontend access
         self._json_response(result)
 
 
@@ -4357,6 +4383,7 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         """GET /api/benchmark/symbolic — Run symbolic math benchmark suite."""
         import json as _json
         from pathlib import Path as _Path
+        from sare.engine import get_transforms
 
         bench_path = _Path(__file__).resolve().parents[3] / "benchmarks/algebra/symbolic_math.json"
         cache_path = _Path(__file__).resolve().parents[3] / "data/memory/benchmark_cache.json"
@@ -4480,6 +4507,7 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         except Exception as e:
             return {"error": f"Cannot load benchmark {bench_path_rel}: {e}"}
 
+        from sare.engine import get_transforms
         energy_fn  = EnergyEvaluator()
         searcher   = BeamSearch()
         transforms = get_transforms()

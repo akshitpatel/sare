@@ -71,12 +71,13 @@ class AlgorithmSelector:
         """Persist win_rates to disk for cross-restart continuity."""
         try:
             import os
+            import threading as _thr
             summary = {
                 "win_rates": self._win_rates,
                 "total_selections": self._total_selections,
             }
             _STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-            tmp = _STATE_PATH.parent / f"algorithm_selector.{os.getpid()}.tmp"
+            tmp = _STATE_PATH.parent / f"algorithm_selector.{os.getpid()}.{_thr.get_ident()}.tmp"
             tmp.write_text(json.dumps(summary, indent=2))
             os.replace(tmp, _STATE_PATH)
         except Exception as e:

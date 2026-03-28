@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading as _thr
 import logging
 import time
 from dataclasses import dataclass, field
@@ -426,7 +427,7 @@ class BottleneckAnalyzer:
         # Persist
         try:
             gap_path = _MEMORY / "capability_gaps.json"
-            tmp = gap_path.parent / f"{gap_path.stem}.{os.getpid()}.tmp"
+            tmp = gap_path.parent / f"{gap_path.stem}.{os.getpid()}.{_thr.get_ident()}.tmp"
             tmp.write_text(json.dumps(report, indent=2), encoding="utf-8")
             tmp.replace(gap_path)
         except OSError:

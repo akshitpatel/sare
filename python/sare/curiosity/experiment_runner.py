@@ -1285,7 +1285,7 @@ class ExperimentRunner:
                 if new_stage != old_stage:
                     state["stage"] = new_stage
                     log.info("[ExperimentRunner] Stage advanced: %s → %s", old_stage, new_stage)
-                tmp = state_path.parent / f"{state_path.stem}.{os.getpid()}.tmp"
+                tmp = state_path.parent / f"{state_path.stem}.{os.getpid()}.{threading.get_ident()}.tmp"
                 tmp.write_text(_json.dumps(state, indent=2))
                 _os.replace(tmp, state_path)
                 log.info("[ExperimentRunner] Domain mastered (persisted): %s (rate=%.2f) stage=%s",

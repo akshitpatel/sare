@@ -856,7 +856,8 @@ class CurriculumGenerator:
             ],
         }
         import os as _os
-        tmp = target.parent / f"{target.stem}.{_os.getpid()}.tmp"
+        import threading as _thr
+        tmp = target.parent / f"{target.stem}.{_os.getpid()}.{_thr.get_ident()}.tmp"
         tmp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         _os.replace(tmp, target)
 

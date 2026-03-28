@@ -493,7 +493,7 @@ class AutonomousTrainer:
             data = self.summary()
             data["saved_at"] = time.time()
             _STATS_PATH.parent.mkdir(parents=True, exist_ok=True)
-            _tmp = _STATS_PATH.parent / f"autonomous_trainer_stats.{os.getpid()}.tmp"
+            _tmp = _STATS_PATH.parent / f"autonomous_trainer_stats.{os.getpid()}.{threading.get_ident()}.tmp"
             _tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
             os.replace(_tmp, _STATS_PATH)
         except Exception as e:

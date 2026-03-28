@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import threading as _thr
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
@@ -304,7 +305,7 @@ class HTMPredictor:
                 "correct_predictions": self._correct_predictions,
                 "saved_at": time.time(),
             }
-            tmp = _HTM_PATH.parent / f"{_HTM_PATH.stem}.{os.getpid()}.tmp"
+            tmp = _HTM_PATH.parent / f"{_HTM_PATH.stem}.{os.getpid()}.{_thr.get_ident()}.tmp"
             tmp.write_text(json.dumps(payload, indent=2))
             os.replace(tmp, _HTM_PATH)
         except Exception as e:

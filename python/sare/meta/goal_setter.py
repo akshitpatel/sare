@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading as _thr
 import time
 import logging
 from dataclasses import dataclass, field, asdict
@@ -237,7 +238,7 @@ class GoalSetter:
                 "goal_count": self._goal_count,
                 "goals": {k: v.to_dict() for k, v in self._goals.items()},
             }
-            tmp = _GOAL_PATH.parent / f"{_GOAL_PATH.stem}.{os.getpid()}.tmp"
+            tmp = _GOAL_PATH.parent / f"{_GOAL_PATH.stem}.{os.getpid()}.{_thr.get_ident()}.tmp"
             with open(tmp, "w") as f:
                 json.dump(payload, f, indent=2)
             tmp.replace(_GOAL_PATH)

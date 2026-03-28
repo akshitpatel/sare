@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import threading as _thr
 import time
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
@@ -92,7 +93,7 @@ class HardSuiteRunner:
     def _save_history(self) -> None:
         try:
             _HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
-            tmp = _HISTORY_PATH.parent / f"hard_suite_history.{os.getpid()}.tmp"
+            tmp = _HISTORY_PATH.parent / f"hard_suite_history.{os.getpid()}.{_thr.get_ident()}.tmp"
             tmp.write_text(json.dumps(self._history, indent=2), encoding="utf-8")
             os.replace(tmp, _HISTORY_PATH)
         except Exception as e:
