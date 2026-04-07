@@ -143,9 +143,8 @@ class FactInference:
         """
         results: List[Tuple[str, str, str]] = []
         try:
-            from sare.knowledge.commonsense import CommonSenseBase
-            cs = CommonSenseBase()
-            cs.load()
+            from sare.knowledge.commonsense import get_commonsense_base
+            cs = get_commonsense_base()
 
             for subj, edges in list(cs._forward.items())[:50]:
                 for rel, obj in edges:
@@ -168,9 +167,8 @@ class FactInference:
         """
         results: List[Tuple[str, str, str]] = []
         try:
-            from sare.knowledge.commonsense import CommonSenseBase
-            cs = CommonSenseBase()
-            cs.load()
+            from sare.knowledge.commonsense import get_commonsense_base
+            cs = get_commonsense_base()
 
             # Domain keyword mapping
             domain_concepts = {
@@ -305,6 +303,19 @@ class FactInference:
                     queue.append((parent, depth + 1, conf_so_far * b.confidence))
         except Exception as e:
             log.debug("[FactInference] chain_to_goal error: %s", e)
+
+        # ── Fallback: FactCompositionEngine for arbitrary predicate chains ────
+        try:
+            from sare.cognition.fact_composer import get_fact_composer
+            _fce = get_fact_composer()
+            _derived = _fce.compose(goal_subject, max_hops=2, min_conf=0.35)
+            for df in _derived:
+                if df.predicate == goal_predicate or goal_predicate in df.predicate:
+                    log.debug("[FactInference] FCE chain_to_goal: %s", df.explanation)
+                    return df.obj
+        except Exception as e:
+            log.debug("[FactInference] FCE chain_to_goal error: %s", e)
+
         return None
 
     # ── Storage ────────────────────────────────────────────────────────────────

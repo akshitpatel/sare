@@ -206,15 +206,8 @@ def _ensure_hippocampus_started():
 
 
 def _ensure_self_improver_started():
-    """Auto-start the 24/7 self-improvement daemon when the server boots."""
-    try:
-        from sare.meta.self_improver import get_self_improver
-        si = get_self_improver()
-        if not si._running:
-            si.start()
-            print("[sare] SelfImprover daemon started (24/7 mode, 5-min cycles)")
-    except Exception as _si_err:
-        print(f"[sare] SelfImprover auto-start failed: {_si_err}")
+    """Self-evolver disabled — focus on self-learning loop."""
+    print("[sare] SelfImprover auto-start DISABLED (self-learning mode)")
 
 
 def _restore_component(name, component):
@@ -512,6 +505,10 @@ def _path_requires_legacy_runtime(path: str) -> bool:
         "/api/engineering-checklist",
         "/api/engineering_checklist",
         "/api/llm-status",
+        "/api/llm/rate-limits",
+        "/api/learning/live",
+        "/api/daemon/heartbeat",
+        "/api/daemon/livelog",
     }:
         return False
     return True
@@ -757,6 +754,8 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_mind_questions()
         elif parsed.path == "/api/agi/evolution":
             self._api_agi_evolution()
+        elif parsed.path == "/api/learning/monitor":
+            self._api_learning_monitor()
         elif parsed.path == "/api/agi/value-net":
             self._api_agi_value_net()
         # ── Evolver Chat endpoints ─────────────────────────────
@@ -803,8 +802,26 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_hippocampus_status()
         elif parsed.path == "/api/autolearn":
             self._api_autolearn_status()
+        elif parsed.path == "/api/daemon/status":
+            self._api_daemon_status()
+        elif parsed.path == "/api/daemon/activity":
+            self._api_daemon_activity()
+        elif parsed.path == "/api/daemon/heartbeat":
+            self._api_daemon_heartbeat()
+        elif parsed.path == "/api/daemon/livelog":
+            params = parse_qs(parsed.query)
+            lines = int(params.get("lines", ["60"])[0])
+            self._api_daemon_livelog(lines)
         elif parsed.path == "/api/llm-status":
             self._api_llm_status()
+        elif parsed.path == "/api/llm/rate-limits":
+            self._api_llm_rate_limits()
+        elif parsed.path == "/api/compose":
+            params = parse_qs(parsed.query)
+            subject = params.get("subject", [""])[0]
+            target  = params.get("target",  [None])[0]
+            hops    = int(params.get("hops", ["3"])[0])
+            self._api_compose(subject, target, hops)
         elif parsed.path == "/api/world":
             self._api_world_summary()
         elif parsed.path == "/api/world/imagine":
@@ -849,6 +866,8 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             expression = params.get("expression", ["x + 0"])[0]
             domain = params.get("domain", ["arithmetic"])[0]
             self._api_world_predict(expression, domain)
+        elif parsed.path == "/api/world/live":
+            self._api_world_live()
         elif parsed.path == "/api/synth/stats":
             self._api_synth_stats()
         elif parsed.path == "/api/synth/review":
@@ -993,6 +1012,8 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_brain_percept()
         elif parsed.path == "/api/domains":
             self._api_domains_status()
+        elif parsed.path == "/api/books":
+            self._api_books_status()
         elif parsed.path == "/api/knowledge/commonsense":
             self._api_knowledge_commonsense()
         elif parsed.path == "/api/knowledge/lookup":
@@ -1040,6 +1061,10 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_solve_stream(expr, budget)
         elif parsed.path == "/api/world/graph":
             self._api_world_graph()
+        elif parsed.path == "/api/weakness":
+            self._api_weakness()
+        elif parsed.path == "/api/world/simulator":
+            self._api_world_simulator()
         elif parsed.path == "/api/transfer":
             self._api_transfer()
         elif parsed.path == "/api/grounding":
@@ -1060,6 +1085,10 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_consciousness()
         elif parsed.path == "/api/intelligence/domains":
             self._api_intelligence_domains()
+        elif parsed.path == "/api/intelligence/learning-progress":
+            self._api_intelligence_learning_progress()
+        elif parsed.path == "/api/intelligence/learning-dashboard":
+            self._api_intelligence_learning_dashboard()
         elif parsed.path == "/api/perception/neural":
             self._api_neural_perception_stats()
         elif parsed.path == "/api/novelty":
@@ -1078,8 +1107,14 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_benchmark_agi()
         elif parsed.path == "/api/learning/trend":
             self._api_learning_trend()
+        elif parsed.path == "/api/learning/summary":
+            self._api_learning_summary()
+        elif parsed.path == "/api/learning/live":
+            self._api_learning_live()
         elif parsed.path == "/dashboard":
             self._serve_file("dashboard.html", "text/html")
+        elif parsed.path in ("/learning-dashboard", "/learning-dashboard/"):
+            self._serve_file("learning_dashboard.html", "text/html")
         elif parsed.path in ("/evolve-chat", "/evolve-chat/"):
             self._serve_file("evolver_chat.html", "text/html")
         elif parsed.path in ("/todo.html", "/todo"):
@@ -1138,10 +1173,22 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
             self._api_autolearn_control(body)
+        elif parsed.path == "/api/daemon/control":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_daemon_control(body)
         elif parsed.path == "/api/solve-nl":
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
             self._api_solve_nl(body)
+        elif parsed.path == "/api/search/learn":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_search_learn(body)
+        elif parsed.path == "/api/learning/chat":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_learning_chat(body)
         elif parsed.path == "/api/ground":
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
@@ -1166,6 +1213,10 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
             self._api_world_ingest(body)
+        elif parsed.path == "/api/code/run":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_code_run(body)
         elif parsed.path == "/api/concepts/extract":
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
@@ -1363,6 +1414,10 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
             self._api_brain_instruct(body)
+        elif parsed.path == "/api/books/ingest":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_books_ingest(body)
         elif parsed.path == "/api/knowledge/expand":
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
@@ -1520,10 +1575,10 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
               f" &nbsp;<span style='color:#69f0ae'>▼ {delta:.1f} ({reduction:.0f}% reduction)</span>"
         )
 
-        # Try LLM for a richer explanation; fall back to symbolic if it fails or is nonsensical
-        # LLM explanation: fire-and-forget background thread; never blocks the response
+        # LLM explanation: only for novel / long proof traces (≥4 steps), never for trivial solves
         nl_explanation = None
-        if explain_solve_trace and result.get("solve_success"):
+        _n_steps_web = len(transforms) if transforms else 0
+        if explain_solve_trace and result.get("solve_success") and _n_steps_web >= 4:
             import threading as _thr_llm
             def _call_llm():
                 try:
@@ -2195,6 +2250,45 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
+    def _api_weakness(self):
+        """GET /api/weakness — WeaknessDetector failure pattern report."""
+        try:
+            from sare.meta.weakness_detector import get_weakness_detector
+            wd = get_weakness_detector()
+            report = wd.analyze()
+            self._json_response({
+                "stats": wd.get_stats(),
+                "report": report,
+                "synthesis_requests": wd.get_synthesis_requests(top_k=3),
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_world_simulator(self):
+        """GET /api/world/simulator — WorldSimulator causal transform ranking stats."""
+        try:
+            from sare.memory.world_simulator import get_world_simulator
+            ws = get_world_simulator()
+            from sare.memory.world_model import get_world_model
+            wm = get_world_model()
+            causal_count = len(wm._causal_links)
+            domain_stats = {}
+            for link in wm._causal_links.values():
+                d = link.domain
+                domain_stats.setdefault(d, {"links": 0, "avg_conf": 0.0, "_sum": 0.0})
+                domain_stats[d]["links"] += 1
+                domain_stats[d]["_sum"] += link.confidence
+            for d, s in domain_stats.items():
+                s["avg_conf"] = round(s["_sum"] / max(s["links"], 1), 3)
+                del s["_sum"]
+            self._json_response({
+                "simulator_stats": ws.get_stats(),
+                "causal_links_total": causal_count,
+                "domain_breakdown": domain_stats,
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
     def _api_transfer(self):
         """GET /api/transfer — Cross-domain analogy transfer summary (alias for /api/analogy)."""
         self._api_analogy()
@@ -2394,6 +2488,73 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         else:
             self._json_response({"available": False, "error": "LLMBridge not loaded"})
 
+    def _api_llm_rate_limits(self):
+        """GET /api/llm/rate-limits — Per-model rate limit tracker for planning."""
+        import time as _time
+        from sare.interface.llm_bridge import get_rate_limit_report, get_llm_stats
+        now = _time.time()
+        rl = get_rate_limit_report()
+        stats = get_llm_stats()
+        recent = stats.get("recent", [])
+
+        # Compute per-model hit/success rate from recent call log
+        model_counts: dict = {}
+        for c in recent:
+            m = c.get("model", "unknown")
+            entry = model_counts.setdefault(m, {"ok": 0, "fail": 0, "roles": {}})
+            if c.get("ok"):
+                entry["ok"] += 1
+            else:
+                entry["fail"] += 1
+            role = c.get("role", "?")
+            entry["roles"][role] = entry["roles"].get(role, 0) + 1
+
+        # Build summary per model
+        summary = {}
+        for model, counts in model_counts.items():
+            total = counts["ok"] + counts["fail"]
+            rl_info = rl.get(model, {})
+            summary[model] = {
+                "calls": total,
+                "success_rate": round(counts["ok"] / max(total, 1), 2),
+                "top_roles": sorted(counts["roles"].items(), key=lambda x: -x[1])[:5],
+                "rate_limit_hits": rl_info.get("total_hits", 0),
+                "available_now": rl_info.get("available", True),
+                "cooldown_remaining_s": rl_info.get("cooldown_remaining_s", 0),
+                "hits_per_hour_24h": rl_info.get("hits_per_hour_24h", 0),
+                "median_gap_s": rl_info.get("median_gap_s"),
+                "last_hit_ago_s": rl_info.get("last_hit_ago_s"),
+            }
+
+        # Planning advice
+        advice = []
+        for model, info in summary.items():
+            if "free" in model and info["success_rate"] < 0.5:
+                gap = info.get("median_gap_s")
+                advice.append({
+                    "model": model,
+                    "issue": "high fallback rate",
+                    "success_rate": info["success_rate"],
+                    "recommendation": f"Free tier rate-limiting heavily. Median gap between hits: {gap}s. "
+                                      f"Consider spacing calls or raising _MIN_CALL_GAP_S.",
+                })
+            elif "free" in model and info.get("hits_per_hour_24h", 0) > 5:
+                advice.append({
+                    "model": model,
+                    "issue": "frequent rate limits",
+                    "hits_per_hour": info["hits_per_hour_24h"],
+                    "recommendation": "Rate limited >5x/hour. Free quota may reset hourly — "
+                                      "consider batching calls in the first minute after reset.",
+                })
+
+        self._json_response({
+            "generated_at": now,
+            "models": summary,
+            "rate_limit_detail": rl,
+            "advice": advice,
+            "total_calls_recorded": len(recent),
+        })
+
     def _api_ask(self, body: dict):
         """POST /api/ask — Conversational math endpoint.
 
@@ -2541,6 +2702,127 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         result_data["parsed"] = parsed.to_dict()
         result_data["raw_input"] = nl_text
         self._json_response(result_data, status_code)
+
+    def _api_search_learn(self, body: dict):
+        """POST /api/search/learn — Search Wikipedia to learn about a topic.
+
+        Body: {"topic": "water molecule", "question": "...", "answer": "..."}
+        Returns: {facts_added, source, extract, answer_found}
+        """
+        topic = body.get("topic", "").strip()
+        question = body.get("question", "").strip()
+        answer = body.get("answer", "").strip() or None
+        if not topic and not question:
+            self._json_response({"error": "Provide 'topic' or 'question'"}, 400)
+            return
+        try:
+            from sare.learning.web_learner import get_web_learner
+            wl = get_web_learner()
+            if question:
+                result = wl.learn(question, expected_answer=answer, domain="general")
+            else:
+                result = wl.learn_topic(topic)
+            self._json_response({
+                "facts_added": result.get("facts_added", 0),
+                "source": result.get("source", ""),
+                "extract": result.get("extract", "")[:400],
+                "answer_found": result.get("answer_found", False),
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_learning_chat(self, body: dict):
+        """POST /api/learning/chat — Chat with the learning monitor about system progress."""
+        import time as _time
+        import json as _json
+        from pathlib import Path as _Path
+
+        message = body.get("message", "").strip()
+        if not message:
+            self._json_response({"error": "empty message"}, 400)
+            return
+
+        # ── Build context snapshot ────────────────────────────────────────────
+        context_lines = []
+
+        # Domain accuracy
+        try:
+            from sare.memory.world_model import get_world_model
+            wm = get_world_model()
+            acc_lines = []
+            for key, hist in wm._belief_accuracy.items():
+                if key.startswith("domain_solve_acc:") and hist:
+                    dom = key[len("domain_solve_acc:"):]
+                    window = min(50, len(hist))
+                    pct = round(sum(hist[-window:]) / window * 100, 1)
+                    acc_lines.append(f"  {dom}: {pct}%")
+            if acc_lines:
+                context_lines.append("Domain accuracy (rolling 50):\n" + "\n".join(sorted(acc_lines, reverse=True)))
+        except Exception:
+            pass
+
+        # KB stats
+        try:
+            from sare.knowledge.commonsense import get_commonsense_base
+            cs = get_commonsense_base()
+            answer_to = sum(1 for triples in cs._forward.values() for r, _ in triples if r == "AnswerTo")
+            total = sum(len(v) for v in cs._forward.values())
+            context_lines.append(f"Knowledge base: {answer_to} AnswerTo triples, {total} total triples")
+        except Exception:
+            pass
+
+        # Recent web searches
+        try:
+            from sare.learning.web_learner import get_web_learner
+            searches = get_web_learner().get_search_log(10)
+            if searches:
+                s_lines = [f"  [{s['domain']}] {s['title']} (+{s['facts_added']} facts)" for s in searches[:5]]
+                context_lines.append("Recent Wikipedia searches:\n" + "\n".join(s_lines))
+        except Exception:
+            pass
+
+        # LLM stats
+        try:
+            from sare.interface.llm_bridge import get_llm_stats
+            stats = get_llm_stats()
+            context_lines.append(f"LLM calls this session: {stats['total_calls']} total")
+            by_role = stats.get("by_role", {})
+            if by_role:
+                role_str = ", ".join(f"{k}:{v}" for k, v in sorted(by_role.items(), key=lambda x: -x[1])[:5])
+                context_lines.append(f"  By role: {role_str}")
+        except Exception:
+            pass
+
+        context = "\n\n".join(context_lines) if context_lines else "No data available yet."
+
+        # ── Ask LLM ───────────────────────────────────────────────────────────
+        system_prompt = (
+            "You are the SARE-HX AGI system's learning monitor assistant. "
+            "Answer questions about the system's current learning progress concisely and factually. "
+            "Use the data provided. Keep responses under 3 sentences unless detail is requested."
+        )
+        prompt = f"Current system state:\n{context}\n\nUser question: {message}"
+
+        try:
+            from sare.interface.llm_bridge import _call_model, llm_available
+            if llm_available and not llm_available():
+                raise RuntimeError("LLM offline")
+            response = _call_model(prompt, role="learning_monitor", system_prompt=system_prompt)
+            self._json_response({
+                "response": response.strip(),
+                "context": context,
+                "llm_used": True,
+                "ts": _time.time(),
+            })
+        except Exception as _llm_err:
+            # Fallback: answer directly from data without LLM
+            self._json_response({
+                "response": f"System state summary:\n{context}",
+                "context": context,
+                "llm_used": False,
+                "llm_error": str(_llm_err),
+                "ts": _time.time(),
+            })
 
     def _api_ground(self, body: dict):
         """
@@ -2912,6 +3194,34 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
 
     # ── WorldModel endpoints ──────────────────────────────────────
 
+    def _api_compose(self, subject: str, target, hops: int):
+        """GET /api/compose?subject=fire&target=ice&hops=3 — derive new facts via belief chaining."""
+        try:
+            from sare.cognition.fact_composer import get_fact_composer
+            if not subject:
+                self._json_response({"error": "subject parameter required"}, 400)
+                return
+            fce = get_fact_composer()
+            derived = fce.compose(subject, target=target or None, max_hops=min(hops, 4))
+            self._json_response({
+                "subject": subject,
+                "target": target,
+                "graph_nodes": len(fce._graph),
+                "graph_edges": fce._graph_size,
+                "derived": [
+                    {
+                        "predicate":   df.predicate,
+                        "object":      df.obj,
+                        "confidence":  df.confidence,
+                        "path_length": df.path_length,
+                        "explanation": df.explanation,
+                    }
+                    for df in derived
+                ],
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
     def _api_world_summary(self):
         """GET /api/world — full world model summary."""
         try:
@@ -3196,6 +3506,44 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             from sare.interface.llm_bridge import ingest_text_for_world_model
             result = ingest_text_for_world_model(text, domain)
             self._json_response({"status": "ok", "domain": domain, **result})
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_world_live(self):
+        """GET /api/world/live — LiveWorld persistent state + recent discoveries."""
+        try:
+            from sare.world.live_world import get_live_world
+            lw = get_live_world()
+            summary = lw.summary()
+            recent = lw.get_recent(20)
+            self._json_response({
+                "ok": True,
+                "summary": summary,
+                "recent_discoveries": recent,
+                "objects": list(lw._objects.keys()),
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_code_run(self, body: dict):
+        """POST /api/code/run — execute code in sandbox, return stdout."""
+        code = body.get("code", "").strip()
+        if not code:
+            self._json_response({"error": "Missing 'code' field"}, 400)
+            return
+        try:
+            from sare.execution.code_executor import get_executor
+            result = get_executor().execute(code)
+            self._json_response({
+                "ok": not result.blocked and result.exit_code == 0,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "exit_code": result.exit_code,
+                "elapsed_ms": round(result.elapsed_ms, 1),
+                "blocked": result.blocked,
+                "block_reason": result.block_reason,
+                "timed_out": result.timed_out,
+            })
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
@@ -3635,6 +3983,14 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._json_response(report)
         except Exception as e:
             self._json_response({"error": str(e), "velocity_score": 0.0})
+
+    def _api_learning_monitor(self):
+        """GET /api/learning/monitor — internal self-evaluation: pattern mastery, velocity."""
+        try:
+            from sare.meta.learning_monitor import get_learning_monitor
+            self._json_response(get_learning_monitor().summary())
+        except Exception as e:
+            self._json_response({"error": str(e)})
 
     def _api_agi_value_net(self):
         """GET /api/agi/value-net — MLX value network stats (M1 GPU training)."""
@@ -4897,6 +5253,171 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
                 self._json_response(brain.auto_learn_status())
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
+
+
+    def _api_daemon_status(self):
+        """GET /api/daemon/status - Check if learn_daemon is running and in which mode."""
+        import subprocess
+        try:
+            result = subprocess.run(
+                ["pgrep", "-f", "learn_daemon.py"],
+                capture_output=True,
+                text=True
+            )
+            running = result.returncode == 0
+            turbo = False
+            pid = None
+            if running:
+                try:
+                    result = subprocess.run(
+                        ["pgrep", "-f", "learn_daemon.py.*--turbo"],
+                        capture_output=True,
+                        text=True
+                    )
+                    turbo = result.returncode == 0
+                except:
+                    pass
+                try:
+                    result = subprocess.run(
+                        ["pgrep", "-f", "learn_daemon.py"],
+                        capture_output=True,
+                        text=True
+                    )
+                    pid = result.stdout.strip().split('\n')[0] if result.stdout else None
+                except:
+                    pass
+            self._json_response({
+                "running": running,
+                "turbo": turbo,
+                "pid": pid,
+                "mode": "turbo" if turbo else "normal"
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_daemon_control(self, body: dict):
+        """POST /api/daemon/control - Start/stop/restart the learn_daemon."""
+        import subprocess
+        import time
+        action = body.get("action", "status")
+        mode = body.get("mode", "normal")
+        try:
+            if action == "start":
+                result = subprocess.run(
+                    ["pgrep", "-f", "learn_daemon.py"],
+                    capture_output=True,
+                    text=True
+                )
+                if result.returncode == 0:
+                    self._json_response({"error": "Daemon already running"}, 400)
+                    return
+                cmd = ["/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/Resources/Python.app/Contents/MacOS/Python", "/Users/akshitpatel/sare/learn_daemon.py"]
+                if mode == "turbo":
+                    cmd.append("--turbo")
+                subprocess.Popen(
+                    cmd,
+                    stdout=open("/Users/akshitpatel/sare/daemon.log", "a"),
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True
+                )
+                self._json_response({"status": "started", "mode": mode})
+            elif action == "stop":
+                subprocess.run(["pkill", "-f", "learn_daemon.py"], capture_output=True)
+                self._json_response({"status": "stopped"})
+            elif action == "restart":
+                subprocess.run(["pkill", "-f", "learn_daemon.py"], capture_output=True)
+                time.sleep(1)
+                cmd = ["/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/Resources/Python.app/Contents/MacOS/Python", "/Users/akshitpatel/sare/learn_daemon.py"]
+                if mode == "turbo":
+                    cmd.append("--turbo")
+                subprocess.Popen(
+                    cmd,
+                    stdout=open("/Users/akshitpatel/sare/daemon.log", "a"),
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True
+                )
+                self._json_response({"status": "restarted", "mode": mode})
+            elif action == "status":
+                self._api_daemon_status()
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_daemon_activity(self):
+        """GET /api/daemon/activity - Get recent daemon activity."""
+        import os
+        try:
+            log_path = "/Users/akshitpatel/sare/daemon.log"
+            if not os.path.exists(log_path):
+                self._json_response({"activity": [], "log_file": log_path})
+                return
+            with open(log_path, "r") as f:
+                lines = f.readlines()
+            activity = []
+            for line in lines[-100:]:
+                line = line.strip()
+                if any(k in line for k in ["Cycle", "Solved", "ERROR", "WARNING", "domain", "batch"]):
+                    activity.append(line)
+            self._json_response({
+                "activity": activity[-30:] if len(activity) > 30 else activity,
+                "total_lines": len(lines),
+                "log_file": log_path
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_daemon_heartbeat(self):
+        """GET /api/daemon/heartbeat — Latest heartbeat written by the daemon each cycle."""
+        import time as _time
+        import json as _json
+        from pathlib import Path as _Path
+        hb_path = _Path(__file__).parent.parent.parent.parent / "data" / "memory" / "daemon_heartbeat.json"
+        try:
+            if not hb_path.exists():
+                self._json_response({"alive": False, "reason": "no heartbeat file yet"})
+                return
+            hb = _json.loads(hb_path.read_text())
+            age = _time.time() - hb.get("ts", 0)
+            # >15 min = stuck; >60 s = slow; else ok
+            if age > 900:
+                status = "stuck"
+            elif age > 60:
+                status = "slow"
+            else:
+                status = "active"
+            self._json_response({
+                "alive": age < 900,
+                "status": status,
+                "age_s": round(age, 1),
+                **hb,
+            })
+        except Exception as e:
+            self._json_response({"alive": False, "status": "error", "error": str(e)})
+
+    def _api_daemon_livelog(self, lines: int = 60):
+        """GET /api/daemon/livelog?lines=60 — Last N lines from the daemon log file."""
+        import os as _os
+        _DAEMON_LOG = "/tmp/sare_daemon.log"
+        try:
+            if not _os.path.exists(_DAEMON_LOG):
+                self._json_response({"lines": [], "log_file": _DAEMON_LOG, "exists": False})
+                return
+            # Efficient tail: read last ~4KB and split lines
+            with open(_DAEMON_LOG, "rb") as f:
+                f.seek(0, 2)
+                size = f.tell()
+                read_bytes = min(size, lines * 200)  # estimate ~200 bytes/line
+                f.seek(max(0, size - read_bytes))
+                raw = f.read().decode("utf-8", errors="replace")
+            all_lines = raw.splitlines()
+            tail = all_lines[-lines:] if len(all_lines) > lines else all_lines
+            self._json_response({
+                "lines": tail,
+                "total_read": len(all_lines),
+                "log_file": _DAEMON_LOG,
+                "exists": True,
+            })
+        except Exception as e:
+            self._json_response({"error": str(e), "lines": []}, 500)
 
     def _api_brain_conjectures(self):
         """GET /api/brain/conjectures — Generate conjectures from learned knowledge."""
@@ -6493,6 +7014,38 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
+    def _api_books_status(self):
+        """GET /api/books — list ingested books and totals."""
+        try:
+            from sare.knowledge.book_ingester import get_book_ingester
+            self._json_response(get_book_ingester().status())
+        except Exception as e:
+            self._json_response({"error": str(e), "total_books": 0, "books": []})
+
+    def _api_books_ingest(self, body: dict):
+        """POST /api/books/ingest {"path": "/absolute/path/to/book.pdf"} — ingest a book file."""
+        import threading as _bt
+        path_str = body.get("path", "").strip()
+        if not path_str:
+            self._json_response({"error": "path required"}, 400)
+            return
+        from pathlib import Path as _P
+        fpath = _P(path_str)
+        if not fpath.exists():
+            self._json_response({"error": f"File not found: {path_str}"}, 404)
+            return
+
+        def _do_ingest():
+            try:
+                from sare.knowledge.book_ingester import get_book_ingester
+                get_book_ingester().ingest_file(fpath, force=body.get("force", False))
+            except Exception:
+                pass
+
+        _bt.Thread(target=_do_ingest, daemon=True).start()
+        self._json_response({"status": "ingesting", "path": str(fpath),
+                             "message": "Ingestion started in background"})
+
     def _api_knowledge_stats(self):
         """GET /api/knowledge/stats — aggregate KB statistics."""
         try:
@@ -6509,11 +7062,16 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
                 pass
 
             cs_facts = 0
+            answer_to_count = 0
             try:
-                from sare.knowledge.commonsense import CommonSenseBase
-                cs = CommonSenseBase()
-                cs.load()
+                from sare.knowledge.commonsense import get_commonsense_base
+                cs = get_commonsense_base()
                 cs_facts = cs.total_facts()
+                # Count AnswerTo triples from live in-memory singleton
+                answer_to_count = sum(
+                    1 for triples in cs._forward.values()
+                    for rel, _ in triples if rel == "AnswerTo"
+                )
             except Exception:
                 pass
 
@@ -6545,11 +7103,155 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
                 "world_model_facts":       wm_facts,
                 "knowledge_graph_nodes":   kg_nodes,
                 "commonsense_facts":       cs_facts,
+                "answer_to_triples":       answer_to_count,
                 "working_memory_sessions": wm_sessions,
                 "kb_hit_rate_last_100":    kb_hit_rate,
             })
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
+
+    def _api_learning_summary(self):
+        """GET /api/learning/summary — general intelligence KB metrics."""
+        import time as _time
+        try:
+            from sare.memory.world_model import get_world_model
+            from sare.knowledge.commonsense import get_commonsense_base
+
+            wm = get_world_model()
+            cs = get_commonsense_base()
+
+            # AnswerTo triple count (live in-memory)
+            answer_to_count = sum(
+                1 for triples in cs._forward.values()
+                for rel, _ in triples if rel == "AnswerTo"
+            )
+
+            # World model facts per domain
+            wm_facts_by_domain = {d: len(v) for d, v in wm._facts.items() if v}
+            wm_facts_total = sum(wm_facts_by_domain.values())
+
+            # Domain failure counts (last 500 per domain)
+            domain_failures: dict = {}
+            try:
+                with wm._domain_failures_lock:
+                    for d, entries in wm._domain_failures.items():
+                        domain_failures[d] = len(entries)
+            except Exception:
+                pass
+
+            # Rolling solve accuracy per domain (via _belief_accuracy keys)
+            domain_accuracy: dict = {}
+            try:
+                for key, hist in wm._belief_accuracy.items():
+                    if key.startswith("domain_solve_acc:") and hist:
+                        dom = key[len("domain_solve_acc:"):]
+                        window = min(50, len(hist))
+                        domain_accuracy[dom] = round(sum(hist[-window:]) / window, 3)
+            except Exception:
+                pass
+
+            # Concept synthesis domains triggered (each has had at least one LLM synthesis call)
+            synthesis_count = 0
+            try:
+                synthesis_count = len(wm._last_concept_synthesis)
+            except Exception:
+                pass
+
+            # KB hit rate from general solver
+            kb_hit_rate = 0.0
+            try:
+                from sare.cognition.general_solver import get_general_solver
+                gs = get_general_solver()
+                if gs._kb_lookup is not None:
+                    kb_hit_rate = gs._kb_lookup.get_hit_rate()
+            except Exception:
+                pass
+
+            self._json_response({
+                "answer_to_triples":    answer_to_count,
+                "wm_facts_total":       wm_facts_total,
+                "wm_facts_by_domain":   wm_facts_by_domain,
+                "domain_failures":      domain_failures,
+                "domain_accuracy":      domain_accuracy,
+                "synthesis_count":      synthesis_count,
+                "kb_hit_rate":          kb_hit_rate,
+                "ts":                   _time.time(),
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_learning_live(self):
+        """GET /api/learning/live — live snapshot: domain accuracy, web search log, LLM call stats."""
+        import time as _time
+        import json as _json
+        from pathlib import Path as _Path
+
+        result: dict = {"ts": _time.time()}
+
+        # ── Domain accuracy (rolling window from world model) ─────────────────
+        domain_accuracy: dict = {}
+        try:
+            from sare.memory.world_model import get_world_model
+            wm = get_world_model()
+            for key, hist in wm._belief_accuracy.items():
+                if key.startswith("domain_solve_acc:") and hist:
+                    dom = key[len("domain_solve_acc:"):]
+                    window = min(50, len(hist))
+                    domain_accuracy[dom] = round(sum(hist[-window:]) / window, 3)
+        except Exception:
+            pass
+
+        # Also read from world_model_v2 facts count as proxy if belief_accuracy empty
+        wm_facts: dict = {}
+        try:
+            wm_path = _Path(__file__).parent.parent.parent.parent / "data" / "memory" / "world_model_v2.json"
+            if wm_path.exists():
+                raw = _json.loads(wm_path.read_text())
+                facts = raw.get("facts", {})
+                wm_facts = {d: len(v) for d, v in facts.items() if v}
+        except Exception:
+            pass
+
+        result["domain_accuracy"] = domain_accuracy
+        result["wm_facts"] = wm_facts
+
+        # ── Web search log — read from disk so we see daemon's searches ─────────
+        web_searches: list = []
+        try:
+            log_path = _Path(__file__).parent.parent.parent.parent / "data" / "memory" / "web_learned.json"
+            if log_path.exists():
+                raw = _json.loads(log_path.read_text())
+                entries = raw.get("entries", [])
+                web_searches = list(reversed(entries[-20:]))
+        except Exception:
+            pass
+
+        result["web_searches"] = web_searches
+
+        # ── LLM call stats ────────────────────────────────────────────────────
+        llm_stats: dict = {"total_calls": 0, "by_role": {}, "recent": []}
+        try:
+            from sare.interface.llm_bridge import get_llm_stats
+            llm_stats = get_llm_stats()
+        except Exception:
+            pass
+
+        result["llm_stats"] = llm_stats
+
+        # ── KB growth snapshot ────────────────────────────────────────────────
+        kb_snapshot: dict = {}
+        try:
+            from sare.knowledge.commonsense import get_commonsense_base
+            cs = get_commonsense_base()
+            answer_to = sum(1 for triples in cs._forward.values() for r, _ in triples if r == "AnswerTo")
+            total_triples = sum(len(v) for v in cs._forward.values())
+            kb_snapshot = {"answer_to": answer_to, "total_triples": total_triples}
+        except Exception:
+            pass
+
+        result["kb_snapshot"] = kb_snapshot
+
+        self._json_response(result)
 
     def _api_knowledge_expand(self, body: dict):
         """POST /api/knowledge/expand — expand KB via LLM (async)."""
@@ -7031,6 +7733,123 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
+    def _api_intelligence_learning_progress(self):
+        """GET /api/intelligence/learning-progress — understanding vs memorization report."""
+        try:
+            from sare.meta.learning_progress_report import generate_learning_progress_report
+            report = generate_learning_progress_report()
+            self._json_response(report)
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_intelligence_learning_dashboard(self):
+        """GET /api/intelligence/learning-dashboard — bundled payload for learning ops UI."""
+        import json as _json
+        import subprocess as _subprocess
+        from pathlib import Path as _Path
+
+        try:
+            from sare import brain as _brain_module
+            from sare.meta import learning_progress_report as _lpr
+
+            report = _lpr.generate_learning_progress_report()
+
+            # Append snapshot to history (throttled: at most once per 5 min)
+            history_path = getattr(_lpr, "DEFAULT_HISTORY_PATH", None)
+            if history_path:
+                try:
+                    _hp = _Path(history_path)
+                    _should_append = True
+                    if _hp.exists():
+                        _hist_data = _json.loads(_hp.read_text(encoding="utf-8"))
+                        if isinstance(_hist_data, list) and _hist_data:
+                            import time as _time_mod
+                            _last_snap = _hist_data[-1]
+                            _last_ts_str = _last_snap.get("timestamp", "")
+                            try:
+                                from datetime import datetime, timezone
+                                _last_dt = datetime.fromisoformat(_last_ts_str.replace("Z", "+00:00"))
+                                _age_s = (datetime.now(timezone.utc) - _last_dt).total_seconds()
+                                _should_append = _age_s >= 300  # 5 minutes
+                            except Exception:
+                                _should_append = True
+                    if _should_append and report.get("snapshot"):
+                        _lpr.append_history(_Path(history_path), report["snapshot"])
+                except Exception:
+                    pass
+
+            history = []
+            if history_path and _Path(history_path).exists():
+                try:
+                    payload = _json.loads(_Path(history_path).read_text(encoding="utf-8"))
+                    if isinstance(payload, list):
+                        history = payload[-96:]
+                except Exception:
+                    history = []
+
+            brain = getattr(_brain_module, "_brain", None)
+            autolearn = {"running": False, "resident": bool(brain)}
+            if brain:
+                autolearn = brain.auto_learn_status()
+                autolearn = dict(autolearn)
+                autolearn["resident"] = True
+                autolearn["stage"] = brain.stage.value
+                if brain.developmental_curriculum:
+                    cmap = brain.developmental_curriculum.get_curriculum_map()
+                    autolearn["mastered"] = cmap.get("mastered", 0)
+                    autolearn["unlocked"] = cmap.get("unlocked", 0)
+                    autolearn["total_domains"] = cmap.get("total_domains", 0)
+
+            trainer = {"running": False, "total_problems": 0}
+            trainer_stats_path = _Path(__file__).resolve().parents[3] / "data" / "memory" / "autonomous_trainer_stats.json"
+            if brain and getattr(brain, "autonomous_trainer", None) and brain.autonomous_trainer._running:
+                trainer = brain.autonomous_trainer.summary()
+            elif trainer_stats_path.exists():
+                try:
+                    trainer = _json.loads(trainer_stats_path.read_text(encoding="utf-8"))
+                    if isinstance(trainer, dict):
+                        trainer["from_disk"] = True
+                        trainer["running"] = False
+                except Exception:
+                    trainer = {"running": False, "total_problems": 0}
+
+            daemon = {"running": False, "turbo": False, "pid": None, "mode": "normal"}
+            try:
+                result = _subprocess.run(
+                    ["pgrep", "-f", "learn_daemon.py"],
+                    capture_output=True,
+                    text=True,
+                )
+                daemon["running"] = result.returncode == 0
+                if daemon["running"]:
+                    try:
+                        turbo_result = _subprocess.run(
+                            ["pgrep", "-f", "learn_daemon.py.*--turbo"],
+                            capture_output=True,
+                            text=True,
+                        )
+                        daemon["turbo"] = turbo_result.returncode == 0
+                    except Exception:
+                        daemon["turbo"] = False
+                    lines = [line.strip() for line in (result.stdout or "").splitlines() if line.strip()]
+                    daemon["pid"] = lines[0] if lines else None
+                    daemon["mode"] = "turbo" if daemon["turbo"] else "normal"
+            except Exception:
+                pass
+
+            self._json_response(
+                {
+                    "generated_at": report.get("generated_at"),
+                    "report": report,
+                    "history": history,
+                    "autolearn": autolearn,
+                    "trainer": trainer,
+                    "daemon": daemon,
+                }
+            )
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
     def _api_neural_perception_stats(self):
         """GET /api/perception/neural — NeuralPerception stats and recent history."""
         try:
@@ -7116,6 +7935,71 @@ def run_server(port=8080):
 
     class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
         daemon_threads = True
+
+    # ── Daemon watchdog: auto-restart if stuck for 15 minutes ─────────────
+    import threading as _threading
+    import subprocess as _subprocess
+    import os as _wd_os
+
+    _REPO_ROOT_WD = str(__file__).split("/python/")[0]
+    _HB_FILE_WD   = _wd_os.path.join(_REPO_ROOT_WD, "data", "memory", "daemon_heartbeat.json")
+    _DAEMON_PID   = _wd_os.path.join(_REPO_ROOT_WD, ".pid_daemon")
+    _STUCK_THRESH = 15 * 60   # 15 minutes
+
+    def _daemon_is_running():
+        try:
+            pid = int(open(_DAEMON_PID).read().strip())
+            _wd_os.kill(pid, 0)
+            return True
+        except Exception:
+            return False
+
+    def _restart_daemon():
+        import logging as _wdlog
+        _wdlog.getLogger("watchdog").warning(
+            "[Watchdog] Daemon appears stuck (no heartbeat for >15 min). Restarting…"
+        )
+        # Kill old process if any
+        try:
+            pid = int(open(_DAEMON_PID).read().strip())
+            _wd_os.kill(pid, 15)   # SIGTERM
+            import time as _wt; _wt.sleep(3)
+            try: _wd_os.kill(pid, 9)
+            except Exception: pass
+        except Exception:
+            pass
+        # Start new daemon
+        _subprocess.Popen(
+            ["python3", "learn_daemon.py", "--verbose"],
+            cwd=_REPO_ROOT_WD,
+            stdout=open("/tmp/sare_daemon.log", "a"),
+            stderr=_subprocess.STDOUT,
+            start_new_session=True,
+        )
+        _wdlog.getLogger("watchdog").info("[Watchdog] Daemon restarted.")
+
+    def _watchdog_loop():
+        import time as _wt
+        import json as _wj
+        _wt.sleep(120)  # wait 2 min before first check (allow daemon startup)
+        while True:
+            try:
+                if _daemon_is_running():
+                    try:
+                        hb = _wj.loads(open(_HB_FILE_WD).read())
+                        age = _wt.time() - hb.get("ts", 0)
+                        if age > _STUCK_THRESH:
+                            _restart_daemon()
+                    except FileNotFoundError:
+                        pass   # heartbeat not written yet — daemon just started
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            _wt.sleep(60)   # check every minute
+
+    _wd_thread = _threading.Thread(target=_watchdog_loop, daemon=True, name="daemon-watchdog")
+    _wd_thread.start()
 
     server = ThreadedHTTPServer(("localhost", port), SareAPIHandler)
     try:
