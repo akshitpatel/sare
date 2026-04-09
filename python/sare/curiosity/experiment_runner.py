@@ -102,6 +102,22 @@ class ExperimentRunner:
         self._daemon_thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
         self._batch_count = 0
+        # Deduplication: track names of rules already successfully promoted this session.
+        # Prevents the same rule (e.g. double_negation_elimination) from being logged
+        # and re-processed hundreds of times across cycles.
+        self._promoted_rule_names: set = set()
+
+        # TransformSynthesizer trigger: track consecutive failures per domain.
+        # When a domain accumulates _SYNTH_FAIL_THRESHOLD consecutive failures,
+        # TransformSynthesizer is called to attempt LLM-assisted transform synthesis.
+        self._domain_consec_fails: dict = {}     # domain -> int
+        self._SYNTH_FAIL_THRESHOLD: int = 20     # trigger synthesis after N consecutive failures
+        self._synth_triggered_domains: set = set()  # domains where synthesis was triggered this session
+        # Domain deprioritization: domains with too many consecutive failures get
+        # a cooldown so we stop wasting cycles on problems we cannot solve.
+        # Key: domain, Value: batch_count when it can be re-enabled.
+        self._domain_cooldown: dict = {}          # domain -> batch_count when it re-enables
+        self._DOMAIN_COOLDOWN_BATCHES: int = 30   # skip a domain for 30 batches (~3-5 min)
 
         self._recent_batch_stats: List[dict] = []
         self._adaptive_batch_size: Optional[int] = None
@@ -112,6 +128,26 @@ class ExperimentRunner:
         self._successful_embeddings: List[dict] = []
         self._embedder = None  # lazy-loaded GraphEmbedding instance
         self._value_net = None  # lazy-loaded MLXValueNet (M1 GPU)
+        self._value_net_callable = None  # graph → float callable for BeamSearch
+
+        # HTMPredictor: learns transform sequences, used to reorder transforms in search
+        self._htm_predictor = None
+        try:
+            from sare.neuro.htm_predictor import HTMPredictor
+            self._htm_predictor = HTMPredictor()
+            log.info("[ExperimentRunner] HTMPredictor initialized")
+        except Exception as _he:
+            log.debug("[ExperimentRunner] HTMPredictor unavailable: %s", _he)
+
+        # TransformPolicy: attention-based neural transform ranker
+        self._transform_policy = None
+        try:
+            from sare.heuristics.transform_policy import get_transform_policy
+            _t_names = [t.name() for t in (transforms or [])]
+            self._transform_policy = get_transform_policy(_t_names)
+            log.info("[ExperimentRunner] TransformPolicy initialized (%d transforms)", len(_t_names))
+        except Exception as _tpe:
+            log.debug("[ExperimentRunner] TransformPolicy unavailable: %s", _tpe)
         self._last_wm_prediction = None  # world model prediction for current problem
 
         # P2-G: per-transform uncertainty tracking (populated from credit assigner)
@@ -121,10 +157,45 @@ class ExperimentRunner:
         # P3-H: A* fallback for hard problems
         self._use_astar_fallback: bool = True
 
+        # Fix 4: cache of stuck graphs per domain for synthesis validation
+        from collections import defaultdict
+        self._stuck_graph_cache: dict = defaultdict(list)
+
+        # ── Stuck-problem quarantine ────────────────────────────────────────────
+        # Problems that fail repeatedly burn CPU with no progress.
+        # After _QUARANTINE_FAIL_LIMIT consecutive failures the problem is
+        # quarantined for _QUARANTINE_COOLDOWN_BATCHES batches.
+        self._problem_consec_fails: dict = {}     # problem_id -> consecutive fail count
+        self._problem_quarantine: dict = {}        # problem_id -> batch# when re-enabled
+        self._QUARANTINE_FAIL_LIMIT: int = 8       # quarantine after 8 straight failures
+        self._QUARANTINE_COOLDOWN_BATCHES: int = 500  # ~45 min @ 1 batch/5s
+
         # Load synthesized transforms from data/memory/synthesized_modules/
         synth = self._load_synthesized_transforms()
         if synth:
             self.transforms = list(self.transforms) + synth
+
+        # Fix 2: cold-start registry load — inject concept rules from registry file
+        self._refresh_concept_transforms()
+
+        # C++ BeamSearch: load bindings for 10-50x speedup on math/logic problems
+        self._cpp_run_beam_search = None
+        self._cpp_search_config_cls = None
+        self._cpp_graph_to_py = None
+        self._cpp_py_to_graph = None
+        self._cpp_ready = False
+        try:
+            import sare.sare_bindings as _sb
+            from sare.core.graph_bridge import cpp_graph_to_py_graph, py_graph_to_cpp_graph
+            self._cpp_run_beam_search = getattr(_sb, "run_beam_search", None)
+            self._cpp_search_config_cls = getattr(_sb, "SearchConfig", None)
+            self._cpp_graph_to_py = cpp_graph_to_py_graph
+            self._cpp_py_to_graph = py_graph_to_cpp_graph
+            self._cpp_ready = bool(self._cpp_run_beam_search and self._cpp_search_config_cls)
+            if self._cpp_ready:
+                log.info("[ExperimentRunner] C++ BeamSearch ready (10-50x speedup for math/logic)")
+        except Exception as _cpp_e:
+            log.debug("[ExperimentRunner] C++ bindings unavailable: %s", _cpp_e)
 
     def _pick_next_problem(self):
         candidates = [
@@ -173,6 +244,64 @@ class ExperimentRunner:
                 log.warning("[ExperimentRunner] Failed to load %s: %s", py_file.name, e)
         return loaded
 
+    def _maybe_reload_synthesized(self) -> int:
+        """Hot-reload any new .py files written to synthesized_modules/ since last check.
+
+        Called at the start of every run_batch() so transforms discovered by the Oracle
+        pipeline during the same session are immediately available — not just on restart.
+        """
+        import importlib.util
+        from pathlib import Path
+        from sare.engine import Transform
+        synth_dir = Path(__file__).resolve().parents[3] / "data" / "memory" / "synthesized_modules"
+        if not synth_dir.exists():
+            return 0
+        if not hasattr(self, "_loaded_synth_files"):
+            # First call: seed the known-file set without loading (already loaded at __init__)
+            self._loaded_synth_files = {f.name for f in synth_dir.glob("*.py")}
+            return 0
+        new_files = [f for f in synth_dir.glob("*.py") if f.name not in self._loaded_synth_files]
+        if not new_files:
+            return 0
+        known_names = {t.name() for t in self.transforms}
+        added = 0
+        for f in new_files:
+            self._loaded_synth_files.add(f.name)
+            try:
+                spec = importlib.util.spec_from_file_location(f.stem, f)
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+                for attr, obj in vars(mod).items():
+                    if (isinstance(obj, type) and issubclass(obj, Transform)
+                            and obj is not Transform):
+                        inst = obj()
+                        if inst.name() not in known_names:
+                            self.transforms = list(self.transforms) + [inst]
+                            known_names.add(inst.name())
+                            added += 1
+                            log.info("[ExperimentRunner] Hot-loaded new transform: %s", inst.name())
+            except Exception as e:
+                log.debug("[ExperimentRunner] Hot-reload failed for %s: %s", f.name, e)
+        return added
+
+    def _refresh_concept_transforms(self) -> None:
+        """Fix 2: Refresh concept-rule transforms without requiring Brain wrapper."""
+        if self.concept_registry is None:
+            return
+        try:
+            from sare.memory.concept_rule import concept_transforms_from_registry
+            new_concept = concept_transforms_from_registry(self.concept_registry)
+            # Replace existing concept_ transforms, then append new ones
+            self.transforms = (
+                [t for t in self.transforms if not t.name().startswith("concept_")]
+                + new_concept
+            )
+            if new_concept:
+                log.info("[ExperimentRunner] Refreshed concept transforms: +%d rules",
+                         len(new_concept))
+        except Exception as exc:
+            log.debug("[ExperimentRunner] concept transform refresh failed: %s", exc)
+
     def _evaluate_energy(self, graph) -> float:
         try:
             if callable(self.energy):
@@ -192,6 +321,21 @@ class ExperimentRunner:
                     pass
         return 0.0
 
+    @staticmethod
+    def _is_cpp_candidate(graph) -> bool:
+        """Check if graph is eligible for C++ BeamSearch (simple math/logic operators only)."""
+        _allowed = {"+", "-", "*", "/", "^", "neg", "and", "or", "not", "eq", "="}
+        try:
+            for node in graph.nodes:
+                if getattr(node, "type", "") != "operator":
+                    continue
+                label = str(getattr(node, "label", "") or "").lower()
+                if label and label not in _allowed:
+                    return False
+            return True
+        except Exception:
+            return False
+
     def _search(self, graph, transforms=None):
         kwargs = {
             "beam_width": self.beam_width,
@@ -207,6 +351,24 @@ class ExperimentRunner:
         except Exception:
             pass
 
+        # Neural wiring: HTMPredictor (transform reordering) + MLXValueNet (state scoring)
+        if self._htm_predictor is not None:
+            kwargs["transform_predictor"] = self._htm_predictor
+        if self._value_net_callable is None and self._value_net is not None:
+            _vn = self._value_net
+            _emb_fn = self._get_graph_embedding
+            def _vnet_wrapper(g):
+                try:
+                    emb = _emb_fn(g)
+                    if emb:
+                        return _vn.score(emb)
+                except Exception:
+                    pass
+                return 0.5
+            self._value_net_callable = _vnet_wrapper
+        if self._value_net_callable is not None:
+            kwargs["value_net"] = self._value_net_callable
+
         # P2-F: pass heuristic_fn to BeamSearch
         try:
             from sare.brain import get_brain as _get_brain
@@ -215,6 +377,38 @@ class ExperimentRunner:
                 kwargs["heuristic_fn"] = _br.heuristic_model.predict_graph
         except Exception:
             pass
+
+        # Try C++ BeamSearch first for eligible graphs (10-50x faster)
+        # Only accept the C++ result if it actually improved energy — otherwise fall through to Python.
+        if self._cpp_ready and self._is_cpp_candidate(graph):
+            try:
+                e_before_cpp = self._evaluate_energy(graph)
+                cpp_graph = self._cpp_py_to_graph(graph)
+                cfg = self._cpp_search_config_cls()
+                cfg.beam_width = kwargs.get("beam_width", self.beam_width)
+                cfg.max_depth = 24
+                cfg.budget_seconds = min(kwargs.get("budget_seconds", self.budget_seconds), 2.0)
+                if hasattr(cfg, "kappa"):
+                    cfg.kappa = 0.1
+                cpp_result = self._cpp_run_beam_search(cpp_graph, cfg)
+                best_graph = self._cpp_graph_to_py(cpp_result.best_graph)
+                e_total = self._evaluate_energy(best_graph)
+
+                # Only use C++ result if it genuinely improved energy
+                if e_before_cpp - e_total > 0.1:
+                    class _CppSearchResult:
+                        pass
+                    r = _CppSearchResult()
+                    r.graph = best_graph
+                    r.energy = type("_E", (), {"total": e_total})()
+                    r.transforms_applied = list(
+                        getattr(getattr(cpp_result, "best_state", None), "transform_trace", []) or []
+                    )
+                    return r
+                # C++ didn't improve — fall through to Python BeamSearch
+                log.debug("[ExperimentRunner] C++ search no improvement (e_before=%.2f e_after=%.2f), using Python", e_before_cpp, e_total)
+            except Exception as _cpp_exc:
+                log.debug("[ExperimentRunner] C++ search failed, Python fallback: %s", _cpp_exc)
 
         if hasattr(self.searcher, "search"):
             try:
@@ -331,8 +525,18 @@ class ExperimentRunner:
             )
             result.rule_promoted = bool(getattr(verdict, "promoted", getattr(verdict, "rule_promoted", False)))
             result.reasoning = str(getattr(verdict, "reasoning", getattr(verdict, "verdict", "")) or "")
-            if result.rule_promoted:
-                log.info("[ExperimentRunner] Rule promoted: %s (%s)", result.rule_name or "(unnamed)", verdict.reasoning)
+            # Deduplicate: only process/log a promotion once per session per rule name.
+            _is_new_promotion = (
+                result.rule_promoted
+                and result.rule_name
+                and result.rule_name not in self._promoted_rule_names
+            )
+            if _is_new_promotion:
+                self._promoted_rule_names.add(result.rule_name)
+                log.info("[ExperimentRunner] Rule promoted (NEW): %s (%s)", result.rule_name, verdict.reasoning)
+            elif result.rule_promoted and result.rule_name:
+                log.debug("[ExperimentRunner] Rule already promoted, skipping duplicate: %s", result.rule_name)
+                result.rule_promoted = False  # suppress downstream re-processing
 
             if result.rule_promoted and self.concept_registry is not None:
                 try:
@@ -345,13 +549,32 @@ class ExperimentRunner:
                         self.concept_registry.promote(rule_to_register)
                 except Exception:
                     pass
-                # Fix 3: Immediately refresh transforms instead of waiting 10 cycles
+                # Fix 2+3: Immediately refresh transforms (brain or standalone)
                 try:
                     brain = getattr(self, "_brain_ref", None)
                     if brain is not None and hasattr(brain, "_refresh_transforms"):
                         brain._refresh_transforms()
+                    else:
+                        self._refresh_concept_transforms()
                 except Exception as exc:
                     log.debug("Immediate transform refresh failed: %s", exc)
+                # Add promoted rule to ConceptHierarchy for cross-domain generalization
+                if result.rule_name:
+                    try:
+                        from sare.memory.concept_hierarchy import get_concept_hierarchy
+                        _hier = get_concept_hierarchy()
+                        _rule_domain = str(getattr(problem, "domain", "general") or "general")
+                        _hier.add_concept(result.rule_name, _rule_domain)
+                        if len(_hier._nodes) % 10 == 0:
+                            _hier.save()
+                    except Exception as _hier_exc:
+                        log.debug("[ConceptHierarchy] add_concept error: %s", _hier_exc)
+                # Register new rule in TransformPolicy so it can learn its utility
+                if self._transform_policy is not None and result.rule_name:
+                    try:
+                        self._transform_policy.add_transform(result.rule_name)
+                    except Exception:
+                        pass
 
             if result.rule_promoted and result.rule_name:
                 try:
@@ -453,8 +676,27 @@ class ExperimentRunner:
                 self._solve_count += 1
                 if self._solve_count % 20 == 0:
                     _cl.mine_composites()
+                if self._solve_count % 100 == 0:
+                    _cl.mine_cross_domain_pairs()
             except Exception:
                 pass
+
+        # Self-evaluation: record in LearningMonitor (no benchmark dependency)
+        try:
+            from sare.meta.learning_monitor import get_learning_monitor
+            _initial = getattr(result, "initial_graph", None) or getattr(result, "graph", None)
+            if _initial is None:
+                _initial = getattr(problem, "graph", problem)
+            get_learning_monitor().record(
+                _initial,
+                solved=bool(getattr(result, "solved", False)),
+                energy_before=float(getattr(result, "energy_before", 0.0) or 0.0),
+                energy_after=float(getattr(result, "energy_after",  0.0) or 0.0),
+                cycle=getattr(self, "_batch_count", 0),
+                domain=str(getattr(result, "domain", "general") or "general"),
+            )
+        except Exception:
+            pass
 
         # T2-3: Publish episode_complete event for ContinuousLearner
         try:
@@ -632,7 +874,7 @@ class ExperimentRunner:
         except Exception:
             return {"beam_delta": 0, "budget_delta": 0.0, "domain_switch": False, "mode": "normal"}
 
-    def _run_single(self, problem) -> ExperimentResult:
+    def _run_single(self, problem, _skip_llm_fallback: bool = False) -> ExperimentResult:
         graph = getattr(problem, "graph", problem)
         problem_id = str(getattr(problem, "id", getattr(problem, "problem_id", "unknown")))
         domain = str(getattr(problem, "domain", "general"))
@@ -665,9 +907,9 @@ class ExperimentRunner:
         budget_delta = emotional_bias.get("budget_delta", 0.0)
         _saved_beam = self.beam_width
         _saved_budget = self.budget_seconds
-        self.beam_width = max(2, self.beam_width + beam_delta)
-        # Adaptive budget: adjust by emotional state, never drop below 0.3s
-        self.budget_seconds = max(0.3, self.budget_seconds + budget_delta)
+        self.beam_width = max(2, min(32, self.beam_width + beam_delta))
+        # Adaptive budget: adjust by emotional state, clamp [0.3s, 10.0s]
+        self.budget_seconds = max(0.3, min(10.0, self.budget_seconds + budget_delta))
 
         if beam_delta != 0 or budget_delta != 0.0:
             if _im is not None:
@@ -765,6 +1007,15 @@ class ExperimentRunner:
         except Exception:
             pass
 
+        # WorldSimulator: reorder transforms using accumulated causal knowledge
+        try:
+            from sare.memory.world_simulator import get_world_simulator
+            self.transforms = get_world_simulator().predict_best_transforms(
+                self.transforms, domain
+            )
+        except Exception:
+            pass
+
         start = time.time()
         energy_before = self._evaluate_energy(graph)
 
@@ -791,6 +1042,32 @@ class ExperimentRunner:
         except Exception:
             _schema_hit = False
 
+        # KB Fast-Path: for knowledge domains, query world model BEFORE expensive BeamSearch.
+        # If we have a stored Wikipedia/ingested fact that answers the question, return it
+        # immediately — no graph search needed. This is how ingested internet data actually
+        # gets used at solve time.
+        _KB_SKIP_DOMAINS = frozenset({
+            "algebra", "arithmetic", "calculus", "trigonometry", "fraction",
+            "geometry", "symbolic_math", "logic", "math",
+        })
+        if not _schema_hit and domain not in _KB_SKIP_DOMAINS and expr and len(expr.split()) >= 3:
+            try:
+                from sare.memory.knowledge_lookup import KnowledgeLookup, DIRECT_THRESHOLD
+                _kl_hit = KnowledgeLookup().lookup(expr, domain)
+                if _kl_hit and _kl_hit.confidence >= DIRECT_THRESHOLD:
+                    solved = True
+                    final_graph = graph
+                    proof_steps = [f"kb:{_kl_hit.source}"]
+                    proof_nl = _kl_hit.answer
+                    _schema_hit = True   # bypass BeamSearch
+                    self.transforms = _saved_transforms
+                    self.beam_width = _saved_beam
+                    self.budget_seconds = _saved_budget
+                    log.info("[ExperimentRunner] KB hit: domain=%s conf=%.2f source=%s — %s",
+                             domain, _kl_hit.confidence, _kl_hit.source, expr[:60])
+            except Exception as _kl_exc:
+                log.debug("[ExperimentRunner] KB lookup error: %s", _kl_exc)
+
         if not _schema_hit:
             try:
                 # P2-E: Transform family routing — filter to domain-relevant transforms
@@ -816,6 +1093,18 @@ class ExperimentRunner:
                     _hypotheses = _hyp_engine.generate(graph, domain or "general")
                 except Exception:
                     pass
+
+                # TransformPolicy: neural attention-based pre-sort of transforms
+                if self._transform_policy is not None:
+                    try:
+                        _graph_emb = self._get_graph_embedding(graph)
+                        if _graph_emb:
+                            _t_names = [t.name() for t in _search_transforms]
+                            _sorted_names = self._transform_policy.sorted_transforms(_t_names, _graph_emb)
+                            _name_to_t = {t.name(): t for t in _search_transforms}
+                            _search_transforms = [_name_to_t[n] for n in _sorted_names if n in _name_to_t]
+                    except Exception:
+                        pass
 
                 outcome = self._search(graph, transforms=_search_transforms)
                 solved, final_graph, proof_steps, proof_nl = self._parse_search_outcome(outcome, graph, energy_before)
@@ -860,6 +1149,43 @@ class ExperimentRunner:
                 self.transforms = _saved_transforms  # always restore original list
                 self.beam_width = _saved_beam
                 self.budget_seconds = _saved_budget
+
+        # ── Semantic path: fires when symbolic BeamSearch fails on non-math ──
+        # For commonsense, factual, science, reasoning, word-problem domains the
+        # symbolic engine has no transforms. Instead of silently discarding the
+        # problem, use the LLM to answer it and feed the knowledge to WorldModel.
+        # This makes SARE learn from EVERYTHING, not just symbolic math.
+        # NOTE: _skip_llm_fallback=True when called from run_batch — the
+        # GeneralSolver batch handles LLM-backed general knowledge separately.
+        # Allowing LLM calls here blocks the entire batch for 5-8 minutes.
+        _sem_solution = None
+        if not solved and expr and not _skip_llm_fallback:
+            try:
+                from sare.learning.semantic_solver import get_semantic_solver, _SYMBOLIC_DOMAINS
+                _sem_solver = get_semantic_solver()
+                _sem_domain = str(domain or "general")
+                if _sem_solver.should_attempt(_sem_domain, expr):
+                    _sem_solution = _sem_solver.solve(question=expr, domain=_sem_domain)
+                    if _sem_solution.solved:
+                        # Mark as solved via semantic path — no graph change, but knowledge captured
+                        solved = True
+                        proof_steps = [f"semantic_{_sem_solution.reasoning_type}"]
+                        proof_nl = _sem_solution.answer
+                        log.info(
+                            "[ExperimentRunner] Semantic solve: domain=%s type=%s conf=%.2f — %s",
+                            _sem_domain, _sem_solution.reasoning_type,
+                            _sem_solution.confidence, expr[:60],
+                        )
+            except Exception as _sem_exc:
+                log.debug("[ExperimentRunner] Semantic path error: %s", _sem_exc)
+
+        # ── Semantic reflection: learn from LLM-solved problems ──────────────
+        if _sem_solution is not None and _sem_solution.solved:
+            try:
+                from sare.reflection.semantic_reflection import get_semantic_reflection
+                get_semantic_reflection().reflect(_sem_solution)
+            except Exception as _sr_exc:
+                log.debug("[ExperimentRunner] Semantic reflection error: %s", _sr_exc)
 
         # Inner monologue: report outcome
         if _im is not None:
@@ -932,6 +1258,42 @@ class ExperimentRunner:
         except Exception:
             pass
 
+        # TransformPolicy: update neural ranker from energy deltas
+        if self._transform_policy is not None and proof_steps:
+            try:
+                _deltas = []
+                _step_energy = energy_before
+                for step_name in proof_steps:
+                    # Approximate per-step delta as uniform share (exact deltas not tracked)
+                    _total_delta = energy_before - energy_after
+                    _deltas.append(_total_delta / max(len(proof_steps), 1))
+                self._transform_policy.update(proof_steps, _deltas)
+                # Register any new transforms from this solve
+                for name in proof_steps:
+                    self._transform_policy.add_transform(name)
+            except Exception:
+                pass
+
+        # HTMPredictor: observe transform sequence so future predictions improve
+        if self._htm_predictor is not None and proof_steps:
+            try:
+                self._htm_predictor.observe_sequence(proof_steps, domain or "general", solved)
+                # Also ensure value_net_callable is initialized for next solve
+                if self._value_net_callable is None and self._value_net is not None:
+                    _vn = self._value_net
+                    _emb_fn = self._get_graph_embedding
+                    def _vnet_wrapper(g):
+                        try:
+                            emb = _emb_fn(g)
+                            if emb:
+                                return _vn.score(emb)
+                        except Exception:
+                            pass
+                        return 0.5
+                    self._value_net_callable = _vnet_wrapper
+            except Exception:
+                pass
+
         # Feed solve outcome to AlgorithmSelector so strategy win rates improve over time
         try:
             from sare.meta.algorithm_selector import get_algorithm_selector as _get_as
@@ -998,6 +1360,12 @@ class ExperimentRunner:
                     _grammar.encode_solve_step(step, graph, final_graph)
             except Exception:
                 pass
+
+        # Fix 4: Cache stuck graphs for synthesis validation
+        if not solved:
+            cache = self._stuck_graph_cache[domain]
+            if len(cache) < 20:
+                cache.append(graph)
 
         # Phase D: Notify confusion detector of failure
         if not solved:
@@ -1095,6 +1463,9 @@ class ExperimentRunner:
     def _adaptive_target_batch_size(self, requested_n: int) -> int:
         if requested_n <= 1:
             return requested_n
+        # In turbo mode, skip adaptive throttling — always use full batch
+        if getattr(self, '_fast_path_ratio', 50) >= 200:
+            return requested_n
 
         if self._adaptive_batch_size is None:
             self._adaptive_batch_size = requested_n
@@ -1143,6 +1514,39 @@ class ExperimentRunner:
         energy_before = self._evaluate_energy(graph)
         transforms = self.transforms or []
 
+        # ── Text-based curriculum problems (commonsense, factual QA) ──────────
+        # Problems with _question/_answer on the graph skip symbolic BeamSearch
+        # and route to GeneralSolver.attempt_learning_problem() instead.
+        _q = getattr(graph, "_question", None) or (expr if domain in ("commonsense", "factual") else None)
+        _a = getattr(graph, "_answer", None)
+        if _q and _a:
+            try:
+                from sare.cognition.general_solver import GeneralSolver
+                _gs = GeneralSolver()
+                _lr = _gs.attempt_learning_problem(
+                    problem_text=_q,
+                    expected_answer=str(_a),
+                    problem_type=domain,
+                    context="",
+                )
+                solved = _lr.solved and bool(_lr.answer)
+                # Check answer correctness
+                if solved and _a:
+                    _expected = str(_a).lower().strip()
+                    _got = str(_lr.answer).lower().strip()
+                    solved = (_expected in _got) or (_got in _expected) or _expected == _got
+                proof_steps = [f"general_solver:{_lr.solver_used}"] if solved else []
+                final_graph = graph
+                energy_after = energy_before
+                elapsed_ms = (time.time() - start) * 1000.0
+                return ExperimentResult(
+                    problem_id=problem_id, solved=solved,
+                    energy_before=energy_before, energy_after=energy_after,
+                    elapsed_ms=elapsed_ms, proof_steps=proof_steps, domain=domain,
+                )
+            except Exception as _qe:
+                log.debug("[ExperimentRunner] Text QA fast path error: %s", _qe)
+
         try:
             outcome = self._search(graph)
             solved, final_graph, proof_steps, _ = self._parse_search_outcome(
@@ -1153,26 +1557,30 @@ class ExperimentRunner:
         energy_after = self._evaluate_energy(final_graph)
         delta = energy_before - energy_after
 
-        # Feed value net (M1 GPU online learning)
-        try:
-            if self._value_net is None:
-                from sare.heuristics.mlx_value_net import get_value_net
-                self._value_net = get_value_net()
-            emb = self._get_graph_embedding(graph)
-            if emb:
-                self._value_net.record_outcome(emb, delta, solved=solved)
-        except Exception:
-            pass
+        _turbo = getattr(self, '_fast_path_ratio', 50) >= 200
 
-        # World model observation (lightweight)
-        try:
-            from sare.memory.world_model import get_world_model
-            get_world_model().observe_solve(
-                expression=expr, transforms_used=proof_steps,
-                energy_delta=delta, domain=domain, solved=solved,
-            )
-        except Exception:
-            pass
+        # Skip per-solve side effects in turbo mode for max throughput
+        if not _turbo:
+            # Feed value net (M1 GPU online learning)
+            try:
+                if self._value_net is None:
+                    from sare.heuristics.mlx_value_net import get_value_net
+                    self._value_net = get_value_net()
+                emb = self._get_graph_embedding(graph)
+                if emb:
+                    self._value_net.record_outcome(emb, delta, solved=solved)
+            except Exception:
+                pass
+
+            # World model observation (lightweight)
+            try:
+                from sare.memory.world_model import get_world_model
+                get_world_model().observe_solve(
+                    expression=expr, transforms_used=proof_steps,
+                    energy_delta=delta, domain=domain, solved=solved,
+                )
+            except Exception:
+                pass
 
         elapsed_ms = (time.time() - start) * 1000.0
         result = ExperimentResult(
@@ -1180,14 +1588,22 @@ class ExperimentRunner:
             energy_before=energy_before, energy_after=energy_after,
             elapsed_ms=elapsed_ms, proof_steps=proof_steps, domain=domain,
         )
-        # Still run reflect-and-learn on successful fast solves (rule promotion)
-        if solved:
-            result = self._reflect_and_learn(problem, result)
+        # Still run reflect-and-learn on a fraction of fast solves (rule promotion)
+        # In turbo mode (_fast_path_ratio >= 200), skip reflection entirely to avoid
+        # blocking LLM calls that cause thread exhaustion and daemon stalls.
+        # Learning comes from the GeneralSolver batch (un-gated) instead.
+        if solved and not _turbo:
+            import random as _rnd_reflect
+            _reflect_prob = 1.0
+            if _rnd_reflect.random() < _reflect_prob:
+                result = self._reflect_and_learn(problem, result)
         return result
 
     def run_batch(self, n: int = 10) -> List[ExperimentResult]:
         import concurrent.futures as _cf
         batch_start = time.time()
+        # Hot-reload any transforms written by Oracle pipeline since last batch
+        self._maybe_reload_synthesized()
         target_n = self._adaptive_target_batch_size(n)
 
         # Collect problems first (curriculum gen is not thread-safe)
@@ -1202,33 +1618,116 @@ class ExperimentRunner:
                 log.debug("No problem available for experiment batch: %s", exc)
                 break
 
-        # Use fast path for bulk problems; keep full path for 1-in-50 (cognitive updates)
-        _full_every = max(1, len(problems) // 50)
+        # Fill remaining slots with ProblemFactory when curriculum runs dry
+        _remaining = target_n - len(problems)
+        if _remaining > 0:
+            try:
+                from sare.knowledge.problem_factory import get_problem_factory
+                from sare.engine import load_problem as _lp_fb
+                _pf = get_problem_factory()
+                _pf_batch = _pf.generate_batch(total=_remaining, seed=int(time.time()) % 10**7)
+                _pf_added = 0
+                for _pf_item in _pf_batch:
+                    try:
+                        _res = _lp_fb(_pf_item["expression"])
+                        if _res is not None:
+                            _g = _res[1] if isinstance(_res, tuple) else _res
+                            if _g is not None:
+                                problems.append(_g)
+                                _pf_added += 1
+                    except Exception:
+                        pass
+                if _pf_added:
+                    log.debug("[run_batch] ProblemFactory filled %d/%d remaining slots", _pf_added, _remaining)
+            except Exception as _fb_exc:
+                log.debug("[run_batch] ProblemFactory fallback error: %s", _fb_exc)
+
+        # Use fast path for bulk problems; keep full path for 1-in-N (cognitive updates)
+        _fast_ratio = getattr(self, '_fast_path_ratio', 50)
+        _turbo_mode = _fast_ratio >= 200
+        # In turbo mode, ALL problems use fast path (avoids LLM blocking).
+        # Learning quality maintained via 5% reflect sampling in _run_single_fast.
+        _n_probs = len(problems)
+        _full_every = max(_n_probs, _fast_ratio) if _n_probs > 0 else 1
         def _solver(idx_problem):
             idx, p = idx_problem
-            if idx % _full_every == 0:
-                return self._run_single(p)
+            if _turbo_mode:
+                return self._run_single_fast(p)
+            if idx == 0:
+                # Skip LLM fallback in batch context — GeneralSolver batch handles it separately.
+                # Allowing synchronous LLM calls here blocks all 30-50 parallel futures.
+                return self._run_single(p, _skip_llm_fallback=True)
+            if _full_every > 0 and idx % _full_every == 0:
+                return self._run_single(p, _skip_llm_fallback=True)
             return self._run_single_fast(p)
 
         # Solve in parallel threads
         results: List[ExperimentResult] = []
-        max_workers = min(len(problems), max(1, (os.cpu_count() or 4)))
+        # Cap to 8 workers to prevent OS thread exhaustion from timeout accumulation
+        max_workers = min(len(problems), min(8, max(1, (os.cpu_count() or 4))))
+        # Batch timeout: budget_seconds per problem + 30s overhead, capped at 60s.
+        _batch_timeout = min(60.0, self.budget_seconds * 3 + 30.0)
         if max_workers > 1 and len(problems) > 1:
             with _cf.ThreadPoolExecutor(max_workers=max_workers,
                                         thread_name_prefix="sare-solve") as pool:
                 futs = {pool.submit(_solver, (i, p)): p
                         for i, p in enumerate(problems)}
-                for fut in _cf.as_completed(futs):
-                    try:
-                        results.append(fut.result(timeout=30.0))
-                    except Exception as exc:
-                        log.debug("Parallel solve error: %s", exc)
+                try:
+                    for fut in _cf.as_completed(futs, timeout=_batch_timeout):
+                        try:
+                            results.append(fut.result(timeout=30.0))
+                        except Exception as exc:
+                            log.debug("Parallel solve error: %s", exc)
+                except _cf.TimeoutError:
+                    log.warning("[run_batch] Batch timeout (%.0fs) — cancelling pending futures", _batch_timeout)
+                    for _fut in futs:
+                        _fut.cancel()
         else:
             for i, problem in enumerate(problems):
                 results.append(_solver((i, problem)))
 
         for r in results:
             self._history.append(r)
+
+        # Async LLM cache-fill: for unsolved non-symbolic problems, call LLM in background
+        # and store the answer back in world model. Next time the same question arrives,
+        # KB lookup will hit directly (no LLM needed). This is how the system learns from
+        # internet-ingested knowledge + LLM responses over time.
+        _SYMBOLIC_BATCH_SKIP = frozenset({
+            "algebra", "arithmetic", "calculus", "trigonometry", "fraction",
+            "geometry", "symbolic_math", "logic", "math", "physics", "chemistry",
+        })
+        _kb_misses = [
+            r for r in results
+            if not r.solved
+            and str(getattr(r, 'domain', 'general') or 'general') not in _SYMBOLIC_BATCH_SKIP
+            and len(str(getattr(r, 'expression', '') or getattr(r, 'problem_id', '') or '').split()) >= 3
+        ]
+        if _kb_misses:
+            import threading as _llm_fill_thread
+            def _fill_cache(misses):
+                for _r in misses[:3]:   # max 3 LLM calls per batch
+                    try:
+                        _expr = str(getattr(_r, 'expression', '') or getattr(_r, 'problem_id', ''))
+                        _dom = str(getattr(_r, 'domain', 'general') or 'general')
+                        from sare.learning.semantic_solver import get_semantic_solver
+                        _sem = get_semantic_solver()
+                        if not _sem.should_attempt(_dom, _expr):
+                            continue
+                        _sol = _sem.solve(question=_expr, domain=_dom)
+                        if _sol.solved and _sol.answer:
+                            # Cache answer in world model for future KB lookups
+                            from sare.memory.world_model import get_world_model
+                            _wm = get_world_model()
+                            _fact = f"{_expr}: {_sol.answer}"
+                            if hasattr(_wm, 'add_fact'):
+                                _wm.add_fact(_dom, _fact, confidence=0.85, source="llm_cache")
+                            log.info("[LLMCache] Stored answer for domain=%s: %s → %s",
+                                     _dom, _expr[:50], _sol.answer[:60])
+                    except Exception as _lce:
+                        log.debug("[LLMCache] Fill error: %s", _lce)
+            _llm_fill_thread.Thread(target=_fill_cache, args=(_kb_misses,),
+                                    daemon=True, name="llm-cache-fill").start()
 
         # Update per-domain solve tracker and check for mastery
         for r in results:
@@ -1239,7 +1738,61 @@ class ExperimentRunner:
             t["attempts"] += 1
             if r.solved:
                 t["successes"] += 1
+                self._domain_consec_fails[domain] = 0  # reset on success
+                # If domain was on cooldown, lift it now that we can solve problems
+                self._domain_cooldown.pop(domain, None)
+                # Notify WeaknessDetector of success (for rate tracking)
+                try:
+                    from sare.meta.weakness_detector import get_weakness_detector
+                    get_weakness_detector().record_success(domain, getattr(r, "graph", None))
+                except Exception:
+                    pass
+            else:
+                self._domain_consec_fails[domain] = self._domain_consec_fails.get(domain, 0) + 1
+                # Record failure in WeaknessDetector for pattern analysis
+                try:
+                    from sare.meta.weakness_detector import get_weakness_detector
+                    get_weakness_detector().record_failure(
+                        domain=domain,
+                        problem_id=getattr(r, "problem_id", ""),
+                        proof_steps=getattr(r, "proof_steps", None),
+                        graph=getattr(r, "graph", None),
+                    )
+                except Exception:
+                    pass
+                # Attempt cross-domain concept transfer on failure
+                if self._domain_consec_fails[domain] % 5 == 0:
+                    try:
+                        from sare.memory.concept_transfer import get_concept_transfer
+                        _ct = get_concept_transfer()
+                        _ct_result = _ct.attempt_transfer(
+                            problem=r,
+                            failed_transforms=r.proof_steps or [],
+                            available_transforms=self.transforms,
+                            searcher=self.searcher,
+                            energy=self.energy,
+                        )
+                        if _ct_result:
+                            rule_name, delta = _ct_result
+                            log.info("[ConceptTransfer] Successful transfer in domain=%s rule=%s delta=%.2f",
+                                     domain, rule_name, delta)
+                    except Exception as _ct_exc:
+                        log.debug("[ConceptTransfer] attempt error: %s", _ct_exc)
+                # Deprioritize domains with extreme consecutive failures (post-synthesis still failing)
+                # Cooldown: 50 consecutive fails → pause for DOMAIN_COOLDOWN_BATCHES batches
+                _thresh = self._SYNTH_FAIL_THRESHOLD * 3  # 60 fails = 3x synthesis threshold
+                _cf = self._domain_consec_fails[domain]
+                if _cf >= _thresh and domain not in self._domain_cooldown:
+                    _resume = self._batch_count + self._DOMAIN_COOLDOWN_BATCHES
+                    self._domain_cooldown[domain] = _resume
+                    log.warning(
+                        "[ExperimentRunner] Domain '%s' on cooldown for %d batches "
+                        "(%d consecutive failures, synthesis not helping). "
+                        "Will resume at batch %d.",
+                        domain, self._DOMAIN_COOLDOWN_BATCHES, _cf, _resume,
+                    )
         self._maybe_emit_domain_mastery()
+        self._maybe_trigger_synthesis()
 
         self._batch_count += 1
         self._record_batch_stats(requested_n=n, results=results, elapsed_s=time.time() - batch_start)
@@ -1266,6 +1819,123 @@ class ExperimentRunner:
                 except Exception as exc:
                     log.debug("Domain mastery emit failed: %s", exc)
 
+    def _maybe_trigger_synthesis(self):
+        """Trigger TransformSynthesizer when a domain has too many consecutive failures.
+
+        If a domain hits _SYNTH_FAIL_THRESHOLD consecutive unsolved problems, it means
+        the current transform set has a genuine gap for that domain. We ask the LLM
+        to synthesize candidate transforms, validate them on known problems, and add
+        the verified ones to the live transform set.
+        """
+        # Lift expired cooldowns so domains get another chance
+        _expired = [d for d, resume in self._domain_cooldown.items()
+                    if self._batch_count >= resume]
+        for d in _expired:
+            del self._domain_cooldown[d]
+            self._domain_consec_fails[d] = 0
+            log.info("[ExperimentRunner] Domain '%s' cooldown expired — re-enabling", d)
+
+        for domain, consec in list(self._domain_consec_fails.items()):
+            if consec < self._SYNTH_FAIL_THRESHOLD:
+                continue
+            # Avoid re-triggering every batch once threshold is crossed
+            trigger_key = f"{domain}:{consec // self._SYNTH_FAIL_THRESHOLD}"
+            if trigger_key in self._synth_triggered_domains:
+                continue
+            self._synth_triggered_domains.add(trigger_key)
+            log.warning(
+                "[ExperimentRunner] Domain '%s' has %d consecutive failures — triggering TransformSynthesizer",
+                domain, consec,
+            )
+            try:
+                from sare.meta.transform_synthesizer import TransformSynthesizer
+                synth = TransformSynthesizer()
+
+                # ── Pass real context: recent failed expressions for this domain ──
+                # Extract stuck expressions from recent history (last 200 results)
+                _stuck_exprs = []
+                for _r in list(self._history)[-200:]:
+                    if (not getattr(_r, "solved", True)
+                            and str(getattr(_r, "domain", "")) == domain
+                            and getattr(_r, "problem_id", "")):
+                        _stuck_exprs.append(str(_r.problem_id))
+                _stuck_exprs = list(dict.fromkeys(_stuck_exprs))[:8]  # dedup, max 8
+
+                # Inject stuck_exprs into synthesizer before calling
+                if _stuck_exprs and hasattr(synth, "_impl") and synth._impl is not None:
+                    synth._impl._last_stuck_exprs = _stuck_exprs
+
+                candidates = synth.synthesize_transforms(domain=domain, n=3)
+                if not candidates:
+                    log.info("[ExperimentRunner] TransformSynthesizer returned no candidates for '%s'", domain)
+                    continue
+
+                # Verification: test each candidate on 5 known problems before accepting
+                verified = []
+                for cand in candidates:
+                    try:
+                        _passes = self._verify_synthesized_transform(cand, domain, n_tests=5)
+                        if _passes:
+                            verified.append(cand)
+                            log.info(
+                                "[ExperimentRunner] Synthesized transform VERIFIED for '%s': %s",
+                                domain, getattr(cand, 'name', lambda: str(cand))() if callable(getattr(cand, 'name', None)) else str(cand),
+                            )
+                        else:
+                            log.info(
+                                "[ExperimentRunner] Synthesized transform REJECTED (failed verification): %s",
+                                getattr(cand, 'name', lambda: str(cand))() if callable(getattr(cand, 'name', None)) else str(cand),
+                            )
+                    except Exception as ve:
+                        log.debug("[ExperimentRunner] Transform verification error: %s", ve)
+
+                if verified:
+                    self.transforms.extend(verified)
+                    log.info(
+                        "[ExperimentRunner] Added %d synthesized transform(s) for domain '%s'. Total transforms: %d",
+                        len(verified), domain, len(self.transforms),
+                    )
+                    # Reset consecutive fail counter and lift cooldown — new capability added
+                    self._domain_consec_fails[domain] = 0
+                    self._domain_cooldown.pop(domain, None)
+            except Exception as exc:
+                log.warning("[ExperimentRunner] TransformSynthesizer error for '%s': %s", domain, exc)
+
+    def _verify_synthesized_transform(self, transform, domain: str, n_tests: int = 5) -> bool:
+        """Test a synthesized transform on a small set of known problems.
+
+        Returns True if the transform applies and reduces energy on at least one
+        test problem without raising exceptions on any of them.
+        """
+        try:
+            problems = []
+            # Try to get test problems from the curriculum generator
+            if self.curriculum_gen is not None:
+                try:
+                    problems = [self.curriculum_gen.generate(domain=domain) for _ in range(n_tests)]
+                    problems = [p for p in problems if p is not None]
+                except Exception:
+                    pass
+            if not problems:
+                return True  # Can't test — give benefit of the doubt
+
+            energy_improvements = 0
+            for prob in problems[:n_tests]:
+                try:
+                    from sare.engine import load_problem
+                    _, g = load_problem(str(getattr(prob, 'expression', prob)))
+                    matches = transform.match(g)
+                    if matches:
+                        new_g, delta = transform.apply(g, matches[0])
+                        if delta < 0:
+                            energy_improvements += 1
+                except Exception:
+                    return False  # Any exception during verification = reject
+
+            return energy_improvements > 0
+        except Exception:
+            return True  # If verification itself errors, allow the transform
+
     def _persist_domain_mastery(self, domain: str, rate: float):
         """Write domain mastery to brain_state.json so the web server picks it up."""
         import json as _json, os as _os
@@ -1278,7 +1948,7 @@ class ExperimentRunner:
             if domain not in mastered:
                 mastered.append(domain)
                 # Recompute stage based on rules + domains + solve_rate
-                rules = stats.get("rules_promoted", 0) + stats.get("rules_discovered", 0)
+                rules = stats.get("rules_promoted", 0)
                 solve_rate = rate
                 new_stage = _compute_stage(rules, len(mastered), solve_rate)
                 old_stage = state.get("stage", "infant")

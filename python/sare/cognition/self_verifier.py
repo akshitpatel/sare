@@ -107,6 +107,28 @@ class SelfVerifier:
         return True, 1.0
 
 
+    def domain_calibration(self, domain: str, window: int = 100) -> float:
+        """Return solve_rate for the domain over last `window` attempts.
+
+        Reads from general_solver_stats.json. Returns 1.0 if no data (benefit of doubt).
+        """
+        import json
+        from pathlib import Path
+        stats_path = Path(__file__).resolve().parents[3] / "data" / "memory" / "general_solver_stats.json"
+        try:
+            data = json.loads(stats_path.read_text(encoding="utf-8"))
+            entry = data.get(domain) or data.get(domain.lower())
+            if not entry:
+                return 1.0
+            attempts = int(entry.get("attempts", 0))
+            solved = int(entry.get("solved", 0))
+            if attempts < 10:
+                return 1.0  # not enough data
+            return round(solved / max(attempts, 1), 3)
+        except Exception:
+            return 1.0
+
+
 _VERIFIER_SINGLETON: Optional[SelfVerifier] = None
 
 

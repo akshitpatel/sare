@@ -442,7 +442,7 @@ class GeneralSolver:
     def _mode_from_result(self, result: GeneralSolveResult) -> str:
         if getattr(result, "learning_mode", MODE_FREE_SOLVE) != MODE_FREE_SOLVE:
             return result.learning_mode
-        if result.solver_used in ("kb_cache", "fact_chain"):
+        if result.solver_used in ("kb_cache", "fact_chain", "pattern_match", "pattern_inference", "neural_recall"):
             return MODE_RETRIEVAL
         if result.solver_used in ("llm", "hybrid", "code_gen"):
             return MODE_HINTED
@@ -522,6 +522,14 @@ class GeneralSolver:
             except Exception:
                 pass
 
+        # ── Pattern abstractor: observe every solved pair to extract templates ──
+        if result.solved and result.answer and ptype not in (PTYPE_MATH, PTYPE_LOGIC):
+            try:
+                from sare.learning.pattern_abstractor import get_pattern_abstractor as _gpa
+                _gpa().observe(problem_text, result.answer, ptype)
+            except Exception:
+                pass
+
         # Wire general-domain solves into the world model prediction loop
         if record_stats and ptype not in (PTYPE_MATH, PTYPE_LOGIC):
             try:
@@ -564,7 +572,7 @@ class GeneralSolver:
 
     def _store_result(self, problem_text: str, ptype: str, result: GeneralSolveResult) -> None:
         if (not result.solved or not result.answer
-                or result.solver_used in ("kb_cache", "fact_chain")
+                or result.solver_used in ("kb_cache", "fact_chain", "pattern_match", "pattern_inference", "neural_recall")
                 or result.solver_used == "concept_hypothesis"
                 or ptype in (PTYPE_MATH, PTYPE_LOGIC)
                 or self._fact_ingester is None):
@@ -589,6 +597,72 @@ class GeneralSolver:
             )
         except Exception as fi_err:
             log.debug("[GeneralSolver] FactIngester error: %s", fi_err)
+
+    # ── Reading comprehension entry point ─────────────────────────────────────
+
+    def solve_with_context(
+        self,
+        passage: str,
+        question: str,
+        problem_type: str = "comprehension",
+        **kwargs,
+    ) -> "GeneralSolveResult":
+        """
+        Answer a question using a context passage — reading comprehension.
+
+        1. Extract beliefs from the passage (ephemeral — NOT injected into WorldModel)
+        2. Try to answer from those passage beliefs via FCE BFS
+        3. Fall through to normal solve() with passage as context string
+
+        This enables "read a paragraph → answer from it" without polluting
+        the permanent knowledge base with passage-specific facts.
+        """
+        passage = (passage or "").strip()
+        question = (question or "").strip()
+        if not passage or not question:
+            return self.solve(question, context=passage, problem_type=problem_type, **kwargs)
+
+        # Step 1: Extract ephemeral beliefs from passage
+        ephemeral: List[tuple] = []
+        try:
+            from sare.perception.nl_to_graph import get_nl_converter
+            raw_beliefs = get_nl_converter().convert_to_beliefs(passage)
+            # raw_beliefs is List[Tuple[str,str,str]] → add confidence 0.85
+            ephemeral = [(s, p, v, 0.85) for s, p, v in raw_beliefs]
+        except Exception as _nl_err:
+            log.debug("[GeneralSolver] solve_with_context NL extraction error: %s", _nl_err)
+
+        # Step 2: Try to answer from passage beliefs
+        if ephemeral:
+            try:
+                from sare.cognition.fact_composer import get_fact_composer
+                ans = get_fact_composer().answer_from_beliefs(question, ephemeral)
+                if ans:
+                    import uuid
+                    return GeneralSolveResult(
+                        problem_id=str(uuid.uuid4())[:8],
+                        problem_text=question,
+                        problem_type=problem_type,
+                        answer=ans,
+                        confidence=0.80,
+                        reasoning=f"Reading comprehension: extracted from passage ({len(ephemeral)} beliefs)",
+                        solver_used="reading_comprehension",
+                        solved=True,
+                        elapsed_ms=0.0,
+                        domain=problem_type,
+                        learning_mode=MODE_RETRIEVAL,
+                        backend="python",
+                    )
+            except Exception as _rc_err:
+                log.debug("[GeneralSolver] solve_with_context FCE error: %s", _rc_err)
+
+        # Step 3: Fall through with passage as context
+        return self.solve(
+            question,
+            context=passage + "\n\n" + (kwargs.pop("context", "") or ""),
+            problem_type=problem_type,
+            **kwargs,
+        )
 
     # ── Main solve entry point ────────────────────────────────────────────────
 
@@ -688,8 +762,61 @@ class GeneralSolver:
         ptype = problem_type or self.classify(problem_text)
         result: Optional[GeneralSolveResult] = None
 
+        # PTYPE_ANALOGY: skip neural_recall — let the native analogy solver run first
+        # PTYPE_SCIENCE/FACTUAL: SituationModel runs first — neural_recall hallucinates physical answers
+        _NL_SKIP = (PTYPE_MATH, PTYPE_LOGIC, PTYPE_SOCIAL, PTYPE_ANALOGY,
+                    PTYPE_SCIENCE, PTYPE_FACTUAL, "commonsense", "general")
+
+        # ── SituationModel: physical commonsense simulation (runs early, before KB) ──
+        if result is None and ptype in (PTYPE_SCIENCE, PTYPE_FACTUAL, PTYPE_REASONING, "commonsense", "general"):
+            try:
+                from sare.world.situation_model import get_situation_model
+                _sm_ans = get_situation_model().answer(problem_text)
+                if _sm_ans:
+                    result = GeneralSolveResult(
+                        problem_id=pid, problem_text=problem_text,
+                        problem_type=ptype, answer=_sm_ans,
+                        confidence=0.88,
+                        reasoning="Physical situation model rule",
+                        solver_used="situation_model", solved=True,
+                        elapsed_ms=(time.time() - t0) * 1000,
+                        domain=ptype, learning_mode=MODE_RETRIEVAL, backend="python",
+                    )
+            except Exception as _sm_err2:
+                log.debug("[GeneralSolver] SituationModel early check error: %s", _sm_err2)
+
+        # ── Pattern abstractor match (structural template → honest recall + inference) ──
+        # Runs FIRST: exact slot recall OR WorldModel inference for unseen slots.
+        # Does NOT hallucinate: returns None if neither path has evidence.
+        if result is None and allow_retrieval:
+            try:
+                from sare.learning.pattern_abstractor import get_pattern_abstractor as _gpa2
+                _pa = _gpa2()
+                _pat_ans = _pa.match_with_inference(problem_text, ptype)
+                if _pat_ans:
+                    # Distinguish recall vs inference for logging
+                    _pa_exact = _pa.match(problem_text, ptype)
+                    _pa_solver = "pattern_match" if _pa_exact else "pattern_inference"
+                    result = GeneralSolveResult(
+                        problem_id=pid, problem_text=problem_text,
+                        problem_type=ptype, answer=_pat_ans,
+                        confidence=0.85 if _pa_exact else 0.75,
+                        reasoning=(
+                            "Pattern abstractor: structural template recall"
+                            if _pa_exact else
+                            "Pattern abstractor: template-guided WorldModel inference"
+                        ),
+                        solver_used=_pa_solver, solved=True,
+                        elapsed_ms=(time.time() - t0) * 1000,
+                        domain=ptype, learning_mode=MODE_RETRIEVAL, backend="python",
+                    )
+            except Exception as _pa_err:
+                log.debug("[GeneralSolver] PatternAbstractor error: %s", _pa_err)
+
         # ── Neural learner recall (genuine generalization, not memorization) ──
-        _NL_SKIP = (PTYPE_MATH, PTYPE_LOGIC)
+        # Social/commonsense/general questions must go through their native solvers first.
+        # Neural recall fires too eagerly on these and returns irrelevant matches.
+        # After native solver runs (and potentially fails), neural recall gets a second chance below.
         if result is None and ptype not in _NL_SKIP and allow_retrieval:
             try:
                 from sare.neuro.neural_learner import get_neural_learner as _gnl
@@ -733,6 +860,48 @@ class GeneralSolver:
             native_language = self._solve_language_natively(pid, problem_text)
             if native_language.solved:
                 result = native_language
+                
+        # Phase 3a: Try NL-to-Graph Bridge for general text problems before falling back
+        if result is None and ptype not in (PTYPE_MATH, PTYPE_LOGIC, PTYPE_CODE):
+            try:
+                from sare.perception.nl_to_graph import NLGraphConverter
+                converter = NLGraphConverter()
+                if converter.is_ready():
+                    g = converter.parse_to_graph(problem_text)
+                    if g and g.node_count > 0:
+                        # Attempt to solve the parsed graph using the symbolic engine
+                        search_res = self._searcher.search(
+                            g, self._energy, self._transforms,
+                            beam_width=8, budget_seconds=2.0
+                        )
+                        if search_res and getattr(search_res, "solved", False):
+                            result = GeneralSolveResult(
+                                problem_id=pid,
+                                problem_text=problem_text,
+                                problem_type=ptype,
+                                answer=getattr(search_res, "proof_nl", "Solved via NL-to-Graph Bridge"),
+                                confidence=0.85,
+                                reasoning="NL parsed to Graph and solved symbolically",
+                                solver_used="nl_to_graph_symbolic",
+                                solved=True,
+                                elapsed_ms=(time.time() - t0) * 1000,
+                                domain=ptype,
+                                learning_mode=MODE_FREE_SOLVE
+                            )
+            except Exception as _nl_graph_err:
+                log.debug("[GeneralSolver] NL-to-Graph fallback failed: %s", _nl_graph_err)
+
+        # NL belief injection: for language/comprehension problems, extract semantic
+        # triples and inject into WorldModel so FCE can use them for multi-hop reasoning
+        if ptype in (PTYPE_LANGUAGE, "comprehension", PTYPE_FACTUAL, "general") and len(problem_text) > 30:
+            try:
+                from sare.perception.nl_to_graph import get_nl_converter
+                _injected = get_nl_converter().inject_to_world_model(problem_text, domain=ptype)
+                if _injected > 0:
+                    log.debug("[GeneralSolver] NL→WorldModel: injected %d beliefs for ptype=%s", _injected, ptype)
+            except Exception as _nlwm_err:
+                log.debug("[GeneralSolver] NL belief injection error: %s", _nlwm_err)
+
         if result is None and ptype == PTYPE_REASONING:
             # AnswerTo lookup FIRST (most accurate for seen questions)
             try:
@@ -757,7 +926,7 @@ class GeneralSolver:
                         break
             except Exception:
                 pass
-        if result is None and ptype in (PTYPE_REASONING, "commonsense"):
+        if result is None and ptype in (PTYPE_REASONING, "commonsense", "general"):
             native_reasoning = self._solve_reasoning_natively(pid, problem_text)
             if native_reasoning.solved:
                 result = native_reasoning
@@ -769,10 +938,28 @@ class GeneralSolver:
             native_planning = self._solve_planning_natively(pid, problem_text)
             if native_planning.solved:
                 result = native_planning
-        if result is None and ptype in (PTYPE_SCIENCE, PTYPE_FACTUAL):
+        if result is None and ptype in (PTYPE_SCIENCE, PTYPE_FACTUAL, "general"):
             native_science = self._solve_science_natively(pid, problem_text, ptype)
             if native_science.solved:
                 result = native_science
+
+        # Neural recall fallback for commonsense/general — only fires if native solvers failed
+        if result is None and ptype in ("commonsense", "general") and allow_retrieval:
+            try:
+                from sare.neuro.neural_learner import get_neural_learner as _gnl_cs
+                _nl_ans_cs = _gnl_cs().recall(problem_text, ptype)
+                if _nl_ans_cs:
+                    result = GeneralSolveResult(
+                        problem_id=pid, problem_text=problem_text,
+                        problem_type=ptype, answer=_nl_ans_cs,
+                        confidence=0.72,
+                        reasoning="Neural learner recall (commonsense fallback)",
+                        solver_used="neural_recall", solved=True,
+                        elapsed_ms=(time.time() - t0) * 1000,
+                        domain=ptype, learning_mode=MODE_RETRIEVAL, backend="python",
+                    )
+            except Exception:
+                pass
 
         if result is None and metadata and metadata.get("concept_hypothesis_id") and ptype not in (PTYPE_MATH, PTYPE_LOGIC):
             try:
@@ -875,6 +1062,7 @@ class GeneralSolver:
             PTYPE_ECONOMICS, PTYPE_PSYCHOLOGY, PTYPE_LANGUAGE, PTYPE_SOCIAL,
             PTYPE_ANALOGY, PTYPE_CODE,   # conceptual code/CS questions use KB lookup
             "commonsense",               # CommonsenseQA learned Q→A pairs
+            "general",                   # catch-all: try KB lookup before failing
         )
         if result is None and ptype in _FACT_CHAIN_TYPES:
             try:
@@ -990,6 +1178,24 @@ class GeneralSolver:
             except Exception as fc_err:
                 log.debug("[GeneralSolver] Fact chain error: %s", fc_err)
 
+        # ── SituationModel: physical commonsense simulation ───────────────────
+        if result is None and ptype in (PTYPE_SCIENCE, PTYPE_FACTUAL, PTYPE_REASONING, "commonsense", "general"):
+            try:
+                from sare.world.situation_model import get_situation_model
+                sm_ans = get_situation_model().answer(problem_text)
+                if sm_ans:
+                    result = GeneralSolveResult(
+                        problem_id=pid, problem_text=problem_text,
+                        problem_type=ptype, answer=sm_ans,
+                        confidence=0.88,
+                        reasoning="Physical situation model rule",
+                        solver_used="situation_model", solved=True,
+                        elapsed_ms=(time.time() - t0) * 1000,
+                        domain=ptype, learning_mode=MODE_RETRIEVAL, backend="python",
+                    )
+            except Exception as _sm_err:
+                log.debug("[GeneralSolver] SituationModel error: %s", _sm_err)
+
         # Route to solver
         if result is None and ptype in (PTYPE_MATH, PTYPE_LOGIC) and self._symbolic_ready:
             result = self._solve_symbolic(pid, problem_text, ptype)
@@ -1001,7 +1207,64 @@ class GeneralSolver:
                     result = llm_r
         elif result is None and ptype == PTYPE_CODE:
             result = self._solve_code(pid, problem_text, context, allow_llm=allow_llm)
-        elif result is None and allow_llm and self._llm_ready:
+        elif result is None and ptype == PTYPE_ANALOGY:
+            # Try entity-level analogy: "A is to B as C is to ?" → find shared predicate in WorldModel
+            _analogy_ans = self._solve_analogy_natively(problem_text)
+            if _analogy_ans:
+                result = GeneralSolveResult(
+                    problem_id=pid, problem_text=problem_text,
+                    problem_type=ptype, answer=_analogy_ans,
+                    confidence=0.85,
+                    reasoning="Entity analogy: shared predicate lookup in WorldModel",
+                    solver_used="analogy_native", solved=True,
+                    elapsed_ms=(time.time() - t0) * 1000,
+                    domain=ptype, learning_mode=MODE_RETRIEVAL, backend="python",
+                )
+        # ── Sub-goal decomposition: try to break multi-hop factual questions ──
+        if result is None and ptype not in (PTYPE_MATH, PTYPE_LOGIC, PTYPE_CODE):
+            try:
+                decomp_ans = self._decompose_and_solve(problem_text, ptype)
+                if decomp_ans:
+                    result = GeneralSolveResult(
+                        problem_id=pid, problem_text=problem_text,
+                        problem_type=ptype, answer=decomp_ans,
+                        confidence=0.72,
+                        reasoning="Solved via sub-goal decomposition",
+                        solver_used="decompose", solved=True,
+                        elapsed_ms=(time.time() - t0) * 1000,
+                        domain=ptype, learning_mode=MODE_RETRIEVAL, backend="python",
+                    )
+            except Exception as _de:
+                log.debug("[GeneralSolver] decompose error: %s", _de)
+
+        # ── Calibrated IDK gate: don't hallucinate for uncalibrated domains ──
+        if result is None and allow_llm and self._llm_ready:
+            if ptype not in (PTYPE_MATH, PTYPE_LOGIC, PTYPE_CODE):
+                try:
+                    from sare.cognition.self_verifier import get_self_verifier
+                    calib = get_self_verifier().domain_calibration(ptype)
+                    if calib < 0.20:
+                        # Check if pattern abstractor at least recognizes the skeleton
+                        pat_known = False
+                        try:
+                            from sare.learning.pattern_abstractor import get_pattern_abstractor
+                            pat_known = get_pattern_abstractor().match(problem_text, ptype) is not None
+                        except Exception:
+                            pass
+                        if not pat_known:
+                            result = GeneralSolveResult(
+                                problem_id=pid, problem_text=problem_text,
+                                problem_type=ptype,
+                                answer="I don't have reliable knowledge about this yet.",
+                                confidence=0.05, reasoning=f"Domain '{ptype}' calibration={calib:.2f} below IDK threshold",
+                                solver_used="idk_calibrated", solved=True,
+                                elapsed_ms=(time.time() - t0) * 1000,
+                                domain=ptype, learning_mode=MODE_FAILED, backend="python",
+                            )
+                except Exception as _ck:
+                    log.debug("[GeneralSolver] calibration check error: %s", _ck)
+
+        if result is None and allow_llm and self._llm_ready:
             result = self._solve_with_llm(pid, problem_text, ptype, context)
         elif result is None:
             result = GeneralSolveResult(
@@ -1627,6 +1890,159 @@ class GeneralSolver:
             learning_mode=MODE_FAILED,
         )
 
+    def _solve_analogy_natively(self, problem_text: str) -> Optional[str]:
+        """
+        Entity-level analogy: "A is to B as C is to ?"
+
+        Two directions:
+          Dir1 (A→B): WorldModel has (A, P, B) → find (C, P, ?) → return ?
+          Dir2 (B→A): WorldModel has (B, P, A) → find (?, P, C) via reverse scan → return ?
+
+        Examples:
+          Dir1: "hot is to warm as cold is to ?" → (hot, related, warm) → (cold, related, ?)
+          Dir2: "Paris is to France as Berlin is to ?" → (France, capital, Paris)
+                → find (?, capital, Berlin) → Germany
+        """
+        m = re.search(
+            r"([a-zA-Z][a-zA-Z\s]{1,25}?)\s+is\s+to\s+([a-zA-Z][a-zA-Z\s]{1,25}?)"
+            r"\s+as\s+([a-zA-Z][a-zA-Z\s]{1,25}?)\s+is\s+to\s*(?:_+|\?|\s*$)",
+            problem_text, re.IGNORECASE,
+        )
+        if not m:
+            return None
+
+        A = m.group(1).strip().lower()
+        B = m.group(2).strip().lower()
+        C = m.group(3).strip().lower()
+
+        try:
+            from sare.memory.world_model import get_world_model
+            wm = get_world_model()
+            beliefs = wm._beliefs
+
+            for bkey, belief in beliefs.items():
+                if not isinstance(bkey, str):
+                    continue
+                b_subj = getattr(belief, "subject", "").lower()
+                b_val  = getattr(belief, "value", "").lower()
+                b_pred = getattr(belief, "predicate", "")
+                if not b_subj or not b_val or not b_pred:
+                    continue
+
+                # Dir1: (A, P, B) → look up (C, P, ?)
+                if b_subj == A and B in b_val:
+                    key_c = f"{C}::{b_pred.lower()}"
+                    b2 = beliefs.get(key_c)
+                    if b2 and getattr(b2, "value", ""):
+                        log.debug("[GeneralSolver] Analogy Dir1: (%s,%s,%s) → %s", A, b_pred, B, b2.value)
+                        return str(b2.value)
+
+                # Dir2: (B, P, A) → find (?, P, C) via reverse scan
+                if b_subj == B and A in b_val:
+                    # Scan for any belief with same predicate and value == C
+                    for bkey2, b2 in beliefs.items():
+                        if not isinstance(bkey2, str):
+                            continue
+                        if (getattr(b2, "predicate", "").lower() == b_pred.lower()
+                                and C in getattr(b2, "value", "").lower()
+                                and getattr(b2, "subject", "").lower() != B):
+                            ans = getattr(b2, "subject", "")
+                            if ans:
+                                log.debug("[GeneralSolver] Analogy Dir2: (%s,%s,%s) → %s", B, b_pred, A, ans)
+                                return str(ans)
+        except Exception as _an_err:
+            log.debug("[GeneralSolver] _solve_analogy_natively error: %s", _an_err)
+        return None
+
+    def _decompose_and_solve(self, question: str, ptype: str) -> Optional[str]:
+        """
+        Sub-goal decomposer: break multi-hop factual questions into sub-queries.
+
+        Patterns handled:
+          "capital of the country whose X is Y"   → find country where X=Y → find capital
+          "who invented/discovered X of Y"         → find Y's X → find inventor
+          "X of Y where Y is Z"                   → find Y=Z → find X of result
+        """
+        q = question.strip().lower()
+
+        # Pattern 1: "capital of the country whose <attr> is <val>"
+        m = re.search(
+            r"capital\s+of\s+(?:the\s+)?(?:country|nation|place|city)\s+whose\s+(\w[\w\s]{1,20}?)\s+is\s+(\w[\w\s]{1,30}?)[\?\.]*$",
+            q, re.IGNORECASE,
+        )
+        if m:
+            attr, val = m.group(1).strip(), m.group(2).strip()
+            try:
+                from sare.memory.world_model import get_world_model
+                wm = get_world_model()
+                # Find entity where attr == val
+                entity = None
+                for bkey, b in wm._beliefs.items():
+                    if not isinstance(bkey, str):
+                        continue
+                    if (getattr(b, "predicate", "").lower() == attr.lower()
+                            and val in getattr(b, "value", "").lower()):
+                        entity = getattr(b, "subject", None)
+                        break
+                if entity:
+                    cap_belief = wm._beliefs.get(f"{entity.lower()}::capital")
+                    if cap_belief and cap_belief.value:
+                        log.debug("[Decompose] capital(%s whose %s=%s) → %s", entity, attr, val, cap_belief.value)
+                        return str(cap_belief.value)
+            except Exception as _de:
+                log.debug("[Decompose] P1 error: %s", _de)
+
+        # Pattern 2: "what is the <attr> of <X> which/that/whose <predicate> is <Y>"
+        m = re.search(
+            r"what\s+is\s+(?:the\s+)?(\w[\w\s]{1,20}?)\s+of\s+(\w[\w\s]{1,25}?)\s+(?:which|that|whose)\s+(\w[\w\s]{1,20}?)\s+is\s+(\w[\w\s]{1,25}?)[\?\.]*$",
+            q, re.IGNORECASE,
+        )
+        if m:
+            target_attr = m.group(1).strip()
+            entity_class = m.group(2).strip()
+            filter_attr = m.group(3).strip()
+            filter_val = m.group(4).strip()
+            try:
+                from sare.memory.world_model import get_world_model
+                wm = get_world_model()
+                # Find entity of class where filter_attr=filter_val
+                for bkey, b in wm._beliefs.items():
+                    if not isinstance(bkey, str):
+                        continue
+                    if (getattr(b, "predicate", "").lower() == filter_attr.lower()
+                            and filter_val in getattr(b, "value", "").lower()):
+                        entity = getattr(b, "subject", "")
+                        ans_belief = wm._beliefs.get(f"{entity.lower()}::{target_attr.lower()}")
+                        if ans_belief and ans_belief.value:
+                            log.debug("[Decompose] P2: %s of %s where %s=%s → %s",
+                                      target_attr, entity, filter_attr, filter_val, ans_belief.value)
+                            return str(ans_belief.value)
+            except Exception as _de2:
+                log.debug("[Decompose] P2 error: %s", _de2)
+
+        # Pattern 3: "who discovered/invented <X> which/that is <Y>"
+        m = re.search(
+            r"who\s+(?:discovered|invented|founded|created)\s+(\w[\w\s]{1,25}?)\s+(?:which|that)\s+is\s+(\w[\w\s]{1,25}?)[\?\.]*$",
+            q, re.IGNORECASE,
+        )
+        if m:
+            thing = m.group(1).strip()
+            qualifier = m.group(2).strip()
+            try:
+                from sare.memory.world_model import get_world_model
+                wm = get_world_model()
+                for pred in ("discovered", "invented", "founded", "invented_by", "discovered_by"):
+                    b = wm._beliefs.get(f"{thing.lower()}::{pred}")
+                    if not b:
+                        b = wm._beliefs.get(f"{thing.lower()} {qualifier.lower()}::{pred}")
+                    if b and b.value:
+                        log.debug("[Decompose] P3: who %s %s → %s", pred, thing, b.value)
+                        return str(b.value)
+            except Exception as _de3:
+                log.debug("[Decompose] P3 error: %s", _de3)
+
+        return None
+
     def _solve_reasoning_natively(self, pid: str, text: str) -> GeneralSolveResult:
         # ── Analogy: "A is to B as C is to ___" (also "Complete the analogy: X is to Y as Z is to __") ──
         # Strip common prefixes before pattern matching
@@ -1672,18 +2088,19 @@ class GeneralSolver:
         )
         if choice_m:
             raw_choices = choice_m.group(1)
-            for cm in re.finditer(r"[A-E]\.\s*([^\|A-E\n]{2,40})", raw_choices):
+            # Support both "A. X" and "A) X" formats
+            for cm in re.finditer(r"[A-E][.)]\s*([^\|A-E\n).]{2,40})", raw_choices):
                 choices.append(cm.group(1).strip().lower())
         if not choices:
-            # Inline format: "A. X B. Y" or newline-separated
-            for cm in re.finditer(r"\b[A-E]\.\s*([^\|A-E\n.?]{2,30})", text):
+            # Inline format: "A. X B. Y" or "A) X B) Y" or newline-separated
+            for cm in re.finditer(r"\b[A-E][.)]\s*([^\|A-E\n).?]{2,30})", text):
                 choices.append(cm.group(1).strip().lower())
             choices = choices[:5]  # cap at 5
 
         if len(choices) >= 2:
             # Score each choice against question keywords using commonsense KB
             q_stem = re.sub(r"(?:Choices?|Options?)\s*:.*", "", text, flags=re.IGNORECASE | re.DOTALL)
-            q_stem = re.sub(r"\b[A-E]\.\s*[^\n|]+", "", q_stem).strip().lower()
+            q_stem = re.sub(r"\b[A-E][.)]\s*[^\n|]+", "", q_stem).strip().lower()
             concepts = self._extract_concepts(q_stem)
             try:
                 from sare.knowledge.commonsense import get_commonsense_base
@@ -1808,30 +2225,66 @@ class GeneralSolver:
         )
 
     def _solve_social_natively(self, pid: str, text: str) -> GeneralSolveResult:
-        match = re.search(
-            r"([A-Z][a-z]+)\s+leaves?.+? in (?:the )?([a-z]+)\.\s*[A-Z][a-z]+\s+moves?.+? to (?:the )?([a-z]+).+where will \1 look",
-            text,
-            flags=re.IGNORECASE | re.DOTALL,
-        )
-        if match:
-            return self._native_semantic_result(pid, text, PTYPE_SOCIAL, match.group(2).lower(), "false-belief-location")
-        if "false belief" in text.lower():
-            return self._native_semantic_result(pid, text, PTYPE_SOCIAL, "false", "false-belief-label")
-        if "smiles" in text.lower() and "feel" in text.lower():
-            return self._native_semantic_result(pid, text, PTYPE_SOCIAL, "happy", "emotion-smile")
+        """Phase 2a: Solve Social/ToM problems natively without LLM fallback."""
+        t0 = time.time()
+        try:
+            from sare.social.theory_of_mind import get_theory_of_mind
+            tom = get_theory_of_mind()
+
+            # Try general-purpose social question answering first (new path)
+            general_answer = tom.answer_social_question(text)
+            if general_answer:
+                return GeneralSolveResult(
+                    problem_id=pid, problem_text=text,
+                    problem_type=PTYPE_SOCIAL, answer=general_answer,
+                    confidence=0.78, reasoning="ToM engine: belief/desire/action reasoning",
+                    solver_used="theory_of_mind", solved=True,
+                    elapsed_ms=(time.time() - t0) * 1000,
+                    domain=PTYPE_SOCIAL, learning_mode=MODE_FREE_SOLVE
+                )
+
+            # Sally-Anne false belief test (regex-specific fallback)
+            import re
+            fb_match = re.search(r"([A-Z][a-z]+)\s+leaves?.+? in (?:the )?([a-z]+)\.\s*[A-Z][a-z]+\s+moves?.+? to (?:the )?([a-z]+).+where will \1 look", text, re.IGNORECASE)
+
+            if fb_match:
+                agent = fb_match.group(1)
+                original_loc = fb_match.group(2)
+                new_loc = fb_match.group(3)
+                ans = original_loc
+                reason = f"{agent} has a false belief that the object is in {original_loc} because it was moved to {new_loc} while {agent} was away."
+                return GeneralSolveResult(
+                    problem_id=pid, problem_text=text,
+                    problem_type=PTYPE_SOCIAL, answer=ans,
+                    confidence=0.95, reasoning=reason,
+                    solver_used="theory_of_mind", solved=True,
+                    elapsed_ms=(time.time() - t0) * 1000,
+                    domain=PTYPE_SOCIAL, learning_mode=MODE_FREE_SOLVE
+                )
+
+            # If not a standard Sally-Anne, try to parse beliefs from text using the engine
+            tom.infer_beliefs_from_text("agent_1", text)
+            pred = tom.predict_action_llm("agent_1", text)
+
+            if pred and not pred.startswith("Unknown"):
+                return GeneralSolveResult(
+                    problem_id=pid, problem_text=text,
+                    problem_type=PTYPE_SOCIAL, answer=pred,
+                    confidence=0.75, reasoning="Inferred agent action via ToM engine",
+                    solver_used="theory_of_mind_llm", solved=True,
+                    elapsed_ms=(time.time() - t0) * 1000,
+                    domain=PTYPE_SOCIAL, learning_mode=MODE_FREE_SOLVE
+                )
+                
+        except Exception as e:
+            log.debug("[GeneralSolver] Native social reasoning failed: %s", e)
 
         return GeneralSolveResult(
-            problem_id=pid,
-            problem_text=text,
-            problem_type=PTYPE_SOCIAL,
-            answer="",
-            confidence=0.0,
-            reasoning="No native social rule matched.",
-            solver_used="native_rule",
-            solved=False,
-            elapsed_ms=0,
-            domain=PTYPE_SOCIAL,
-            learning_mode=MODE_FAILED,
+            problem_id=pid, problem_text=text,
+            problem_type=PTYPE_SOCIAL, answer="", confidence=0.0,
+            reasoning="Native social solver failed", solver_used="native_social",
+            solved=False, elapsed_ms=(time.time() - t0) * 1000,
+            domain=PTYPE_SOCIAL, learning_mode=MODE_FAILED
         )
 
     # ── Planning native solver ─────────────────────────────────────────────────

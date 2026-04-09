@@ -15,8 +15,18 @@ log = logging.getLogger(__name__)
 try:
     from sare.sare_bindings import Graph, Node, Edge
 except ImportError:
-    logging.warning("SARE bindings not found. CurriculumGenerator will not function.")
-    Graph = None
+    # C++ bindings unavailable (e.g. running on Linux with a macOS-compiled .so).
+    # Fall back to the pure-Python Graph from sare.engine — mutation helpers
+    # already duck-type both flavours so CurriculumGenerator works normally.
+    try:
+        from sare.engine import Graph, Node  # type: ignore[assignment]
+        Edge = None  # type: ignore[assignment]
+        logging.debug("CurriculumGenerator: using Python Graph fallback (C++ bindings absent)")
+    except ImportError:
+        logging.warning("SARE bindings not found and Python Graph unavailable. CurriculumGenerator will not function.")
+        Graph = None  # type: ignore[assignment]
+        Node = None   # type: ignore[assignment]
+        Edge = None   # type: ignore[assignment]
 
 
 def _graph_to_expr(graph) -> str:
@@ -42,6 +52,7 @@ class GeneratedProblem:
     created_at: float = field(default_factory=time.time)
     domain: str = ""
     expression: str = ""
+    retry_count: int = 0
 
     def __post_init__(self):
         """Infer domain and expression from graph if not set."""
@@ -241,6 +252,13 @@ class CurriculumGenerator:
                 log.debug("Retry queue full (%d), skipping", retry_pending)
                 return
 
+            # Skip problems that have been retried too many times
+            prev_retries = getattr(problem, "retry_count", 0)
+            if prev_retries >= 3:
+                log.debug("Skipping retry for %s (already retried %d times)",
+                          getattr(problem, "id", "?"), prev_retries)
+                return
+
             # If the problem has a graph, add a new mutated variant
             if hasattr(problem, "graph") and problem.graph is not None:
                 try:
@@ -254,9 +272,10 @@ class CurriculumGenerator:
                             graph=mutated,
                             origin=origin,
                             status="pending",
+                            retry_count=prev_retries + 1,
                         )
                         self.generated_problems.append(new_p)
-                        log.debug("Failure retry queued: %s", pid)
+                        log.debug("Failure retry queued: %s (attempt %d)", pid, prev_retries + 1)
                 except Exception:
                     pass
         except Exception as exc:
@@ -352,6 +371,33 @@ class CurriculumGenerator:
                     log.debug("CurriculumGenerator: injected %d autobio hard episodes", autobio_injected)
             except Exception as _ae:
                 log.debug("Autobiographical replay error: %s", _ae)
+
+        # ── SituationModel: inject physical commonsense problems every 3 batches ─
+        if self._batch_count % 3 == 0:
+            try:
+                sm_probs = self._gen_situation_model_problems(n=2)
+                for smp in sm_probs:
+                    batch.append(smp)
+            except Exception as _sme:
+                log.debug("SituationModel curriculum error: %s", _sme)
+
+        # ── Multi-hop commonsense chain problems every 4 batches ─────────────
+        if self._batch_count % 4 == 0:
+            try:
+                cs_probs = self._gen_commonsense_chain_problems(n=2)
+                for csp in cs_probs:
+                    batch.append(csp)
+            except Exception as _cse:
+                log.debug("Commonsense chain curriculum error: %s", _cse)
+
+        # ── Factual QA from WorldModel beliefs every 5 batches ───────────────
+        if self._batch_count % 5 == 0:
+            try:
+                fq_probs = self._gen_factual_qa_problems(n=2)
+                for fqp in fq_probs:
+                    batch.append(fqp)
+            except Exception as _fqe:
+                log.debug("Factual QA curriculum error: %s", _fqe)
 
         # ── Progressive difficulty: inject harder problems for mastered domains ─
         if self._batch_count % 5 == 0:  # every 5 batches
@@ -495,6 +541,145 @@ class CurriculumGenerator:
             [p for p in batch if p not in self.generated_problems])
         return batch
 
+    def _gen_situation_model_problems(self, n: int = 2) -> List["GeneratedProblem"]:
+        """Generate QA problems from the SituationModel physical rules."""
+        problems = []
+        try:
+            from sare.world.situation_model import get_situation_model
+            from sare.engine import Graph as PyGraph
+            sm = get_situation_model()
+            training = sm.generate_training_problems(n=n * 5)
+            random.shuffle(training)
+            for item in training[:n]:
+                q, a = item["question"], item["answer"]
+                g = PyGraph()
+                nid = g.add_node(type="concept", label=q[:60])
+                g.add_node(type="property", label=f"answer:{a}")
+                g._answer = a
+                g._domain = "commonsense"
+                g._question = q
+                pid = f"sm_{uuid.uuid4().hex[:8]}"
+                gp = GeneratedProblem(
+                    id=pid, graph=g, origin="situation_model",
+                    domain="commonsense", expression=q,
+                )
+                problems.append(gp)
+                self.generated_problems.append(gp)
+        except Exception as e:
+            log.debug("_gen_situation_model_problems error: %s", e)
+        return problems
+
+    def _gen_commonsense_chain_problems(self, n: int = 2) -> List["GeneratedProblem"]:
+        """Generate multi-hop commonsense chain QA problems."""
+        problems = []
+        try:
+            from sare.knowledge.commonsense import get_commonsense_base
+            from sare.engine import Graph as PyGraph
+            cb = get_commonsense_base()
+            # Build 2-hop chains: A→rel1→B→rel2→C → "does A rel2 C?"
+            chain_pairs = []
+            for subj, triples in cb._forward.items():
+                for rel1, mid in triples:
+                    if rel1 not in ("Causes", "Enables", "HasProperty"):
+                        continue
+                    for rel2, obj in cb._forward.get(mid, []):
+                        if rel2 in ("Causes", "HasProperty") and subj != obj:
+                            chain_pairs.append((subj, rel1, mid, rel2, obj))
+            random.shuffle(chain_pairs)
+            templates = [
+                ("If {A} causes {B}, and {B} causes {C}, does {A} indirectly cause {C}?", "yes"),
+                ("Does {A} lead to {C} via {B}?", "yes"),
+                ("What does {A} eventually cause?", "{C}"),
+                ("What is an effect of {A}?", "{C}"),
+            ]
+            for A, rel1, B, rel2, C in chain_pairs[:n * 3]:
+                if len(problems) >= n:
+                    break
+                tmpl, ans = random.choice(templates)
+                q = tmpl.replace("{A}", A).replace("{B}", B).replace("{C}", C)
+                a = ans.replace("{C}", C).replace("{B}", B)
+                try:
+                    g = PyGraph()
+                    g.add_node(type="concept", label=q[:60])
+                    g._answer = a
+                    g._domain = "commonsense"
+                    g._question = q
+                    pid = f"cs_{uuid.uuid4().hex[:8]}"
+                    gp = GeneratedProblem(
+                        id=pid, graph=g, origin="cs_chain",
+                        domain="commonsense", expression=q,
+                    )
+                    problems.append(gp)
+                    self.generated_problems.append(gp)
+                except Exception:
+                    pass
+        except Exception as e:
+            log.debug("_gen_commonsense_chain_problems error: %s", e)
+        return problems
+
+    def _gen_factual_qa_problems(self, n: int = 2) -> List["GeneratedProblem"]:
+        """Generate fill-in factual problems from WorldModel structured beliefs."""
+        problems = []
+        try:
+            from sare.memory.world_model import get_world_model
+            from sare.engine import Graph as PyGraph
+            wm = get_world_model()
+            candidates = []
+            # Collect beliefs with useful predicates
+            useful_preds = {
+                "capital", "is_capital_of", "founded", "invented_by", "discovered_by",
+                "discovered", "invented", "located_in", "borders", "population",
+                "HasFormula", "MadeOf", "Contains", "HasSymbol", "HasAtomicNumber",
+            }
+            for bkey, b in wm._beliefs.items():
+                if not isinstance(bkey, str):
+                    continue
+                pred = getattr(b, "predicate", "")
+                subj = getattr(b, "subject", "")
+                val = getattr(b, "value", "")
+                if pred in useful_preds and subj and val and len(val) < 50:
+                    candidates.append((subj, pred, val))
+            random.shuffle(candidates)
+            templates = {
+                "capital": "What is the capital of {subj}?",
+                "is_capital_of": "What country is {subj} the capital of?",
+                "founded": "When was {subj} founded?",
+                "invented_by": "Who invented {subj}?",
+                "discovered_by": "Who discovered {subj}?",
+                "discovered": "What did {subj} discover?",
+                "invented": "What did {subj} invent?",
+                "located_in": "Where is {subj} located?",
+                "HasFormula": "What is the chemical formula for {subj}?",
+                "MadeOf": "What is {subj} made of?",
+                "HasSymbol": "What is the symbol for {subj}?",
+                "HasAtomicNumber": "What is the atomic number of {subj}?",
+            }
+            for subj, pred, val in candidates:
+                if len(problems) >= n:
+                    break
+                tmpl = templates.get(pred)
+                if not tmpl:
+                    tmpl = f"What is the {{pred}} of {{subj}}?".replace("{pred}", pred)
+                q = tmpl.replace("{subj}", subj)
+                try:
+                    g = PyGraph()
+                    g.add_node(type="concept", label=q[:60])
+                    g._answer = val
+                    g._domain = "factual"
+                    g._question = q
+                    pid = f"fq_{uuid.uuid4().hex[:8]}"
+                    gp = GeneratedProblem(
+                        id=pid, graph=g, origin="factual_qa",
+                        domain="factual", expression=q,
+                    )
+                    problems.append(gp)
+                    self.generated_problems.append(gp)
+                except Exception:
+                    pass
+        except Exception as e:
+            log.debug("_gen_factual_qa_problems error: %s", e)
+        return problems
+
     def _get_priority_domains(self) -> list:
         """Ask world model + autobiographical memory which domains need work."""
         priority = []
@@ -607,10 +792,21 @@ class CurriculumGenerator:
         return random.choice(self.seed_problems)
 
     def _mutate(self, graph: Graph) -> Optional[Graph]:
-        """Apply random mutations to a graph clone."""
-        if not Graph: return None
-        
-        new_graph = graph.clone()
+        """Apply random mutations to a graph clone.
+
+        Works with both C++ sare_bindings.Graph and the pure-Python sare.engine.Graph.
+        The C++ guard was removed — all helper methods (_node_ids, _find_root,
+        _get_node_attr, _set_node_attr) already duck-type both graph flavours.
+        """
+        if graph is None:
+            return None
+        if not hasattr(graph, 'clone'):
+            return None
+
+        try:
+            new_graph = graph.clone()
+        except Exception:
+            return None
         
         # Developmental curriculum heuristic:
         # 1. Optionally perturb (make it slightly different).
