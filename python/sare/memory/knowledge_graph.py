@@ -19,6 +19,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import shutil
+import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -72,7 +75,22 @@ class KnowledgeGraph:
         self._nodes: Dict[str, KGNode] = {}
         self._edges: List[KGEdge] = []
         self._id_counter = 0
+        self._health: Dict[str, object] = {
+            "loaded": False,
+            "recovered": False,
+            "reseeded": False,
+            "corrupt_backup_written": False,
+            "last_error": None,
+        }
         self.load()
+
+    def _recover_json_payload(self, raw_text: str) -> Optional[dict]:
+        decoder = json.JSONDecoder()
+        try:
+            payload, _ = decoder.raw_decode(raw_text.lstrip())
+        except json.JSONDecodeError:
+            return None
+        return payload if isinstance(payload, dict) else None
 
     def _new_id(self, prefix: str = "n") -> str:
         self._id_counter += 1
@@ -130,6 +148,7 @@ class KnowledgeGraph:
         self._nodes[nid] = KGNode(id=nid, type="belief", name=key,
                                    domain=domain, confidence=confidence,
                                    content={"description": description})
+        self._try_link_domain(nid, domain)
         return nid
 
     def add_causal_link(self, cause: str, effect: str, mechanism: str,
@@ -145,7 +164,46 @@ class KnowledgeGraph:
                                    domain=domain, confidence=confidence,
                                    content={"cause": cause, "effect": effect,
                                             "mechanism": mechanism})
+        self._try_link_domain(nid, domain)
         return nid
+
+    def materialize_missing_edges(self) -> int:
+        """One-time migration: ensure every non-domain node has a `belongs_to`
+        edge to its domain node. Returns the number of edges added.
+
+        This fixes the bug where beliefs and causal links were added without
+        calling _try_link_domain, leaving 1500+ nodes with 0 edges.
+        """
+        added = 0
+        # Index existing edges for fast lookup
+        existing = set()
+        for e in self._edges:
+            existing.add((e.source, e.target, e.relation))
+
+        for nid, n in list(self._nodes.items()):
+            if n.type == "domain":
+                continue
+            if not n.domain:
+                continue
+            # Find or create the domain node for this node's domain
+            domain_node_id = None
+            for d_nid, d_n in self._nodes.items():
+                if d_n.type == "domain" and d_n.name == n.domain:
+                    domain_node_id = d_nid
+                    break
+            if not domain_node_id:
+                domain_node_id = self._new_id("domain")
+                self._nodes[domain_node_id] = KGNode(
+                    id=domain_node_id, type="domain",
+                    name=n.domain, domain=n.domain,
+                )
+            if (nid, domain_node_id, "belongs_to") not in existing:
+                self._edges.append(KGEdge(
+                    source=nid, target=domain_node_id, relation="belongs_to", weight=1.0
+                ))
+                existing.add((nid, domain_node_id, "belongs_to"))
+                added += 1
+        return added
 
     def add_edge(self, source_id: str, target_id: str, relation: str,
                  weight: float = 1.0):
@@ -225,12 +283,44 @@ class KnowledgeGraph:
         if not KG_PATH.exists():
             return
         try:
-            with open(KG_PATH, "r") as f:
-                data = json.load(f)
-                self._nodes = {k: KGNode(**v) for k, v in data.get("nodes", {}).items()}
-                self._edges = [KGEdge(**e) for e in data.get("edges", [])]
-                self._id_counter = max(int(k.split("_")[1]) for k in self._nodes.keys()) if self._nodes else 0
+            data = json.loads(KG_PATH.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            try:
+                raw_text = KG_PATH.read_text(encoding="utf-8", errors="ignore")
+                data = self._recover_json_payload(raw_text)
+                if data is None:
+                    raise
+                backup = KG_PATH.with_suffix(KG_PATH.suffix + ".corrupt")
+                if not backup.exists():
+                    shutil.copy2(KG_PATH, backup)
+                    self._health["corrupt_backup_written"] = True
+                    log.warning("KnowledgeGraph recovered partial JSON from %s; original backed up to %s", KG_PATH, backup)
+                else:
+                    log.warning("KnowledgeGraph recovered partial JSON from %s", KG_PATH)
+                self._health["recovered"] = True
+            except Exception as e:
+                self._health["last_error"] = str(e)
+                log.error(f"Failed to load knowledge graph: {e}")
+                return
         except Exception as e:
+            self._health["last_error"] = str(e)
+            log.error(f"Failed to load knowledge graph: {e}")
+            return
+        try:
+            self._nodes = {k: KGNode(**v) for k, v in data.get("nodes", {}).items()}
+            self._edges = [KGEdge(**e) for e in data.get("edges", [])]
+            self._id_counter = max(int(k.split("_")[1]) for k in self._nodes.keys()) if self._nodes else 0
+            self._health["loaded"] = True
+            self._health["last_error"] = None
+
+            # One-time migration: if we have nodes but far fewer edges than expected,
+            # materialize `belongs_to` edges so relational queries work.
+            if self._nodes and len(self._edges) < len(self._nodes) // 4:
+                added = self.materialize_missing_edges()
+                if added > 0:
+                    log.info("KnowledgeGraph: materialized %d belongs_to edges on load", added)
+        except Exception as e:
+            self._health["last_error"] = str(e)
             log.error(f"Failed to load knowledge graph: {e}")
 
     def save(self):
@@ -239,8 +329,27 @@ class KnowledgeGraph:
             "edges": [e.to_dict() for e in self._edges]
         }
         KG_PATH.parent.mkdir(parents=True, exist_ok=True)
-        with open(KG_PATH, "w") as f:
-            json.dump(data, f, indent=2)
+        fd, tmp_name = tempfile.mkstemp(
+            prefix=f"{KG_PATH.name}.",
+            suffix=".tmp",
+            dir=str(KG_PATH.parent),
+        )
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_name, KG_PATH)
+            self._health["last_error"] = None
+        except Exception as e:
+            self._health["last_error"] = str(e)
+            log.error(f"Failed to save knowledge graph: {e}")
+        finally:
+            if os.path.exists(tmp_name):
+                try:
+                    os.remove(tmp_name)
+                except OSError:
+                    pass
 
     def _try_link_domain(self, node_id: str, domain: str):
         """Create or update domain node and link to it."""
@@ -255,3 +364,6 @@ class KnowledgeGraph:
             self._nodes[domain_node_id] = KGNode(id=domain_node_id, type="domain",
                                                  name=domain, domain=domain)
         self.add_edge(node_id, domain_node_id, "belongs_to")
+
+    def health(self) -> dict:
+        return dict(self._health)

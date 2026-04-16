@@ -22,6 +22,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import shutil
+import tempfile
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -238,6 +241,179 @@ _SEED_CONCEPTS: List[dict] = [
         "related": ["double_negation"],
         "symbolic_rules": ["f(f(x)) = x"],
     },
+    # ── Physics (general-domain seeding) ─────────────────────────────
+    {
+        "name": "force",
+        "meaning": "interaction that changes an object's motion",
+        "symbol": "F",
+        "domain": "physics",
+        "related": ["mass", "acceleration", "newton_second_law"],
+        "symbolic_rules": ["F = m * a"],
+    },
+    {
+        "name": "mass",
+        "meaning": "amount of matter in an object",
+        "symbol": "m",
+        "domain": "physics",
+        "related": ["force", "weight", "inertia"],
+        "symbolic_rules": ["F = m * a", "p = m * v"],
+    },
+    {
+        "name": "acceleration",
+        "meaning": "rate of change of velocity",
+        "symbol": "a",
+        "domain": "physics",
+        "related": ["force", "velocity"],
+        "symbolic_rules": ["a = dv/dt", "F = m * a"],
+    },
+    {
+        "name": "velocity",
+        "meaning": "rate of change of position",
+        "symbol": "v",
+        "domain": "physics",
+        "related": ["acceleration", "position"],
+        "symbolic_rules": ["v = u + a*t", "p = m * v"],
+    },
+    {
+        "name": "energy",
+        "meaning": "capacity to do work",
+        "symbol": "E",
+        "domain": "physics",
+        "related": ["mass", "kinetic_energy", "potential_energy"],
+        "symbolic_rules": ["E = m * c^2", "KE = 0.5 * m * v^2"],
+    },
+    {
+        "name": "conservation",
+        "meaning": "total quantity stays constant in a closed system",
+        "symbol": "Σ",
+        "domain": "physics",
+        "related": ["energy", "momentum"],
+        "symbolic_rules": ["E_before = E_after"],
+    },
+    # ── Chemistry ─────────────────────────────────────────────
+    {
+        "name": "element",
+        "meaning": "pure substance with a single type of atom",
+        "symbol": "E",
+        "domain": "chemistry",
+        "related": ["compound", "atom", "periodic_table"],
+        "symbolic_rules": ["has_atomic_number(element)"],
+    },
+    {
+        "name": "compound",
+        "meaning": "substance of two or more chemically bonded elements",
+        "symbol": "C",
+        "domain": "chemistry",
+        "related": ["element", "bond", "molecule"],
+        "symbolic_rules": ["compound = element1 + element2"],
+    },
+    {
+        "name": "reaction",
+        "meaning": "process that transforms reactants into products",
+        "symbol": "→",
+        "domain": "chemistry",
+        "related": ["compound", "conservation", "balance"],
+        "symbolic_rules": ["reactants → products", "mass_conserved"],
+    },
+    {
+        "name": "balance",
+        "meaning": "equal atoms on each side of a reaction",
+        "symbol": "=",
+        "domain": "chemistry",
+        "related": ["reaction", "conservation"],
+        "symbolic_rules": ["atoms_left = atoms_right"],
+    },
+    # ── Language / QA ─────────────────────────────────────────
+    {
+        "name": "subject",
+        "meaning": "the entity a sentence is about",
+        "symbol": "S",
+        "domain": "language",
+        "related": ["verb", "object", "sentence"],
+        "symbolic_rules": ["sentence = subject + verb + object"],
+    },
+    {
+        "name": "verb",
+        "meaning": "action or state in a sentence",
+        "symbol": "V",
+        "domain": "language",
+        "related": ["subject", "object"],
+        "symbolic_rules": ["predicate = verb + object"],
+    },
+    {
+        "name": "entity",
+        "meaning": "a thing referred to by a name",
+        "symbol": "E",
+        "domain": "language",
+        "related": ["subject", "property"],
+        "symbolic_rules": ["entity has property"],
+    },
+    {
+        "name": "property",
+        "meaning": "attribute or quality of an entity",
+        "symbol": "P",
+        "domain": "language",
+        "related": ["entity", "value"],
+        "symbolic_rules": ["entity.property = value"],
+    },
+    # ── Code ──────────────────────────────────────────────────
+    {
+        "name": "variable",
+        "meaning": "named storage for a value",
+        "symbol": "x",
+        "domain": "code",
+        "related": ["assignment", "function"],
+        "symbolic_rules": ["x = expr"],
+    },
+    {
+        "name": "function",
+        "meaning": "named procedure that maps input to output",
+        "symbol": "f",
+        "domain": "code",
+        "related": ["variable", "return", "parameter"],
+        "symbolic_rules": ["f(x) = body", "return expr"],
+    },
+    {
+        "name": "conditional",
+        "meaning": "branch execution based on a condition",
+        "symbol": "if",
+        "domain": "code",
+        "related": ["function", "boolean"],
+        "symbolic_rules": ["if cond then A else B"],
+    },
+    {
+        "name": "loop",
+        "meaning": "repeat actions until a condition is met",
+        "symbol": "for",
+        "domain": "code",
+        "related": ["conditional", "function"],
+        "symbolic_rules": ["while cond do body"],
+    },
+    # ── Commonsense / Causal ──────────────────────────────────
+    {
+        "name": "cause",
+        "meaning": "something that brings about an effect",
+        "symbol": "→",
+        "domain": "commonsense",
+        "related": ["effect", "reaction"],
+        "symbolic_rules": ["cause produces effect"],
+    },
+    {
+        "name": "effect",
+        "meaning": "outcome produced by a cause",
+        "symbol": "⇒",
+        "domain": "commonsense",
+        "related": ["cause"],
+        "symbolic_rules": ["effect follows cause"],
+    },
+    {
+        "name": "object",
+        "meaning": "a physical or abstract thing with properties",
+        "symbol": "obj",
+        "domain": "commonsense",
+        "related": ["property", "entity"],
+        "symbolic_rules": ["object has properties"],
+    },
 ]
 
 
@@ -246,21 +422,64 @@ class ConceptGraph:
         self.persist_path = persist_path or _PERSIST_PATH
         self.concepts: Dict[str, Concept] = {}
         self.by_domain: Dict[str, Set[str]] = defaultdict(set)
+        self._health: Dict[str, Any] = {
+            "loaded": False,
+            "recovered": False,
+            "reseeded": False,
+            "corrupt_backup_written": False,
+            "last_error": None,
+        }
         self._load_or_seed()
 
     def _load_or_seed(self) -> None:
         if self.persist_path.exists():
             try:
-                with self.persist_path.open("r", encoding="utf-8") as f:
-                    raw = json.load(f)
+                raw_text = self.persist_path.read_text(encoding="utf-8", errors="replace")
+                try:
+                    raw = json.loads(raw_text)
+                except Exception:
+                    raw = self._recover_partial_payload(raw_text)
+                    if raw is None:
+                        raise
+                    backup = self.persist_path.with_suffix(self.persist_path.suffix + ".corrupt")
+                    try:
+                        shutil.copy2(self.persist_path, backup)
+                        self._health["corrupt_backup_written"] = True
+                        log.warning("ConceptGraph recovered partial JSON from %s; original backed up to %s", self.persist_path, backup)
+                    except Exception:
+                        log.warning("ConceptGraph recovered partial JSON from %s", self.persist_path)
+                    self._health["recovered"] = True
                 for entry in raw.get("concepts", []):
                     concept = Concept.from_dict(entry)
                     if concept.name:
                         self.concepts[concept.name] = concept
                         self.by_domain[concept.domain].add(concept.name)
                 if self.concepts:
+                    # Merge in any missing seed concepts (for upgrades that add new domains)
+                    _added = 0
+                    for entry in _SEED_CONCEPTS:
+                        if entry["name"] not in self.concepts:
+                            concept = Concept(
+                                name=entry["name"],
+                                meaning=entry["meaning"],
+                                symbol=entry["symbol"],
+                                domain=entry["domain"],
+                                related=list(entry.get("related", [])),
+                                symbolic_rules=list(entry.get("symbolic_rules", [])),
+                            )
+                            self.concepts[concept.name] = concept
+                            self.by_domain[concept.domain].add(concept.name)
+                            _added += 1
+                    if _added:
+                        log.info("ConceptGraph: merged %d new seed concepts (multi-domain upgrade)", _added)
+                        try:
+                            self._persist()
+                        except Exception:
+                            pass
+                    self._health["loaded"] = True
                     return
             except Exception as e:
+                self._health["last_error"] = str(e)
                 log.warning("Failed loading concept graph: %s", e)
         for entry in _SEED_CONCEPTS:
             concept = Concept(
@@ -273,19 +492,47 @@ class ConceptGraph:
             )
             self.concepts[concept.name] = concept
             self.by_domain[concept.domain].add(concept.name)
+        self._health["reseeded"] = True
         self._persist()
+
+    @staticmethod
+    def _recover_partial_payload(raw_text: str) -> Optional[dict]:
+        decoder = json.JSONDecoder()
+        for idx, ch in enumerate(raw_text):
+            if ch != "{":
+                continue
+            try:
+                obj, _end = decoder.raw_decode(raw_text[idx:])
+            except Exception:
+                continue
+            if isinstance(obj, dict):
+                return obj
+        return None
 
     def _persist(self) -> None:
         try:
             self.persist_path.parent.mkdir(parents=True, exist_ok=True)
-            with self.persist_path.open("w", encoding="utf-8") as f:
-                json.dump(
-                    {"concepts": [c.to_dict() for c in self.concepts.values()]},
-                    f,
-                    indent=2,
-                    ensure_ascii=False,
-                )
+            payload = {"concepts": [c.to_dict() for c in self.concepts.values()]}
+            fd, tmp_name = tempfile.mkstemp(
+                prefix=f"{self.persist_path.name}.",
+                suffix=".tmp",
+                dir=str(self.persist_path.parent),
+            )
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    json.dump(payload, f, indent=2, ensure_ascii=False)
+                    f.write("\n")
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(tmp_name, self.persist_path)
+            finally:
+                if os.path.exists(tmp_name):
+                    try:
+                        os.remove(tmp_name)
+                    except OSError:
+                        pass
         except Exception as e:
+            self._health["last_error"] = str(e)
             log.warning("Failed persisting concept graph: %s", e)
 
     def get(self, name: str) -> Optional[Concept]:
@@ -354,6 +601,60 @@ class ConceptGraph:
     def concepts_in_domain(self, domain: str) -> List[str]:
         return sorted(self.by_domain.get(domain, set()))
 
+    def activate_for_problem(self, domain: str, symbols: List[str]) -> List[Concept]:
+        """Activate concepts relevant to a problem. Returns the matched concepts and
+        increments their use_count. Domain-general — works for math, logic, physics,
+        chemistry, language, code, commonsense, etc.
+
+        Args:
+            domain: the problem's domain (e.g., "arithmetic", "chemistry", "logic")
+            symbols: operator/keyword tokens from the problem (e.g., ["+", "sin", "="])
+
+        Returns:
+            List of Concept objects that were activated.
+        """
+        activated: List[Concept] = []
+        seen: Set[str] = set()
+        # Match by symbol (works for operators like "+", "∪", and keywords like "force")
+        sym_set = {s for s in symbols if s}
+        for concept in self.concepts.values():
+            matched = False
+            if concept.symbol and concept.symbol in sym_set:
+                matched = True
+            elif concept.name in sym_set:
+                matched = True
+            elif concept.domain == domain:
+                # Domain match counts for lower-weight activation
+                matched = True
+            if matched and concept.name not in seen:
+                concept.use_count += 1
+                activated.append(concept)
+                seen.add(concept.name)
+        # Persist periodically (not every call) to avoid I/O overhead
+        if activated and sum(c.use_count for c in activated) % 50 == 0:
+            try:
+                self._persist()
+            except Exception:
+                pass
+        return activated
+
+    def get_transform_hints(self, activated: List[Concept]) -> List[str]:
+        """From a list of activated concepts, return transform-name keywords to boost
+        during search. Derived from each concept's symbolic_rules + name + related.
+        Domain-agnostic: works wherever concepts have symbolic_rules or related terms.
+        """
+        hints: Set[str] = set()
+        for c in activated:
+            hints.add(c.name)
+            for rel in c.related:
+                hints.add(rel)
+            # Extract keywords from symbolic rules (strip operators/numbers/vars)
+            for rule in c.symbolic_rules:
+                import re as _re
+                for tok in _re.findall(r"[a-zA-Z_][a-zA-Z0-9_]{2,}", rule):
+                    hints.add(tok.lower())
+        return list(hints)
+
     def stats(self) -> Dict[str, Any]:
         return {
             "concept_count": len(self.concepts),
@@ -361,6 +662,15 @@ class ConceptGraph:
             "well_grounded": sum(1 for c in self.concepts.values() if c.is_well_grounded()),
             "examples": sum(len(c.examples) for c in self.concepts.values()),
         }
+
+    def summary(self) -> Dict[str, Any]:
+        return {
+            **self.stats(),
+            "health": self.health(),
+        }
+
+    def health(self) -> Dict[str, Any]:
+        return dict(self._health)
 
     def _rule_roles(self, rule: str) -> Set[str]:
         roles: Set[str] = set()
@@ -445,3 +755,19 @@ class ConceptGraph:
             "concepts": [c.to_dict() for c in sorted(self.concepts.values(), key=lambda c: c.name)],
             "stats": self.stats(),
         }
+
+# ── Singleton ─────────────────────────────────────────────────────────────────
+
+import threading as _threading
+
+_CG_INSTANCE: "ConceptGraph | None" = None
+_CG_LOCK = _threading.Lock()
+
+
+def get_concept_graph() -> "ConceptGraph":
+    global _CG_INSTANCE
+    if _CG_INSTANCE is None:
+        with _CG_LOCK:
+            if _CG_INSTANCE is None:
+                _CG_INSTANCE = ConceptGraph()
+    return _CG_INSTANCE

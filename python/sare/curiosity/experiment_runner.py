@@ -1164,6 +1164,52 @@ class ExperimentRunner:
                 except Exception:
                     pass
 
+                # AGI wiring: activate concepts for this problem so knowledge gets USED,
+                # not just stored. Domain-general — works for any domain that has concepts
+                # in the concept graph (math, logic, physics, chemistry, code, commonsense).
+                _concept_hints: set = set()
+                try:
+                    from sare.concept.concept_graph import get_concept_graph
+                    _cg = get_concept_graph()
+                    # Extract symbols from the problem graph
+                    _problem_symbols = []
+                    try:
+                        if hasattr(graph, 'get_node_ids'):
+                            for _nid in graph.get_node_ids():
+                                _n = graph.get_node(_nid)
+                                if _n:
+                                    _lbl = str(getattr(_n, 'label', '') or '')
+                                    if _lbl:
+                                        _problem_symbols.append(_lbl)
+                        elif hasattr(graph, 'nodes'):
+                            for _n in graph.nodes:
+                                _lbl = str(getattr(_n, 'label', '') or '')
+                                if _lbl:
+                                    _problem_symbols.append(_lbl)
+                    except Exception:
+                        pass
+                    if _problem_symbols:
+                        _activated = _cg.activate_for_problem(domain or "general", _problem_symbols)
+                        if _activated:
+                            _concept_hints = set(_cg.get_transform_hints(_activated))
+                            log.debug("[ConceptActivation] %d concepts activated, %d hints",
+                                      len(_activated), len(_concept_hints))
+                except Exception as _ce:
+                    log.debug("[ConceptActivation] error: %s", _ce)
+
+                # Reorder transforms: boost those whose name matches concept hints
+                # (symbol-level or keyword-level). Keeps all transforms; only changes order.
+                if _concept_hints:
+                    def _concept_match_score(t):
+                        try:
+                            tname = t.name().lower()
+                        except Exception:
+                            return 0
+                        return sum(1 for h in _concept_hints if h and h.lower() in tname)
+                    _scored = [(t, _concept_match_score(t)) for t in _search_transforms]
+                    _scored.sort(key=lambda x: -x[1])  # higher score first
+                    _search_transforms = [t for t, _s in _scored]
+
                 # P3-I: CompositeRuleLearner — suggest transform order
                 try:
                     from sare.learning.composite_rule_learner import get_composite_learner
@@ -1973,6 +2019,25 @@ class ExperimentRunner:
                     )
         self._maybe_emit_domain_mastery()
         self._maybe_trigger_synthesis()
+
+        # Wire homeostasis: solving problems satisfies drives (was never called from solve loop,
+        # causing all 7 drives to saturate at 1.0 permanently).
+        try:
+            from sare.meta.homeostasis import get_homeostatic_system
+            _hs = get_homeostatic_system()
+            _total = len(results)
+            _solved = sum(1 for _r in results if getattr(_r, "solved", False))
+            if _total > 0:
+                _hs.on_batch_completed(_solved, _total)
+            # Novel domains satisfy exploration drive (domain-agnostic signal)
+            _domains_this_batch = {str(getattr(_r, "domain", "general") or "general")
+                                    for _r in results}
+            if len(_domains_this_batch) >= 2:
+                _hs.on_exploration()
+            # Tick drives forward each batch (time-based growth)
+            _hs.tick()
+        except Exception as _hs_exc:
+            log.debug("[ExperimentRunner] homeostasis update error: %s", _hs_exc)
 
         self._batch_count += 1
         self._record_batch_stats(requested_n=n, results=results, elapsed_s=time.time() - batch_start)

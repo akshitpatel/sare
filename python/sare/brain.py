@@ -2258,12 +2258,15 @@ class Brain:
             if fallback_info.get("attempted") and fallback_info.get("generated", 0) > 0:
                 reason = "candidates_generated_but_rejected"
                 suggestion = "Fallback candidates were generated but did not pass solve-time checks"
+            if fallback_info.get("no_runtime_match"):
+                reason = "candidates_generated_but_unmatched"
+                suggestion = "Fallback candidates were proposed but no live transform matched the expression graph"
             if fallback_info.get("verification_failed"):
                 reason = "verification_failed"
                 suggestion = "Fallback candidates matched but failed verification"
             if fallback_info.get("execution_failed"):
                 reason = "execution_failed"
-                suggestion = "Fallback candidates executed but still did not solve the problem"
+                suggestion = "Matched fallback transforms executed but still did not solve the problem"
         elif delta < 0:
             # Transforms made it worse
             reason = "negative_delta"
@@ -2377,8 +2380,11 @@ class Brain:
             "attempted": True,
             "generated": 0,
             "candidate_names": [],
+            "matched_transforms": 0,
+            "matched_transform_names": [],
             "verification_failed": False,
             "execution_failed": False,
+            "no_runtime_match": False,
         }
         candidates = self._transform_fallback_candidates(expression, domain)
         info["candidate_names"] = candidates[:5]
@@ -2403,10 +2409,11 @@ class Brain:
                     continue
             if matched:
                 info["generated"] = max(info["generated"], matched)
+                info["matched_transforms"] = matched
                 info["verification_failed"] = True
                 info["matched_transform_names"] = matched_names[:8]
             elif candidates:
-                info["execution_failed"] = True
+                info["no_runtime_match"] = True
         return info
 
     def failure_reason_report(self) -> dict:
@@ -2416,6 +2423,7 @@ class Brain:
             for name in (
                 "no_candidates_generated",
                 "candidates_generated_but_rejected",
+                "candidates_generated_but_unmatched",
                 "verification_failed",
                 "execution_failed",
                 "no_matching_transforms",
@@ -2426,6 +2434,8 @@ class Brain:
         rescue_stats = dict((self._stats.get("transform_rescue", {}) or {}))
         by_domain_raw = dict(rescue_stats.get("by_domain", {}) or {})
         by_domain: Dict[str, dict] = {}
+        by_source_attempts: Dict[str, int] = {}
+        by_source_rescues: Dict[str, int] = {}
         for domain, raw in by_domain_raw.items():
             if not isinstance(raw, dict):
                 continue
@@ -2439,6 +2449,10 @@ class Brain:
                 str(source): int(count or 0)
                 for source, count in dict(raw.get("source_successes", {}) or {}).items()
             }
+            for source, count in sources.items():
+                by_source_attempts[source] = by_source_attempts.get(source, 0) + int(count or 0)
+            for source, count in successes.items():
+                by_source_rescues[source] = by_source_rescues.get(source, 0) + int(count or 0)
             best_source = None
             best_successes = -1
             best_rate = -1.0
@@ -2459,12 +2473,26 @@ class Brain:
                 "source_successes": successes,
                 "best_rescue_source": best_source,
             }
+        by_source = [
+            {
+                "source": source,
+                "attempts": attempts,
+                "rescues": by_source_rescues.get(source, 0),
+                "rescue_rate": round(by_source_rescues.get(source, 0) / max(attempts, 1), 3) if attempts else 0.0,
+            }
+            for source, attempts in by_source_attempts.items()
+        ]
+        by_source.sort(
+            key=lambda item: (item["rescues"], item["rescue_rate"], item["attempts"]),
+            reverse=True,
+        )
         return {
             "failure_reasons": reasons,
             "transform_failures": {
                 "total": transform_total,
                 "no_candidates_generated": int(reasons.get("no_candidates_generated", 0) or 0),
                 "candidates_generated_but_rejected": int(reasons.get("candidates_generated_but_rejected", 0) or 0),
+                "candidates_generated_but_unmatched": int(reasons.get("candidates_generated_but_unmatched", 0) or 0),
                 "verification_failed": int(reasons.get("verification_failed", 0) or 0),
                 "execution_failed": int(reasons.get("execution_failed", 0) or 0),
                 "legacy_no_matching_transforms": int(reasons.get("no_matching_transforms", 0) or 0),
@@ -2472,6 +2500,8 @@ class Brain:
                 "fallback_rescues": fallback_rescues,
                 "fallback_rescue_rate": round(fallback_rescues / max(fallback_attempts, 1), 3) if fallback_attempts else 0.0,
                 "by_domain": by_domain,
+                "by_source": by_source,
+                "best_rescue_source": by_source[0]["source"] if by_source else None,
             },
         }
 
@@ -2564,6 +2594,28 @@ class Brain:
         try:
             fallback = dict(failure_info.get("fallback", {}) or {})
             weak_domains = {"mathematics", "physics", "chemistry", "technology", "word_problems"}
+            rescue_stats = dict((self._stats.get("transform_rescue", {}) or {}))
+            domain_rescue = dict((rescue_stats.get("by_domain", {}) or {}).get(str(domain or "general"), {}) or {})
+            source_attempts = {
+                str(source): int(count or 0)
+                for source, count in dict(domain_rescue.get("sources", {}) or {}).items()
+            }
+            source_successes = {
+                str(source): int(count or 0)
+                for source, count in dict(domain_rescue.get("source_successes", {}) or {}).items()
+            }
+            fallback_generated = int(fallback.get("generated", 0) or 0)
+            matched_transforms = int(fallback.get("matched_transforms", 0) or 0)
+            no_runtime_match = bool(fallback.get("no_runtime_match"))
+            verification_failed = bool(fallback.get("verification_failed"))
+            transfer_attempts = int(self._stats.get("transfers_attempted", 0) or 0)
+            transfer_successes = int(self._stats.get("transfers_succeeded", 0) or 0)
+            global_transfer_rate = (
+                transfer_successes / max(transfer_attempts, 1)
+                if transfer_attempts
+                else None
+            )
+
             def _with_rescue_source(result: Optional[dict], source: str) -> Optional[dict]:
                 success = bool(result and result.get("success"))
                 self._record_transform_rescue(domain, source, success)
@@ -2573,7 +2625,33 @@ class Brain:
                 payload.setdefault("rescue_source", source)
                 return payload
 
-            if fallback.get("generated", 0) > 0 or domain in weak_domains:
+            def _source_viable(source: str, min_attempts: int = 4, min_rate: float = 0.15, force: bool = False) -> bool:
+                attempts = int(source_attempts.get(source, 0) or 0)
+                rescues = int(source_successes.get(source, 0) or 0)
+                if force or attempts < min_attempts:
+                    return True
+                return (rescues / max(attempts, 1)) >= min_rate
+
+            should_try_transfer = fallback_generated > 0 or domain in weak_domains
+            if no_runtime_match or matched_transforms > 0:
+                should_try_transfer = True
+            if (
+                should_try_transfer
+                and global_transfer_rate is not None
+                and transfer_attempts >= 10
+                and global_transfer_rate < 0.1
+                and domain not in weak_domains
+                and not no_runtime_match
+            ):
+                should_try_transfer = False
+            if should_try_transfer and not _source_viable(
+                "verified_transfer_suggestion",
+                min_attempts=4,
+                min_rate=0.2,
+                force=(domain in weak_domains or no_runtime_match),
+            ):
+                should_try_transfer = False
+            if should_try_transfer:
                 transferred = self._attempt_concept_transfer(
                     expression,
                     domain,
@@ -2598,7 +2676,16 @@ class Brain:
                         "verified_transfer_suggestion",
                     )
                 self._record_transform_rescue(domain, "verified_transfer_suggestion", False)
-            if domain in weak_domains:
+            should_try_general_solver = (
+                domain in weak_domains
+                and _source_viable(
+                    "general_solver_rescue",
+                    min_attempts=4,
+                    min_rate=0.12,
+                    force=(no_runtime_match or verification_failed or fallback_generated == 0),
+                )
+            )
+            if should_try_general_solver:
                 rescued = self._run_general_solver(
                     expression,
                     context={
@@ -4175,6 +4262,46 @@ class Brain:
             pass
         return {}
 
+    def world_model_readable_report(self, include_content: bool = False) -> dict:
+        try:
+            from sare.meta.world_model_readable_report import DEFAULT_METADATA_PATH, DEFAULT_OUTPUT_PATH
+        except Exception as exc:
+            self._record_runtime_error("world_model_readable_report.import", exc, "world_model_readable_report")
+            return {"available": False, "metadata": {}, "content": "", "url": "/api/world/readable-report"}
+
+        metadata_path = Path(DEFAULT_METADATA_PATH)
+        output_path = Path(DEFAULT_OUTPUT_PATH)
+        metadata: Dict[str, Any] = {}
+        content = ""
+
+        if metadata_path.exists():
+            try:
+                loaded = json.loads(metadata_path.read_text(encoding="utf-8"))
+                if isinstance(loaded, dict):
+                    metadata = loaded
+            except Exception as exc:
+                self._record_runtime_error("world_model_readable_report.metadata", exc, "world_model_readable_report")
+
+        if include_content and output_path.exists():
+            try:
+                content = output_path.read_text(encoding="utf-8")
+            except Exception as exc:
+                self._record_runtime_error("world_model_readable_report.content", exc, "world_model_readable_report")
+
+        available = bool(metadata) or output_path.exists()
+        return {
+            "available": available,
+            "metadata": metadata,
+            "content": content,
+            "url": "/api/world/readable-report",
+            "path": str(output_path),
+            "metadata_path": str(metadata_path),
+            "generated_at": metadata.get("generated_at"),
+            "generated_at_human": metadata.get("generated_at_human"),
+            "solve_count": metadata.get("solve_count"),
+            "every_solves": metadata.get("every_solves"),
+        }
+
     def world_prediction_stats(self) -> dict:
         stats: Dict[str, Any] = {}
         if self.world_model is not None and hasattr(self.world_model, "prediction_stats"):
@@ -5724,24 +5851,38 @@ class Brain:
             "mid_term": 21600.0,
             "long_term": 86400.0,
         }
+        due_order = [
+            ("long_term", tiers["long_term"]),
+            ("mid_term", tiers["mid_term"]),
+            ("short_term", tiers["short_term"]),
+        ]
+        recent_window_seconds = 24 * 3600.0
         items = list(self.learned_artifacts(limit=500).get("items", []))
         due = {name: 0 for name in tiers}
         recent = {name: 0 for name in tiers}
+        verified_items = 0
         for item in items:
             if str(item.get("verification_state", "")) != "verified":
                 continue
+            verified_items += 1
             metadata = dict(item.get("metadata", {}) or {})
             acquired_at = float(metadata.get("acquired_at", (item.get("provenance", {}) or {}).get("acquired_at", 0.0)) or 0.0)
             last_retested_at = float(metadata.get("last_retested_at", 0.0) or 0.0)
             baseline = last_retested_at if last_retested_at > 0 else acquired_at
-            for name, min_age in tiers.items():
+            due_tier = ""
+            for name, min_age in due_order:
                 if baseline > 0 and now - baseline >= min_age:
-                    due[name] += 1
+                    due_tier = name
+                    break
+            if due_tier:
+                due[due_tier] += 1
             current_tier = str(metadata.get("retention_tier", "") or "")
-            if current_tier in recent:
+            if current_tier in recent and last_retested_at > 0 and now - last_retested_at <= recent_window_seconds:
                 recent[current_tier] += 1
         return {
             "tiers": [{"name": name, "min_age_seconds": age, "due_now": due[name], "recent_retests": recent[name]} for name, age in tiers.items()],
+            "eligible_verified": verified_items,
+            "recent_window_seconds": recent_window_seconds,
             "timestamp": now,
         }
 
@@ -6212,6 +6353,7 @@ class Brain:
         def _build() -> dict:
             try:
                 from sare.meta.learning_progress_report import (
+                    DEFAULT_HISTORY_PATH,
                     DEFAULT_OUTPUT_PATH,
                     generate_learning_progress_report,
                     write_learning_progress_report,
@@ -6264,7 +6406,11 @@ class Brain:
                     report["measured"] = measured
                     safe_report = self._json_safe(report)
                     report = safe_report if isinstance(safe_report, dict) else {"value": safe_report}
-                    write_learning_progress_report(report, output_path=Path(DEFAULT_OUTPUT_PATH), history_path=None)
+                    write_learning_progress_report(
+                        report,
+                        output_path=Path(DEFAULT_OUTPUT_PATH),
+                        history_path=Path(DEFAULT_HISTORY_PATH),
+                    )
                 return report
             except Exception as exc:
                 self._record_runtime_error("learning_progress_report.generate", exc, "learning_progress_report")
@@ -6772,11 +6918,16 @@ class Brain:
             truth_gate = _safe(self.learning_truth_gate)
             weakest_domains: List[dict] = []
             try:
+                domains = [item for item in report.get("domains", []) if isinstance(item, dict)]
+                ranked_domains = [item for item in domains if int(item.get("measured_attempts", 0) or 0) >= 3]
+                if not ranked_domains:
+                    ranked_domains = [item for item in domains if int(item.get("measured_attempts", 0) or 0) > 0]
                 weakest_domains = sorted(
-                    report.get("domains", []),
+                    ranked_domains,
                     key=lambda item: (
-                        float(item.get("understanding_share") if item.get("understanding_share") is not None else -1.0),
-                        int(item.get("attempts", 0)),
+                        float(item.get("understanding_share") if item.get("understanding_share") is not None else 1.0),
+                        -int(item.get("measured_attempts", 0) or 0),
+                        -int(item.get("attempts", 0) or 0),
                     ),
                 )[:8]
             except Exception:
@@ -6819,6 +6970,7 @@ class Brain:
                 "report": report,
                 "acquisition": acquisition,
                 "audit": audit,
+                "world_model_readable": _safe(lambda: self.world_model_readable_report(include_content=False)),
                 "understanding": understanding,
                 "evidence_quality": dict(understanding.get("evidence_quality", {}) or {}),
                 "autolearn": dict(self.auto_learn_status()),
@@ -6884,12 +7036,16 @@ class Brain:
                     self._record_runtime_error("developmental_curriculum.get_curriculum_map", exc, "learning_dashboard_payload")
 
             return {
+                "generated_at": ops.get("generated_at", time.time()),
                 "report": report,
                 "history": history,
                 "autolearn": autolearn,
                 "trainer": self.autonomous_trainer_status(),
+                "world_model_readable": ops.get("world_model_readable", {}),
                 "acquisition": ops.get("acquisition", {}),
                 "audit": ops.get("audit", {}),
+                "source_yield": ops.get("source_yield", {}),
+                "transfer_suite": ops.get("transfer_suite", {}),
                 "grounded": ops.get("grounded", {}),
                 "retention_schedule": ops.get("retention_schedule", {}),
                 "bootstrap": ops.get("bootstrap", {}),
@@ -8329,7 +8485,7 @@ class Brain:
         if not self.goal_setter:
             return
         try:
-            from sare.meta.goal_setter import GoalType
+            from sare.meta.goal_setter import GoalType, GoalStatus
 
             # Avoid duplicate goals — check active goals first
             try:
@@ -8357,15 +8513,29 @@ class Brain:
                 except Exception:
                     pass
 
-            # Generate rule discovery goal if not enough rules known
+            # Generate rule discovery goal if not enough rules known.
+            # De-dupe by type: only one active RULE_DISCOVERY goal at a time
+            # (the description embeds a counter that changes, so string-matching
+            # would create a new goal every time — the bug we're fixing).
             rules_known = self._stats.get("rules_promoted", 0)
             if rules_known < 5:
-                desc = f"Discover 5 new rules (currently {rules_known})"
-                if desc not in active_descs:
+                _has_active_rd = False
+                try:
+                    for _g in self.goal_setter._goals.values():
+                        if (getattr(_g, "type", None) == GoalType.RULE_DISCOVERY
+                                and getattr(_g, "status", None) == GoalStatus.ACTIVE):
+                            _has_active_rd = True
+                            # Update its progress instead of creating a duplicate
+                            _g.update_progress(float(rules_known))
+                            _g.description = f"Discover 5 new rules (currently {rules_known})"
+                            break
+                except Exception:
+                    pass
+                if not _has_active_rd:
                     try:
                         self.goal_setter.add_goal(
                             type=GoalType.RULE_DISCOVERY,
-                            description=desc,
+                            description=f"Discover 5 new rules (currently {rules_known})",
                             target=5.0,
                             domain=None,
                             priority=2,
