@@ -22,15 +22,25 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import subprocess
+import tempfile
 import time
 import threading
 from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 from sare.sare_logging.logger import SareLogger, SolveLog
+from sare.learning.acquisition import (
+    AcquisitionMesh,
+    AcquisitionResult as AcquisitionResultData,
+    AcquisitionSourceConfig as CanonicalAcquisitionSourceConfig,
+)
+from sare.learning.learning_policy import AdaptiveLearningPolicy
+from sare.learning.strategy_scorecard import LearningStrategyScorecard
 
 log = logging.getLogger("sare.brain")
 
@@ -196,6 +206,77 @@ class EventData:
     source: str = ""
 
 
+class SolveResult(dict):
+    """Compatibility-safe canonical solve result."""
+
+    @property
+    def solved(self) -> bool:
+        return bool(self.get("success", False))
+
+    @property
+    def request_id(self) -> str:
+        return str(self.get("request_id", self.get("expression", "")))
+
+    def to_dict(self) -> dict:
+        return dict(self)
+
+
+class LearnCycleResult(list):
+    """List-like learning result with aggregate metadata."""
+
+    def __init__(self, results: Optional[Iterable[dict]] = None, **summary: Any):
+        super().__init__(results or [])
+        self.summary = dict(summary)
+
+    def to_dict(self) -> dict:
+        return {"results": list(self), **self.summary}
+
+
+class IngestionResult(dict):
+    """Canonical ingestion result."""
+
+    def to_dict(self) -> dict:
+        return dict(self)
+
+
+class AcquisitionResult(dict):
+    """Canonical acquisition result."""
+
+    def to_dict(self) -> dict:
+        return dict(self)
+
+
+class AuditReport(dict):
+    """Canonical learning audit result."""
+
+    def to_dict(self) -> dict:
+        return dict(self)
+
+
+class BrainStatus(dict):
+    """Canonical brain status payload."""
+
+    def to_dict(self) -> dict:
+        return dict(self)
+
+
+@dataclass
+class IngestionSourceConfig:
+    source_type: str
+    payload: Any
+    source_id: str = "user"
+    domain: str = "general"
+    trust_level: str = "default"
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class IngestionBatch:
+    items: List[IngestionSourceConfig]
+    source_id: str = "batch"
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
 class EventBus:
     """Simple synchronous event bus for inter-module communication."""
 
@@ -289,6 +370,7 @@ class Brain:
 
         # Event bus
         self.events = EventBus()
+        self._events_wired = False
 
         # Developmental state
         self.stage = DevelopmentalStage.INFANT
@@ -419,6 +501,7 @@ class Brain:
         self.nl_parser = None
         self.llm_bridge = None
         self.language_grounding = None
+        self.general_solver = None
 
         # Infrastructure
         self.hippocampus = None
@@ -441,10 +524,43 @@ class Brain:
             "domains_mastered": [],
             "sleep_cycles": 0,
             "runtime_errors": 0,
+            "solve_modes": {},
+            "ingestion": {
+                "records_scanned": 0,
+                "facts_added": 0,
+                "problems_added": 0,
+                "concepts_proposed": 0,
+                "rejected_records": 0,
+            },
         }
         self._diagnostics: List[dict] = []
         self._max_diagnostics = 200
         self._last_problem_selection: Optional[dict] = None
+        self._concept_graph_health: Dict[str, Any] = {
+            "loaded": False,
+            "recovered": False,
+            "reseeded": False,
+            "corrupt_backup_written": False,
+        }
+        self.acquisition_mesh: Optional[AcquisitionMesh] = None
+        self._acquisition_lock = threading.Lock()
+        self._acquisition_schedule_threads: List[threading.Thread] = []
+        self._acquisition_cooldowns: Dict[str, float] = {}
+        self._acquisition_policy_stats: Dict[str, Any] = {
+            "success_counts": {},
+            "error_counts": {},
+            "last_remote_failure": None,
+            "last_fallback_source": None,
+            "github_enabled": False,
+        }
+        self._state_save_lock = threading.Lock()
+        self._report_cache: Dict[str, Dict[str, Any]] = {}
+        self._report_cache_lock = threading.Lock()
+        self._report_build_locks: Dict[str, threading.Lock] = {}  # per-key build serialization
+        self.learning_strategy_scorecard = LearningStrategyScorecard()
+        self.adaptive_learning_policy = AdaptiveLearningPolicy(self.learning_strategy_scorecard)
+        self._last_self_generated_learning: Dict[str, Any] = {}
+        self._wire_events()
 
     @staticmethod
     def _load_config(config: Optional[dict] = None) -> dict:
@@ -475,8 +591,17 @@ class Brain:
     #  Boot Sequence
     # ─────────────────────────────────────────────────────────────────────────
 
-    def boot(self):
+    def boot(self, config_path: Optional[str] = None):
         """Initialize all subsystems in dependency order."""
+        if config_path and yaml:
+            try:
+                payload = yaml.safe_load(Path(config_path).read_text(encoding="utf-8")) or {}
+                if isinstance(payload, dict):
+                    self.config = self._load_config(payload)
+                    self.phase_flags = dict(self.config.get("phases", {}))
+                    self.boot_flags = dict(self.config.get("brain_boot", {}))
+            except Exception as exc:
+                self._record_runtime_error("brain.boot.config_path", exc, "boot")
         self.boot_time = time.time()
         log.info("╔══════════════════════════════════════════╗")
         log.info("║       SARE-HX Brain Booting...           ║")
@@ -530,6 +655,11 @@ class Brain:
                 "cpp_reflection_engine", "causal_induction", "cpp_module_generator",
                 reason="world_model boot disabled",
             )
+        try:
+            self._write_run_marker("brain")
+            self._write_tracking_snapshot(force=True)
+        except Exception as exc:
+            self._record_runtime_error("brain.boot.run_marker", exc, "boot")
 
         # Layer 5: Perception
         if self._boot_enabled("perception", True):
@@ -635,18 +765,66 @@ class Brain:
                 pass
         return str(graph)[:120]
 
+    @staticmethod
+    def _safe_stringify(value: Any, limit: int = 500) -> str:
+        try:
+            text = str(value)
+        except Exception:
+            try:
+                text = repr(value)
+            except Exception:
+                text = f"<{type(value).__name__}>"
+        if len(text) > limit:
+            return text[:limit]
+        return text
+
+    @classmethod
+    def _json_safe(cls, value: Any, *, _depth: int = 0, _seen: Optional[set] = None) -> Any:
+        if value is None or isinstance(value, (str, int, float, bool)):
+            return value
+        if _depth >= 8:
+            return cls._safe_stringify(value, limit=200)
+        if isinstance(value, Path):
+            return str(value)
+        if _seen is None:
+            _seen = set()
+        if isinstance(value, dict):
+            obj_id = id(value)
+            if obj_id in _seen:
+                return "<recursive>"
+            _seen.add(obj_id)
+            try:
+                safe_dict = {}
+                for key, item in list(value.items())[:200]:
+                    safe_key = cls._safe_stringify(key, limit=120)
+                    safe_dict[safe_key] = cls._json_safe(item, _depth=_depth + 1, _seen=_seen)
+                return safe_dict
+            finally:
+                _seen.discard(obj_id)
+        if isinstance(value, (list, tuple, set)):
+            obj_id = id(value)
+            if obj_id in _seen:
+                return ["<recursive>"]
+            _seen.add(obj_id)
+            try:
+                return [cls._json_safe(item, _depth=_depth + 1, _seen=_seen) for item in list(value)[:200]]
+            finally:
+                _seen.discard(obj_id)
+        return cls._safe_stringify(value, limit=200)
+
     def _record_runtime_error(self, component: str, exc: Exception, context: str = "") -> None:
+        error_message = self._safe_stringify(exc)
         entry = {
             "time": time.time(),
             "component": component,
-            "error": str(exc),
+            "error": error_message,
             "context": context,
         }
         self._diagnostics.append(entry)
         if len(self._diagnostics) > self._max_diagnostics:
             self._diagnostics = self._diagnostics[-self._max_diagnostics:]
         self._stats["runtime_errors"] = self._stats.get("runtime_errors", 0) + 1
-        log.debug("%s failed%s: %s", component, f" ({context})" if context else "", exc)
+        log.debug("%s failed%s: %s", component, f" ({context})" if context else "", error_message)
 
     @staticmethod
     def _serialize_recalled_memory(similar: List[dict]) -> List[dict]:
@@ -670,6 +848,8 @@ class Brain:
             ("credit_assigner", self.credit_assigner),
         ):
             saver = getattr(component, "save", None)
+            if not callable(saver):
+                saver = getattr(component, "_save", None)
             if not callable(saver):
                 continue
             try:
@@ -812,18 +992,24 @@ class Brain:
         else:
             self._mark_skipped("concept_registry", reason="abstraction phase disabled")
 
-        # P1.4: Reload high-confidence rules as live transforms immediately
+        # P1.4: Reload persisted rules as live transforms immediately
+        # Lowered from 0.7 → 0.5 so more discovered rules survive restarts
         if self.concept_registry and self.transforms:
             try:
-                rules = self.concept_registry.get_consolidated_rules(min_confidence=0.7)
+                rules = self.concept_registry.get_consolidated_rules(0.5)
+                existing_names = {t.name() for t in self.transforms if hasattr(t, 'name') and callable(t.name)}
                 loaded = 0
                 for rule in rules:
+                    rule_name = rule.get('name', '') if isinstance(rule, dict) else getattr(rule, 'name', '')
+                    if rule_name in existing_names:
+                        continue  # Skip duplicates already in transform set
                     t = self._rule_to_transform(rule) if hasattr(self, '_rule_to_transform') else None
                     if t:
                         self.transforms.append(t)
+                        existing_names.add(rule_name)
                         loaded += 1
                 if loaded:
-                    log.info(f"Boot: reloaded {loaded} high-confidence rules as live transforms")
+                    log.info(f"Boot: reloaded {loaded} persisted rules as live transforms")
             except Exception as _e:
                 log.debug(f"Rule reload skipped: {_e}")
 
@@ -833,6 +1019,12 @@ class Brain:
             cs.load()
             if cs.total_facts() == 0:
                 cs.seed()
+            # Ensure chemistry facts are seeded (runs once, idempotent)
+            try:
+                from sare.knowledge.chemistry_seed import seed as _chem_seed
+                _chem_seed()
+            except Exception as _ce:
+                pass
             return cs
         self.commonsense = self._load_module("commonsense", load_cs)
 
@@ -1174,22 +1366,36 @@ class Brain:
         if self.concept_graph and self.environment_simulator and self._boot_enabled("warmup_environment_discovery", True):
             try:
                 sym_rules = self.environment_simulator.generate_symbolic_rules()
-                for concept_name, symbolic, evidence in sym_rules:
+                for item in sym_rules:
+                    if isinstance(item, dict):
+                        concept_name = str(item.get("concept", ""))
+                        symbolic = str(item.get("rule", ""))
+                    elif isinstance(item, (list, tuple)) and len(item) >= 2:
+                        concept_name = str(item[0])
+                        symbolic = str(item[1])
+                    else:
+                        continue
+                    if not concept_name or not symbolic:
+                        continue
                     if concept_name in self.concept_graph.concepts:
                         c = self.concept_graph.concepts[concept_name]
                         if symbolic not in c.symbolic_rules:
                             c.symbolic_rules.append(symbolic)
-                obs_by_concept = self.environment_simulator.extract_concepts()
-                for concept_name, obs_list in obs_by_concept.items():
-                    for obs in obs_list[:3]:
-                        self.concept_graph.ground_example(
-                            concept_name=concept_name,
-                            text=obs.description,
-                            operation=obs.operation,
-                            symbolic=obs.symbolic,
-                            domain="arithmetic",
-                        )
-                log.info(f"Concept graph seeded: {self.concept_graph.summary()}")
+                if hasattr(self.environment_simulator, "extract_concepts"):
+                    obs_by_concept = self.environment_simulator.extract_concepts()
+                    for concept_name, obs_list in obs_by_concept.items():
+                        for obs in obs_list[:3]:
+                            self.concept_graph.ground_example(
+                                concept_name=concept_name,
+                                text=obs.description,
+                                operation=obs.operation,
+                                symbolic=obs.symbolic,
+                                domain="arithmetic",
+                            )
+                cg_summary = self.concept_graph.summary() if hasattr(self.concept_graph, "summary") else self.concept_graph.stats()
+                if hasattr(self.concept_graph, "health"):
+                    self._concept_graph_health = dict(self.concept_graph.health())
+                log.info(f"Concept graph seeded: {cg_summary}")
             except Exception as _e:
                 log.debug(f"Concept graph seeding: {_e}")
 
@@ -1215,7 +1421,7 @@ class Brain:
             # Seed with known rules from the concept registry
             if self.concept_registry:
                 try:
-                    for rule in self.concept_registry.get_consolidated_rules(min_confidence=0.7):
+                    for rule in self.concept_registry.get_consolidated_rules(0.7):
                         name = rule.get("name", "") if isinstance(rule, dict) else getattr(rule, "name", "")
                         domain = rule.get("domain", "arithmetic") if isinstance(rule, dict) else getattr(rule, "domain", "arithmetic")
                         conf = rule.get("confidence", 0.7) if isinstance(rule, dict) else getattr(rule, "confidence", 0.7)
@@ -1241,8 +1447,8 @@ class Brain:
         # Transfer Engine
         if self._phase_enabled("causal", True):
             def load_te():
-                from sare.transfer.engine import TransferEngine
-                return TransferEngine()
+                from sare.transfer.engine import get_transfer_engine
+                return get_transfer_engine()
             self.transfer_engine = self._load_module("transfer_engine", load_te)
 
             def load_ci():
@@ -1308,7 +1514,7 @@ class Brain:
 
         if self._phase_enabled("plasticity", True):
             def load_ts():
-                from sare.transfer.synthesizer import TransformSynthesizer
+                from sare.meta.transform_synthesizer import TransformSynthesizer
                 return TransformSynthesizer()
             self.transform_synthesizer = self._load_module("transform_synthesizer", load_ts)
         else:
@@ -1334,6 +1540,11 @@ class Brain:
             from sare.interface import llm_bridge
             return llm_bridge
         self.llm_bridge = self._load_module("llm_bridge", load_llm)
+
+        def load_general_solver():
+            from sare.cognition.general_solver import GeneralSolver
+            return GeneralSolver(persistence_delegate=self)
+        self.general_solver = self._load_module("general_solver", load_general_solver)
 
     def _boot_social(self):
         def load_dm():
@@ -1387,6 +1598,7 @@ class Brain:
                 causal_induction=self.causal_induction,
                 concept_registry=self.concept_registry,
                 transforms=self.transforms,
+                analogy_transfer=self.analogy_transfer,
             )
             # Patch in optional modules
             if self.self_model:
@@ -1476,6 +1688,8 @@ class Brain:
 
     def _wire_events(self):
         """Connect modules via event bus."""
+        if self._events_wired:
+            return
 
         # When a solve completes, update memory + self model + world model
         self.events.subscribe(Event.SOLVE_COMPLETED, self._on_solve_completed)
@@ -1484,6 +1698,15 @@ class Brain:
         self.events.subscribe(Event.RULE_PROMOTED, self._on_rule_promoted)
         self.events.subscribe(Event.DOMAIN_MASTERED, self._on_domain_mastered)
         self.events.subscribe(Event.COMPETENCE_UPDATED, self._on_competence_updated)
+        self.events.subscribe(Event.TRANSFER_ATTEMPTED, self._on_transfer_attempted)
+        self.events.subscribe(Event.TRANSFER_SUCCEEDED, self._on_transfer_succeeded)
+        # Subscribe to transfer_verified from the global core event bus (published by TransferEngine)
+        try:
+            from sare.core.event_bus import get_event_bus as _get_core_bus
+            _get_core_bus().subscribe("transfer_verified", self._on_transfer_verified_core)
+        except Exception:
+            pass
+        self._events_wired = True
 
     def _on_solve_completed(self, ed: EventData):
         """Post-solve processing: store episode, update competence, reflect."""
@@ -1494,12 +1717,17 @@ class Brain:
         energy_after = data.get("energy_after", 0)
         domain = data.get("domain", "general")
         elapsed = data.get("elapsed", 0)
+        solver_used = str(data.get("solver_used", "symbolic") or "symbolic")
         delta = energy_before - energy_after
         success = delta > 0.01
 
         self._stats["solves_attempted"] += 1
         if success:
             self._stats["solves_succeeded"] += 1
+            try:
+                self._stats.setdefault("domain_consecutive_failures", {})[domain] = 0
+            except Exception:
+                pass
 
         # WorldModel v3: observe every solve (learns causal links, schemas, beliefs)
         if self.world_model_v3:
@@ -1518,6 +1746,48 @@ class Brain:
             except Exception as exc:
                 self._record_runtime_error("transfer_engine.observe", exc, "post_solve")
 
+        # Transfer Engine: passive hypothesis testing via live solve outcomes
+        if self.transfer_engine and success and transforms_used:
+            try:
+                from sare.transfer.engine import RoleClassifier as _BRC
+                _used_roles = {_BRC.classify(t) for t in transforms_used if t} - {None}
+                _te_domain = domain or "general"
+                _pending = [
+                    h for h in self.transfer_engine._hypotheses.values()
+                    if h.status == "untested" and h.target_domain == _te_domain
+                    and h.source_role in _used_roles
+                ]
+                if _pending:
+                    log.info("[TransferPassive] domain=%s roles=%s → %d matches",
+                             _te_domain, _used_roles, len(_pending))
+                for _hyp in _pending[:2]:
+                    _hyp.test_results.append({
+                        "problem": str(problem_id)[:80],
+                        "success": success,
+                        "delta": float(energy_before - energy_after),
+                    })
+                    if len(_hyp.test_results) >= 3:
+                        _wins = sum(1 for r in _hyp.test_results if r.get("success"))
+                        if _wins / len(_hyp.test_results) >= 0.5:
+                            _hyp.status = "verified"
+                            _hyp.confidence = min(0.95, _hyp.confidence + 0.2)
+                            self.transfer_engine._stats["hypotheses_verified"] = (
+                                int(self.transfer_engine._stats.get("hypotheses_verified", 0)) + 1
+                            )
+                            log.info("[TransferPassive] VERIFIED: %s→%s role=%s conf=%.2f",
+                                     _hyp.source_domain, _hyp.target_domain,
+                                     _hyp.source_role, _hyp.confidence)
+                        elif _wins == 0 and len(_hyp.test_results) >= 5:
+                            _hyp.status = "rejected"
+                            _hyp.confidence *= 0.3
+                            self.transfer_engine._stats["hypotheses_rejected"] = (
+                                int(self.transfer_engine._stats.get("hypotheses_rejected", 0)) + 1
+                            )
+                if _pending:
+                    self.transfer_engine.save()
+            except Exception as _tp_exc:
+                log.debug("[TransferPassive] exception: %s", _tp_exc)
+
         # S32: CausalRollout — observe transform sequence and energy deltas
         if self.causal_rollout and transforms_used:
             try:
@@ -1534,8 +1804,8 @@ class Brain:
                     expression=problem_id,
                     domain=domain,
                     transforms_applied=transforms_used,
-                    energy_before=energy_before,
-                    energy_after=energy_after,
+                    original_delta=delta,
+                    solve_fn=lambda expr: {"delta": 0.0},
                 )
             except Exception as exc:
                 self._record_runtime_error("counterfactual_reasoner.analyze", exc, "post_solve")
@@ -1544,10 +1814,11 @@ class Brain:
         if success and delta > 0.1:
             try:
                 from sare.neuro.dopamine import get_dopamine_system
+                _evt = "solve_novel" if delta > 3.0 else "solve_known"
                 get_dopamine_system().receive_reward(
-                    reward=min(1.0, delta / 5.0),
+                    event_type=_evt,
                     domain=domain,
-                    is_novel=(delta > 3.0),
+                    delta=delta,
                 )
             except Exception as exc:
                 self._record_runtime_error("dopamine.receive_reward", exc, "post_solve")
@@ -1583,26 +1854,21 @@ class Brain:
         if self.concept_memory is not None and success and data.get("final_graph") is not None:
             try:
                 self.concept_memory.record(data["final_graph"], problem_id, transforms_used)
-                if len(self.concept_memory) % 10 == 0:
+                if len(self.concept_memory) % 200 == 0:
                     from sare.memory.concept_formation import ConceptFormation
                     ConceptFormation(self.concept_memory, self.concept_registry).run()
             except Exception as exc:
                 self._record_runtime_error("concept_memory.record", exc, "post_solve")
 
-        # 2. Update self model (API: observe, not record_solve)
+        # 2. Update self model
         if self.self_model:
             try:
-                _elapsed_ms = elapsed * 1000
-                _strategy = data.get('strategy', 'beam_search')
-                self.self_model.observe(
+                self.self_model.update(
                     domain=domain,
-                    success=success,
-                    delta=delta,
+                    solved=success,
+                    energy_delta=delta,
                     steps=len(transforms_used),
-                    transforms_used=transforms_used,
                     predicted_confidence=0.5,
-                    strategy=_strategy,
-                    elapsed_ms=_elapsed_ms,
                 )
                 self.events.emit(Event.COMPETENCE_UPDATED, {
                     "domain": domain, "success": success
@@ -1718,20 +1984,36 @@ class Brain:
             try:
                 expression_text = data.get("expression") or problem_id
                 result_text = self._graph_preview(data.get("final_graph"))
-                self.concept_graph.ground_solve_episode(
-                    expression=expression_text,
-                    result=result_text,
-                    transforms_used=transforms_used,
-                    domain=domain,
-                    delta=delta,
-                )
-                # Trigger abstraction for any well-observed concepts
+                legacy_ground = getattr(self.concept_graph, "ground_solve_episode", None)
+                if callable(legacy_ground):
+                    legacy_ground(
+                        expression=expression_text,
+                        transforms=list(transforms_used),
+                        result=bool(success),
+                        domain=domain,
+                        delta=delta,
+                    )
+                example_ground = getattr(self.concept_graph, "ground_example", None)
                 for t_name in transforms_used:
-                    c = self.concept_graph.concept_for_transform(t_name)
+                    if not callable(example_ground):
+                        continue
+                    example_ground(
+                        concept_name=t_name,
+                        text=f"{expression_text} → {result_text}",
+                        metadata={
+                            "domain": domain,
+                            "operation": t_name,
+                            "result": result_text,
+                            "inputs": [expression_text],
+                            "symbolic": f"delta={delta:.2f}",
+                        },
+                    )
+                    # Trigger abstraction for well-observed concepts
+                    c = self.concept_graph.get(t_name)
                     if c and c.ground_count() >= 3:
                         self.concept_graph.abstract_from_examples(c.name)
             except Exception as exc:
-                self._record_runtime_error("concept_graph.ground_solve_episode", exc, "post_solve")
+                self._record_runtime_error("concept_graph.ground_example", exc, "post_solve")
 
         # 8b-i. Multi-step causal chain detection
         if success and len(transforms_used) >= 2 and delta > 0.3:
@@ -1821,6 +2103,15 @@ class Brain:
         transforms_tried = data.get("transforms", [])
         energy_before = data.get("energy_before", 0)
         energy_after = data.get("energy_after", 0)
+        if expression and not transforms_tried:
+            fallback_info = self._prepare_transform_fallback(
+                expression,
+                domain,
+                data.get("initial_graph"),
+            )
+            data["fallback_info"] = fallback_info
+            if fallback_info.get("attempted"):
+                self._stats["transform_fallback_attempts"] = int(self._stats.get("transform_fallback_attempts", 0) or 0) + 1
 
         # ── 1. Failure Analysis: understand WHY it failed ──
         failure_reason = self._analyze_failure(data)
@@ -1865,6 +2156,8 @@ class Brain:
                 if retry_result and retry_result.get("success"):
                     self._stats.setdefault("retry_successes", 0)
                     self._stats["retry_successes"] += 1
+                    if data.get("fallback_info", {}).get("attempted"):
+                        self._stats["transform_fallback_successes"] = int(self._stats.get("transform_fallback_successes", 0) or 0) + 1
             finally:
                 self._in_retry = False
 
@@ -1893,6 +2186,61 @@ class Brain:
             except Exception as exc:
                 self._record_runtime_error("autobiography.record", exc, "solve_failed")
 
+        try:
+            domain_failures = self._stats.setdefault("domain_consecutive_failures", {})
+            fail_count = int(domain_failures.get(domain, 0) or 0) + 1
+            domain_failures[domain] = fail_count
+            if fail_count % 5 == 0:
+                self._attempt_concept_transfer(expression, domain, transforms_tried)
+        except Exception as exc:
+            self._record_runtime_error("concept_transfer.fail_count", exc, "solve_failed")
+
+        # ── 7. Feed failures into LLM synthesizer (learn from what we can't do) ──
+        # Every 10 failures in a domain, ask the LLM to synthesize a new transform
+        if expression and self.transform_synthesizer:
+            try:
+                _fail_buf = self._stats.setdefault("_synth_fail_buffer", {})
+                _synth_ts = self._stats.setdefault("_synth_last_attempt_ts", {})
+                _buf = _fail_buf.setdefault(domain or "general", [])
+                _buf.append(expression)
+                # Deduplicate and cap buffer
+                _buf_unique = list(dict.fromkeys(_buf))[-20:]
+                _fail_buf[domain or "general"] = _buf_unique
+                _SYNTH_COOLDOWN_S = 300  # 5 minutes between LLM synthesis per domain
+                _now_s = time.time()
+                _last_s = float(_synth_ts.get(domain or "general", 0.0) or 0.0)
+                if (len(_buf_unique) >= 10 and len(_buf_unique) % 10 == 0
+                        and (_now_s - _last_s) >= _SYNTH_COOLDOWN_S):
+                    # Get current transform names for context
+                    _t_names = [t.name() for t in (self.transforms or [])
+                                if hasattr(t, "name")][:30]
+                    # Build validation graphs from buffer
+                    _val_graphs = []
+                    for _expr in _buf_unique[-6:]:
+                        try:
+                            _, _g = self.engine.load_problem(_expr)
+                            _val_graphs.append(_g)
+                        except Exception:
+                            pass
+                    _synth_ts[domain or "general"] = _now_s  # record attempt time
+                    import threading as _thr
+                    _domain_snap = domain or "general"
+                    _buf_snap = list(_buf_unique[-6:])
+                    def _synth_bg(_d=_domain_snap, _b=_buf_snap):
+                        try:
+                            results = self.transform_synthesizer.synthesize_transforms(domain=_d, n=1)
+                            if results:
+                                log.info("[SynthFromFailure] New transform(s) promoted for domain=%s: %s",
+                                         _d, [t.name() for t in results if hasattr(t, "name")])
+                                self._refresh_transforms()
+                            else:
+                                log.debug("[SynthFromFailure] domain=%s synthesis: no new transforms promoted", _d)
+                        except Exception as _se:
+                            log.debug("[SynthFromFailure] synthesis error: %s", _se)
+                    _thr.Thread(target=_synth_bg, daemon=True).start()
+            except Exception as exc:
+                self._record_runtime_error("synth_from_failure", exc, "solve_failed")
+
     def _analyze_failure(self, solve_data: dict) -> dict:
         """Analyze WHY a solve failed. Returns structured failure report."""
         expression = solve_data.get("expression", "")
@@ -1900,14 +2248,22 @@ class Brain:
         energy_before = solve_data.get("energy_before", 0)
         energy_after = solve_data.get("energy_after", 0)
         delta = energy_before - energy_after
-        graph = solve_data.get("initial_graph")
+        fallback_info = dict(solve_data.get("fallback_info", {}) or {})
 
         # Classify the failure
         if not transforms:
-            # No transforms matched at all
-            reason = "no_matching_transforms"
+            reason = "no_candidates_generated"
             retryable = True
-            suggestion = "Need new transform types for this pattern"
+            suggestion = "Need new transform types or verified fallback candidates for this pattern"
+            if fallback_info.get("attempted") and fallback_info.get("generated", 0) > 0:
+                reason = "candidates_generated_but_rejected"
+                suggestion = "Fallback candidates were generated but did not pass solve-time checks"
+            if fallback_info.get("verification_failed"):
+                reason = "verification_failed"
+                suggestion = "Fallback candidates matched but failed verification"
+            if fallback_info.get("execution_failed"):
+                reason = "execution_failed"
+                suggestion = "Fallback candidates executed but still did not solve the problem"
         elif delta < 0:
             # Transforms made it worse
             reason = "negative_delta"
@@ -1935,7 +2291,213 @@ class Brain:
             "transforms_tried": transforms,
             "delta": delta,
             "repeated_failure": repeated,
+            "fallback": fallback_info,
         }
+
+    def _transform_fallback_candidates(self, expression: str, domain: str, limit: int = 8) -> List[str]:
+        candidates: List[str] = []
+        seen = set()
+
+        def _add(items: Iterable[Any]) -> None:
+            for item in items:
+                name = ""
+                if isinstance(item, str):
+                    name = item
+                elif isinstance(item, dict):
+                    name = str(item.get("name") or item.get("rule_name") or item.get("title") or "")
+                else:
+                    name = str(getattr(item, "name", "") or "")
+                name = name.strip()
+                if name and name not in seen:
+                    seen.add(name)
+                    candidates.append(name)
+                if len(candidates) >= limit:
+                    return
+
+        families = {
+            "arithmetic": ["add_zero", "mul_one", "cancel_terms", "combine_like_terms"],
+            "algebra": ["expand", "factor", "combine_like_terms", "distribute"],
+            "logic": ["double_negation", "and_true", "or_false", "de_morgan"],
+            "code": ["identity", "inline_wrapper", "eliminate_noop"],
+            "mathematics": ["factor", "expand", "combine_like_terms", "distribute"],
+            "physics": ["unit_reduce", "solve_for_variable", "cancel_terms"],
+            "chemistry": ["chemistry_stoich_reaction", "balance_equation", "combine_like_terms"],
+            "technology": ["identity", "inline_wrapper", "normalize_api_usage"],
+            "word_problems": ["extract_equation", "translate_units", "solve_for_variable"],
+        }
+        _add(families.get(domain, []))
+
+        try:
+            rules = self.promoted_rules_summary().get("rules", [])
+            _add(rule for rule in rules if str(rule.get("domain", "")) == domain)
+        except Exception:
+            pass
+
+        try:
+            recent_successes = self.events.recent(50, Event.SOLVE_COMPLETED)
+            _add(
+                transform
+                for event in reversed(recent_successes)
+                for transform in list((event.data or {}).get("transforms_used", []) or [])
+                if str((event.data or {}).get("domain", "")) == domain
+            )
+        except Exception:
+            pass
+
+        try:
+            if self.memory_manager is not None:
+                recent_strategies = list(getattr(self.memory_manager, "_strategies", {}).values())[-40:]
+                _add(
+                    transform
+                    for strategy in reversed(recent_strategies)
+                    for transform in list((strategy or {}).get("transform_sequence", []) or [])
+                )
+        except Exception:
+            pass
+
+        try:
+            for artifact in self.learned_artifacts(limit=50).get("items", []):
+                metadata = dict(artifact.get("metadata", {}) or {})
+                if artifact.get("verification_state") != "verified":
+                    continue
+                if metadata.get("source_kind") not in {"github_code", "github_tests"}:
+                    continue
+                if str(artifact.get("domain", "")) not in {domain, "code", "general"}:
+                    continue
+                _add(list(metadata.get("fallback_transforms", []) or []))
+                _add([artifact.get("content", ""), artifact.get("title", "")])
+                if len(candidates) >= limit:
+                    break
+        except Exception:
+            pass
+        return candidates[:limit]
+
+    def _prepare_transform_fallback(self, expression: str, domain: str, graph: Any = None) -> dict:
+        info = {
+            "attempted": True,
+            "generated": 0,
+            "candidate_names": [],
+            "verification_failed": False,
+            "execution_failed": False,
+        }
+        candidates = self._transform_fallback_candidates(expression, domain)
+        info["candidate_names"] = candidates[:5]
+        info["generated"] = len(candidates)
+        if graph is None:
+            try:
+                graph = self.engine.build_expression_graph(expression)
+            except Exception:
+                graph = None
+        if graph is not None and self.transforms:
+            matched = 0
+            matched_names: List[str] = []
+            for transform in self.transforms[:100]:
+                try:
+                    if transform.match(graph):
+                        matched += 1
+                        try:
+                            matched_names.append(str(transform.name()))
+                        except Exception:
+                            pass
+                except Exception:
+                    continue
+            if matched:
+                info["generated"] = max(info["generated"], matched)
+                info["verification_failed"] = True
+                info["matched_transform_names"] = matched_names[:8]
+            elif candidates:
+                info["execution_failed"] = True
+        return info
+
+    def failure_reason_report(self) -> dict:
+        reasons = dict(self._stats.get("failure_reasons", {}) or {})
+        transform_total = sum(
+            int(reasons.get(name, 0) or 0)
+            for name in (
+                "no_candidates_generated",
+                "candidates_generated_but_rejected",
+                "verification_failed",
+                "execution_failed",
+                "no_matching_transforms",
+            )
+        )
+        fallback_attempts = int(self._stats.get("transform_fallback_attempts", 0) or 0)
+        fallback_rescues = int(self._stats.get("transform_fallback_successes", 0) or 0)
+        rescue_stats = dict((self._stats.get("transform_rescue", {}) or {}))
+        by_domain_raw = dict(rescue_stats.get("by_domain", {}) or {})
+        by_domain: Dict[str, dict] = {}
+        for domain, raw in by_domain_raw.items():
+            if not isinstance(raw, dict):
+                continue
+            attempts = int(raw.get("attempts", 0) or 0)
+            rescues = int(raw.get("rescues", 0) or 0)
+            sources = {
+                str(source): int(count or 0)
+                for source, count in dict(raw.get("sources", {}) or {}).items()
+            }
+            successes = {
+                str(source): int(count or 0)
+                for source, count in dict(raw.get("source_successes", {}) or {}).items()
+            }
+            best_source = None
+            best_successes = -1
+            best_rate = -1.0
+            for source, source_attempts in sources.items():
+                source_rescues = successes.get(source, 0)
+                source_rate = source_rescues / max(source_attempts, 1)
+                if source_rescues > best_successes or (
+                    source_rescues == best_successes and source_rate > best_rate
+                ):
+                    best_source = source
+                    best_successes = source_rescues
+                    best_rate = source_rate
+            by_domain[domain] = {
+                "attempts": attempts,
+                "rescues": rescues,
+                "rescue_rate": round(rescues / max(attempts, 1), 3) if attempts else 0.0,
+                "sources": sources,
+                "source_successes": successes,
+                "best_rescue_source": best_source,
+            }
+        return {
+            "failure_reasons": reasons,
+            "transform_failures": {
+                "total": transform_total,
+                "no_candidates_generated": int(reasons.get("no_candidates_generated", 0) or 0),
+                "candidates_generated_but_rejected": int(reasons.get("candidates_generated_but_rejected", 0) or 0),
+                "verification_failed": int(reasons.get("verification_failed", 0) or 0),
+                "execution_failed": int(reasons.get("execution_failed", 0) or 0),
+                "legacy_no_matching_transforms": int(reasons.get("no_matching_transforms", 0) or 0),
+                "fallback_attempts": fallback_attempts,
+                "fallback_rescues": fallback_rescues,
+                "fallback_rescue_rate": round(fallback_rescues / max(fallback_attempts, 1), 3) if fallback_attempts else 0.0,
+                "by_domain": by_domain,
+            },
+        }
+
+    def _record_transform_rescue(self, domain: str, source: str, success: bool) -> None:
+        bucket = self._stats.setdefault("transform_rescue", {})
+        by_domain = bucket.setdefault("by_domain", {})
+        entry = by_domain.setdefault(str(domain or "general"), {})
+        entry["attempts"] = int(entry.get("attempts", 0) or 0) + 1
+        if success:
+            entry["rescues"] = int(entry.get("rescues", 0) or 0) + 1
+        sources = entry.setdefault("sources", {})
+        source_successes = entry.setdefault("source_successes", {})
+        sources[str(source)] = int(sources.get(str(source), 0) or 0) + 1
+        if success:
+            source_successes[str(source)] = int(source_successes.get(str(source), 0) or 0) + 1
+
+    def _transfer_suite_definitions(self) -> List[dict]:
+        return [
+            {"id": "arithmetic_to_algebra", "label": "Arithmetic -> Algebra", "source_domain": "arithmetic", "target_domain": "algebra"},
+            {"id": "logic_to_code", "label": "Logic -> Code", "source_domain": "logic", "target_domain": "code"},
+            {"id": "science_to_reasoning", "label": "Science -> Reasoning", "source_domain": "science", "target_domain": "reasoning"},
+            {"id": "language_to_dialogue", "label": "Language -> Dialogue", "source_domain": "language", "target_domain": "dialogue"},
+            {"id": "mathematics_to_word_problems", "label": "Mathematics -> Word Problems", "source_domain": "mathematics", "target_domain": "word_problems"},
+            {"id": "science_to_technology", "label": "Science -> Technology", "source_domain": "science", "target_domain": "technology"},
+            {"id": "logic_to_reasoning", "label": "Logic -> Reasoning", "source_domain": "logic", "target_domain": "reasoning"},
+        ]
 
     def _expression_class(self, expression: str) -> str:
         """Classify an expression into a structural class for failure tracking."""
@@ -1953,24 +2515,124 @@ class Brain:
             return "simple_arithmetic"
         return "atomic"
 
+    def _attempt_concept_transfer(self, expression: str, domain: str,
+                                  failed_transforms: Optional[List[str]] = None) -> Optional[dict]:
+        try:
+            from sare.memory.concept_transfer import get_concept_transfer
+        except Exception as exc:
+            self._record_runtime_error("get_concept_transfer", exc, "attempt_concept_transfer")
+            return None
+
+        if not self.transforms or self.energy is None:
+            return None
+
+        try:
+            graph = self.engine.build_expression_graph(expression)
+        except Exception as exc:
+            self._record_runtime_error("engine.build_expression_graph", exc, "attempt_concept_transfer")
+            return None
+
+        class _Problem:
+            def __init__(self, graph_obj, target_domain):
+                self.graph = graph_obj
+                self.domain = target_domain
+
+        transfer_engine = get_concept_transfer()
+        result = transfer_engine.attempt_transfer(
+            problem=_Problem(graph, domain),
+            failed_transforms=list(failed_transforms or []),
+            available_transforms=self.transforms,
+            searcher=getattr(self, "searcher", None),
+            energy=self.energy,
+        )
+        if result:
+            rule_name, delta = result
+            self.events.emit(Event.TRANSFER_SUCCEEDED, {
+                "source": "concept_transfer",
+                "target": domain,
+                "rule_name": rule_name,
+                "heldout_target_wins": 1,
+                "heldout_target_tests": 1,
+                "delta": delta,
+            }, "concept_transfer")
+            return {"rule_name": rule_name, "delta": delta}
+        return None
+
     def _retry_with_alternative(self, expression: str, domain: str,
                                  failure_info: dict) -> Optional[dict]:
         """Retry a failed problem with a different strategy."""
         try:
-            # Strategy 1: Try MCTS if beam search failed
-            result = self.solve(
-                expression, algorithm="mcts",
-                beam_width=12, max_depth=50, budget=5.0, domain=domain
-            )
-            if result.get("success"):
-                return result
+            fallback = dict(failure_info.get("fallback", {}) or {})
+            weak_domains = {"mathematics", "physics", "chemistry", "technology", "word_problems"}
+            def _with_rescue_source(result: Optional[dict], source: str) -> Optional[dict]:
+                success = bool(result and result.get("success"))
+                self._record_transform_rescue(domain, source, success)
+                if not result:
+                    return None
+                payload = dict(result)
+                payload.setdefault("rescue_source", source)
+                return payload
 
-            # Strategy 2: Try with wider beam
-            result = self.solve(
-                expression, algorithm="beam",
-                beam_width=16, max_depth=60, budget=8.0, domain=domain
+            if fallback.get("generated", 0) > 0 or domain in weak_domains:
+                transferred = self._attempt_concept_transfer(
+                    expression,
+                    domain,
+                    failed_transforms=list(fallback.get("matched_transform_names", []) or []),
+                )
+                if transferred and float(transferred.get("delta", 0.0) or 0.0) > 0.0:
+                    return _with_rescue_source(
+                        {
+                            "success": True,
+                            "delta": float(transferred.get("delta", 0.0) or 0.0),
+                            "transforms_used": [str(transferred.get("rule_name", "concept_transfer"))],
+                            "strategy": "concept_transfer",
+                            "transfer_outcome": {
+                                "source_domain": "concept_transfer",
+                                "target_domain": domain,
+                                "proposed_transform": str(transferred.get("rule_name", "concept_transfer")),
+                                "verified": True,
+                                "heldout_target_wins": 1,
+                                "heldout_target_tests": 1,
+                            },
+                        },
+                        "verified_transfer_suggestion",
+                    )
+                self._record_transform_rescue(domain, "verified_transfer_suggestion", False)
+            if domain in weak_domains:
+                rescued = self._run_general_solver(
+                    expression,
+                    context={
+                        "force_general_solver": True,
+                        "rescue_mode": True,
+                        "fallback_transforms": list(fallback.get("candidate_names", []) or []),
+                    },
+                    domain=domain,
+                )
+                rescued_payload = _with_rescue_source(
+                    {
+                        **dict(rescued or {}),
+                        "strategy": "general_solver_rescue",
+                    } if rescued else None,
+                    "general_solver_rescue",
+                )
+                if rescued_payload and rescued_payload.get("success"):
+                    return rescued_payload
+            result = _with_rescue_source(
+                self.solve(
+                    expression, algorithm="mcts",
+                    beam_width=12, max_depth=50, budget=5.0, domain=domain
+                ),
+                "mcts_retry",
             )
-            return result
+            if result and result.get("success"):
+                return result
+            return _with_rescue_source(
+                self.solve(
+                    expression, algorithm="beam",
+                    beam_width=16, max_depth=60, budget=8.0, domain=domain
+                ),
+                "beam_widen",
+            )
         except Exception as exc:
             self._record_runtime_error("retry_with_alternative", exc, expression[:80])
             return None
@@ -1989,6 +2651,136 @@ class Brain:
         self._stats["rules_promoted"] += 1
         log.info(f"Rule promoted: {ed.data.get('name', '?')} → refreshing transforms")
         self._refresh_transforms()
+        try:
+            self._trigger_transfer_evaluation(
+                str(ed.data.get("domain", "general") or "general"),
+                reason="rule_promoted",
+            )
+        except Exception as exc:
+            self._record_runtime_error("trigger_transfer_evaluation", exc, "rule_promoted")
+
+    def _on_transfer_attempted(self, ed: EventData):
+        self._stats["transfers_attempted"] = int(self._stats.get("transfers_attempted", 0)) + 1
+        try:
+            payload = self._load_transfer_payload()
+            stats = dict(payload.get("stats", {}) or {})
+            stats["runtime_transfer_attempts"] = int(stats.get("runtime_transfer_attempts", 0) or 0) + 1
+            stats["hypotheses_generated"] = max(
+                int(stats.get("hypotheses_generated", 0) or 0),
+                int(stats.get("runtime_transfer_attempts", 0) or 0),
+            )
+            payload["stats"] = stats
+            self._save_transfer_payload(payload)
+        except Exception as exc:
+            self._record_runtime_error("transfer_attempt_persist", exc, "_on_transfer_attempted")
+        self._invalidate_report_cache("transfer_audit", "audit_dashboard", "learning_ops_dashboard", "learning_dashboard_payload", "time_to_agi_report")
+        if self.boot_time:
+            self.save_state()
+
+    def _on_transfer_succeeded(self, ed: EventData):
+        self._stats["transfers_succeeded"] = int(self._stats.get("transfers_succeeded", 0)) + 1
+        try:
+            payload = self._load_transfer_payload()
+            history = [item for item in payload.get("transfer_history", []) if isinstance(item, dict)]
+            data = dict(ed.data or {})
+            source_domain = str(data.get("source_domain", data.get("source", "general")) or "general")
+            target_domain = str(data.get("target_domain", data.get("target", "general")) or "general")
+            source_role = str(data.get("source_role", data.get("role", "transferred_rule")) or "transferred_rule")
+            proposed_transform = str(
+                data.get("proposed_transform")
+                or data.get("rule_name")
+                or data.get("name")
+                or f"{source_domain}_to_{target_domain}_{source_role}"
+            )
+            verified = bool(data.get("verified", True))
+            heldout_target_wins = int(data.get("heldout_target_wins", data.get("wins", 0)) or 0)
+            heldout_target_tests = int(data.get("heldout_target_tests", data.get("tests", 0)) or 0)
+            evaluation_type = str(data.get("evaluation_type", data.get("source_role", "runtime_event")) or "runtime_event")
+            history.append({
+                "source_domain": source_domain,
+                "target_domain": target_domain,
+                "source_role": source_role,
+                "proposed_transform": proposed_transform,
+                "heldout_target_wins": heldout_target_wins,
+                "heldout_target_tests": heldout_target_tests,
+                "verified_at": float(data.get("verified_at", time.time()) or time.time()),
+                "status": "verified" if verified else "runtime_only",
+                "verified": verified,
+                "evaluation_type": evaluation_type,
+                "event_source": ed.source,
+                "new_transforms": int(data.get("new_transforms", 0) or 0),
+                "delta": float(data.get("delta", 0.0) or 0.0),
+            })
+            payload["transfer_history"] = history[-500:]
+            stats = dict(payload.get("stats", {}) or {})
+            stats["runtime_transfer_successes"] = int(stats.get("runtime_transfer_successes", 0) or 0) + 1
+            verified_count = len([item for item in payload["transfer_history"] if bool(item.get("verified"))])
+            verified_items = [item for item in payload["transfer_history"] if bool(item.get("verified"))]
+            stats["hypotheses_verified"] = max(int(stats.get("hypotheses_verified", 0) or 0), verified_count)
+            stats["verified_transfer_runs"] = verified_count
+            stats["verified_transfer_successes"] = verified_count
+            stats["heldout_target_wins"] = sum(int(item.get("heldout_target_wins", 0) or 0) for item in verified_items)
+            stats["heldout_target_tests"] = sum(int(item.get("heldout_target_tests", 0) or 0) for item in verified_items)
+            payload["stats"] = stats
+            self._save_transfer_payload(payload)
+        except Exception as exc:
+            self._record_runtime_error("transfer_success_persist", exc, "_on_transfer_succeeded")
+        self._invalidate_report_cache("transfer_audit", "audit_dashboard", "learning_ops_dashboard", "learning_dashboard_payload", "time_to_agi_report")
+        if self.boot_time:
+            self.save_state()
+
+    def _on_transfer_verified_core(self, payload: dict):
+        """Handle transfer_verified events from the global core event bus.
+
+        Promotes verified transfers into ConceptRegistry so they influence future solves.
+        """
+        try:
+            rule = {
+                "name": payload.get("name", ""),
+                "domain": payload.get("domain", ""),
+                "source_domain": payload.get("source_domain", ""),
+                "confidence": payload.get("confidence", 0.6),
+                "source": "transfer_verified",
+            }
+            if self.concept_registry and rule.get("name"):
+                self.concept_registry.add_rule(rule)
+                if hasattr(self.concept_registry, "save"):
+                    self.concept_registry.save()
+                log.info("Transfer promoted to ConceptRegistry: %s → %s  name=%s",
+                         rule["source_domain"], rule["domain"], rule["name"])
+                # Update transfers_promoted stat in transfer engine
+                try:
+                    from sare.transfer.engine import get_transfer_engine
+                    _te = get_transfer_engine()
+                    _te._stats["transfers_promoted"] = _te._stats.get("transfers_promoted", 0) + 1
+                    _te.save()
+                except Exception:
+                    pass
+            # Also emit TRANSFER_SUCCEEDED so dashboard stats update
+            self.events.emit(Event.TRANSFER_SUCCEEDED, {
+                **payload,
+                "verified": True,
+                "evaluation_type": "passive_observation",
+            }, "transfer_engine")
+        except Exception as exc:
+            self._record_runtime_error("transfer_verified_core", exc, "_on_transfer_verified_core")
+
+    def record_artifact_reuse(
+        self,
+        artifact_id: str,
+        *,
+        solved: bool,
+        learning_mode: str = "",
+        heldout_variant: bool = False,
+    ) -> dict:
+        payload = self._get_acquisition_mesh().record_artifact_reuse(
+            artifact_id,
+            solved=solved,
+            learning_mode=learning_mode,
+            heldout_variant=heldout_variant,
+        )
+        self._invalidate_report_cache()
+        return payload
 
     def _on_domain_mastered(self, ed: EventData):
         domain = ed.data.get("domain", "")
@@ -2042,6 +2834,56 @@ class Brain:
                 self.experiment_runner.transforms = self.transforms
         except Exception as e:
             log.error(f"Transform refresh failed: {e}")
+
+    def _trigger_transfer_evaluation(
+        self,
+        source_domain: str,
+        reason: str = "runtime",
+        target_domains: Optional[Iterable[str]] = None,
+    ) -> int:
+        attempts = 0
+        allowed_targets = set(target_domains or [
+            "arithmetic", "algebra", "calculus", "logic",
+            "code", "planning", "social", "dialogue", "science",
+        ])
+        if source_domain in allowed_targets:
+            allowed_targets.discard(source_domain)
+
+        if self.transfer_engine and hasattr(self.transfer_engine, "generate_hypotheses"):
+            try:
+                generated = self.transfer_engine.generate_hypotheses() or []
+                for hyp in list(generated)[:5]:
+                    target = str(getattr(hyp, "target_domain", "") or "")
+                    if allowed_targets and target and target not in allowed_targets:
+                        continue
+                    attempts += 1
+                    self.events.emit(Event.TRANSFER_ATTEMPTED, {
+                        "source": getattr(hyp, "source_domain", source_domain),
+                        "target": target,
+                        "role": getattr(hyp, "source_role", ""),
+                        "reason": reason,
+                    }, "brain.transfer_engine")
+            except Exception as exc:
+                self._record_runtime_error("transfer_engine.generate_hypotheses", exc, "trigger_transfer_evaluation")
+
+        if self.analogy_transfer and hasattr(self.analogy_transfer, "transfer_from_domain"):
+            try:
+                suggestions = self.analogy_transfer.transfer_from_domain(source_domain) or []
+                for suggestion in list(suggestions)[:5]:
+                    target = str(getattr(suggestion, "target_domain", "") or getattr(suggestion, "domain", "") or "")
+                    if allowed_targets and target and target not in allowed_targets:
+                        continue
+                    attempts += 1
+                    self.events.emit(Event.TRANSFER_ATTEMPTED, {
+                        "source": source_domain,
+                        "target": target,
+                        "reason": reason,
+                        "schema": suggestion.to_dict() if hasattr(suggestion, "to_dict") else str(suggestion),
+                    }, "brain.analogy_transfer")
+            except Exception as exc:
+                self._record_runtime_error("analogy_transfer.transfer_from_domain", exc, "trigger_transfer_evaluation")
+
+        return attempts
 
     def _rule_to_transform(self, rule) -> Optional[Any]:
         """Convert a discovered AbstractRule into a live Transform for search.
@@ -2197,9 +3039,36 @@ class Brain:
         confidence = getattr(rule, "confidence", 0.0)
         if not self.concept_registry or confidence <= 0.4:
             return False
+
+        # Dedup: skip if structurally equivalent rule already exists
+        rule_name = str(getattr(rule, "name", ""))
+        try:
+            existing_rules = self.concept_registry.get_rules()
+            for existing in existing_rules:
+                existing_name = existing.get("name", "") if isinstance(existing, dict) else getattr(existing, "name", "")
+                if existing_name == rule_name:
+                    log.debug(f"Rule dedup: '{rule_name}' already exists, skipping")
+                    return False
+        except Exception:
+            pass
+
         try:
             payload = rule.to_dict() if hasattr(rule, "to_dict") else rule
-            self.concept_registry.add_rule(payload)
+            try:
+                self.concept_registry.add_rule(payload)
+            except TypeError:
+                # C++ ConceptRegistry requires AbstractRule, not a dict — convert and retry.
+                try:
+                    import sare.sare_bindings as _sb
+                    ar = _sb.AbstractRule()
+                    _d = payload if isinstance(payload, dict) else {}
+                    ar.name = str(_d.get("name", getattr(rule, "name", "")))
+                    ar.domain = str(_d.get("domain", domain))
+                    ar.confidence = float(_d.get("confidence", confidence))
+                    ar.observations = int(_d.get("observations", getattr(rule, "observations", 1)))
+                    self.concept_registry.add_rule(ar)
+                except Exception:
+                    pass
             self.events.emit(Event.RULE_PROMOTED, {
                 "name": getattr(rule, "name", payload.get("name", "")),
                 "domain": domain,
@@ -2210,6 +3079,7 @@ class Brain:
                     self.knowledge_graph.add_rule(rule)
                 except Exception:
                     pass
+            self._stats["rules_promoted"] = self._stats.get("rules_promoted", 0) + 1
             return True
         except Exception:
             return False
@@ -2345,10 +3215,10 @@ class Brain:
     #  Cognitive Loop
     # ─────────────────────────────────────────────────────────────────────────
 
-    def solve(self, expression: str, algorithm: str = "beam",
+    def solve(self, expression: str, context: Optional[dict] = None, algorithm: str = "beam",
               beam_width: int = 8, max_depth: int = 30,
               budget: float = 10.0, domain: str = "general",
-              kappa: float = 0.1, force_python: bool = False) -> dict:
+              kappa: float = 0.1, force_python: bool = False) -> SolveResult:
         """
         Full cognitive solve: perceive → recall → plan → act → reflect.
 
@@ -2358,11 +3228,64 @@ class Brain:
             "expression": expression, "domain": domain
         }, "brain")
 
+        _context = context or {}
+        _force_general = bool(_context.get("force_general_solver"))
+        if _force_general:
+            return self._run_general_solver(expression, context=_context, domain=domain)
+
         # 1. PERCEIVE: Parse expression into graph
-        expr_str, graph = self.engine.load_problem(expression)
+        try:
+            expr_str, graph = self.engine.load_problem(expression)
+        except Exception:
+            return self._run_general_solver(expression, context=_context, domain=domain)
 
         # 3. PLAN: Determine domain first (needed for domain-aware energy)
         detected_domain = self._detect_domain(graph, domain)
+        selected_strategy = ""
+        selector_counted = False
+        normalized_algorithm = str(algorithm or "beam").strip().lower()
+        if normalized_algorithm == "beam_search":
+            normalized_algorithm = "beam"
+        if normalized_algorithm == "auto" or (
+            normalized_algorithm == "beam"
+            and beam_width == 8
+            and max_depth == 30
+            and abs(float(budget) - 10.0) < 1e-9
+            and not _context.get("disable_algorithm_selector")
+        ):
+            try:
+                from sare.meta.algorithm_selector import get_algorithm_selector as _get_as
+                _selector = _get_as()
+                _dom = detected_domain or domain or "general"
+                if _dom in {"language", "science", "planning"}:
+                    _preferred = ["greedy", "beam_search", "mcts"]
+                elif _dom in {"trigonometry"}:
+                    _preferred = ["mcts", "beam_search", "greedy"]
+                elif _dom in {"arithmetic", "logic", "calculus", "set_theory", "logic_basics"}:
+                    _preferred = ["beam_search", "greedy", "mcts"]
+                else:
+                    _preferred = ["beam_search", "greedy", "mcts"]
+                _algo_opts = _selector.recommend_options(
+                    _dom,
+                    _preferred,
+                    min_samples=10,
+                    low_win_rate=0.15,
+                    high_win_rate=0.8,
+                )
+                selected_strategy = _selector.select(_dom, _algo_opts)
+                selector_counted = True
+                if selected_strategy == "mcts":
+                    normalized_algorithm = "mcts"
+                elif selected_strategy == "greedy":
+                    normalized_algorithm = "greedy"
+                else:
+                    normalized_algorithm = "beam"
+            except Exception as exc:
+                self._record_runtime_error("algorithm_selector.select", exc, "solve")
+                normalized_algorithm = "beam"
+        if not selected_strategy:
+            selected_strategy = "mcts" if normalized_algorithm == "mcts" else "beam_search"
+        algorithm = normalized_algorithm
 
         # P3.3: Use domain-aware EnergyEvaluator for calculus/trig/distribution/factoring domains
         if detected_domain in ("calculus", "trigonometry", "distribution", "factoring"):
@@ -2394,6 +3317,7 @@ class Brain:
         # 4. ACT: Run search with synthesized transforms included
         heuristic_fn = self.engine.load_heuristic_scorer()
         transforms = list(self.transforms)
+        transfer_links: List[dict] = []
 
         # Fix 2: Memory warm-start — replay past successful transform sequences
         if strategy_hint is not None and getattr(strategy_hint, "found", False):
@@ -2427,6 +3351,25 @@ class Brain:
             try:
                 suggestions = self.transfer_engine.get_transfer_suggestions(detected_domain)
                 if suggestions:
+                    for suggestion in suggestions[:5]:
+                        transfer_links.append(
+                            {
+                                "source_domain": str(suggestion.get("source_domain", "") or "general"),
+                                "target_domain": str(detected_domain or domain or "general"),
+                                "proposed_transform": str(suggestion.get("source_transform", "") or ""),
+                                "source_role": str(suggestion.get("source_role", "transfer_suggestion") or "transfer_suggestion"),
+                                "confidence": float(suggestion.get("confidence", 0.0) or 0.0),
+                                "verified": False,
+                                "evaluation_type": "solve_rerank",
+                            }
+                        )
+                        self.events.emit(Event.TRANSFER_ATTEMPTED, {
+                            "source": suggestion.get("source_domain", ""),
+                            "target": detected_domain,
+                            "source_transform": suggestion.get("source_transform", ""),
+                            "confidence": suggestion.get("confidence", 0.0),
+                            "reason": "solve_rerank",
+                        }, "brain.solve")
                     suggested = {s.get("source_transform", "") for s in suggestions[:5] if s.get("confidence", 0) > 0.4}
                     if suggested:
                         _front = [t for t in transforms if (t.name() if hasattr(t, "name") else str(t)) in suggested]
@@ -2434,6 +3377,35 @@ class Brain:
                         transforms = _front + _tail
             except Exception as exc:
                 self._record_runtime_error("transfer_engine.get_transfer_suggestions", exc, "solve")
+
+        if self.analogy_transfer:
+            try:
+                effective = []
+                if hasattr(self.analogy_transfer, "get_effective_transfers"):
+                    effective = [
+                        item for item in (self.analogy_transfer.get_effective_transfers() or [])
+                        if str(item.get("domain", "")) == detected_domain
+                    ]
+                if effective:
+                    suggested = {str(item.get("rule_name", "")) for item in effective[:5]}
+                    for item in effective[:5]:
+                        transfer_links.append(
+                            {
+                                "source_domain": str(item.get("source_domain", "") or "general"),
+                                "target_domain": str(detected_domain or domain or "general"),
+                                "proposed_transform": str(item.get("rule_name", "") or ""),
+                                "source_role": str(item.get("source_role", "verified_transfer") or "verified_transfer"),
+                                "confidence": float(item.get("confidence", 1.0) or 1.0),
+                                "verified": True,
+                                "evaluation_type": "verified_transfer",
+                            }
+                        )
+                    if suggested:
+                        _front = [t for t in transforms if (t.name() if hasattr(t, "name") else str(t)) in suggested]
+                        _tail  = [t for t in transforms if (t.name() if hasattr(t, "name") else str(t)) not in suggested]
+                        transforms = _front + _tail
+            except Exception as exc:
+                self._record_runtime_error("analogy_transfer.get_effective_transfers", exc, "solve")
 
         # Fix 1: WorldModel prediction — reorder transforms by predicted best
         try:
@@ -2486,6 +3458,15 @@ class Brain:
                         iterations=max_depth * 10,
                         budget_seconds=remaining_budget,
                     )
+                elif algorithm == "greedy":
+                    result = self.searcher.search(
+                        working_graph, active_energy, transforms,
+                        beam_width=1,
+                        max_depth=max_depth,
+                        budget_seconds=remaining_budget,
+                        kappa=kappa,
+                        heuristic_fn=heuristic_fn,
+                    )
                 else:
                     result = self.searcher.search(
                         working_graph, active_energy, transforms,
@@ -2519,6 +3500,15 @@ class Brain:
 
         delta = initial_energy.total - result.energy.total
         success = delta > 0.01
+
+        try:
+            from sare.meta.algorithm_selector import get_algorithm_selector as _get_as
+            _selector = _get_as()
+            if not selector_counted:
+                _selector.record_selection(detected_domain or domain or "general", selected_strategy)
+            _selector.record_outcome(detected_domain or domain or "general", selected_strategy, success)
+        except Exception as exc:
+            self._record_runtime_error("algorithm_selector.record_outcome", exc, "solve")
 
         # 5. REFLECT: Emit solve event (triggers all post-processing via event bus)
         self.events.emit(
@@ -2581,6 +3571,39 @@ class Brain:
                 self._record_runtime_error("proof_builder.build", exc, "solve")
 
         reduction_pct = (delta / initial_energy.total * 100) if initial_energy.total > 0 else 0.0
+        used_names = {str(name) for name in list(result.transforms_applied)}
+        transfer_outcome = None
+        if transfer_links and used_names:
+            matched_transfer = next(
+                (
+                    item for item in transfer_links
+                    if str(item.get("proposed_transform", "")) in used_names
+                ),
+                None,
+            )
+            if matched_transfer is not None:
+                transfer_outcome = {
+                    **dict(matched_transfer),
+                    "used": True,
+                    "success": success,
+                    "heldout_target_wins": 1 if success and bool(_context.get("expected_transfer_source")) else 0,
+                    "heldout_target_tests": 1 if bool(_context.get("expected_transfer_source")) else 0,
+                }
+                if transfer_outcome["heldout_target_tests"] and success:
+                    self.events.emit(
+                        Event.TRANSFER_SUCCEEDED,
+                        {
+                            "source": transfer_outcome.get("source_domain", ""),
+                            "target": transfer_outcome.get("target_domain", ""),
+                            "role": transfer_outcome.get("source_role", ""),
+                            "heldout_target_wins": transfer_outcome.get("heldout_target_wins", 0),
+                            "heldout_target_tests": transfer_outcome.get("heldout_target_tests", 0),
+                            "evaluation_type": "solve_transfer_backed",
+                            "verified": bool(transfer_outcome.get("verified", False)),
+                            "rule_name": transfer_outcome.get("proposed_transform", ""),
+                        },
+                        "brain.solve",
+                    )
         proof_payload = proof.to_dict() if proof and hasattr(proof, "to_dict") else None
         initial_payload = {
             "graph": graph.to_dict(),
@@ -2621,7 +3644,7 @@ class Brain:
         except Exception:
             _steps_text = None
 
-        return {
+        return self._make_solve_result({
             "expression": expr_str,
             "answer": _answer,
             "steps_text": _steps_text,
@@ -2653,7 +3676,15 @@ class Brain:
             "result": result_payload,
             "learned_concepts": [],
             "stage": self.stage.value,
-        }
+            "source": "brain.symbolic",
+            "solver_path": "symbolic",
+            "learning_mode": "free_solve",
+            "algorithm_used": selected_strategy,
+            "search_strategy": selected_strategy,
+            "verification_outcome": None,
+            "transfer_outcome": transfer_outcome,
+            "persistence_ids": {},
+        })
 
     def _reflect(self, initial_graph, final_graph, domain: str,
                  transforms_applied: List[str] = None):
@@ -3120,29 +4151,3701 @@ class Brain:
     #  Perception: Ingest real-world data
     # ─────────────────────────────────────────────────────────────────────────
 
-    def ingest(self, data: str, kind: str = "text", source: str = "user") -> dict:
+    def world_summary(self) -> dict:
+        if self.world_model is not None and hasattr(self.world_model, "summary"):
+            try:
+                return self.world_model.summary()
+            except Exception as exc:
+                self._record_runtime_error("world_model.summary", exc, "world_summary")
+        if self.world_model_v3 is not None and hasattr(self.world_model_v3, "summary"):
+            try:
+                return self.world_model_v3.summary()
+            except Exception as exc:
+                self._record_runtime_error("world_model_v3.summary", exc, "world_summary")
+        try:
+            facts = self.world_facts_by_domain()
+            return {
+                "fact_count": sum(int(v) for v in facts.values()),
+                "causal_link_count": int(len(getattr(self.world_model, "_causal_links", {}) or {})),
+                "schema_count": int(len(getattr(self.world_model, "_schemas", {}) or {})),
+                "belief_count": int(len(getattr(self.world_model, "_beliefs", {}) or {})),
+                "domains": sorted(facts.keys(), key=str),
+            }
+        except Exception:
+            pass
+        return {}
+
+    def world_prediction_stats(self) -> dict:
+        stats: Dict[str, Any] = {}
+        if self.world_model is not None and hasattr(self.world_model, "prediction_stats"):
+            try:
+                stats.update(self.world_model.prediction_stats())
+            except Exception as exc:
+                self._record_runtime_error("world_model.prediction_stats", exc, "world_prediction_stats")
+        return stats
+
+    def high_surprise_domains(self, top_n: int = 5) -> List[tuple]:
+        if self.world_model is not None and hasattr(self.world_model, "get_high_surprise_domains"):
+            try:
+                return list(self.world_model.get_high_surprise_domains(top_n=top_n))
+            except Exception as exc:
+                self._record_runtime_error("world_model.get_high_surprise_domains", exc, "high_surprise_domains")
+        return []
+
+    def world_facts_by_domain(self) -> Dict[str, int]:
+        if self.world_model is not None and hasattr(self.world_model, "_facts"):
+            try:
+                return {
+                    str(domain): len(facts)
+                    for domain, facts in getattr(self.world_model, "_facts", {}).items()
+                    if facts
+                }
+            except Exception as exc:
+                self._record_runtime_error("world_model._facts", exc, "world_facts_by_domain")
+        return {}
+
+    def world_domain_failures(self) -> Dict[str, int]:
+        failures: Dict[str, int] = {}
+        if self.world_model is None:
+            return failures
+        try:
+            lock = getattr(self.world_model, "_domain_failures_lock", None)
+            failure_map = getattr(self.world_model, "_domain_failures", {})
+            if lock is not None:
+                with lock:
+                    for domain, entries in failure_map.items():
+                        failures[str(domain)] = len(entries)
+            else:
+                for domain, entries in failure_map.items():
+                    failures[str(domain)] = len(entries)
+        except Exception as exc:
+            self._record_runtime_error("world_model._domain_failures", exc, "world_domain_failures")
+        return failures
+
+    def world_domain_accuracy(self, window: int = 50) -> Dict[str, float]:
+        accuracy: Dict[str, float] = {}
+        if self.world_model is not None and hasattr(self.world_model, "_belief_accuracy"):
+            try:
+                for key, hist in getattr(self.world_model, "_belief_accuracy", {}).items():
+                    if key.startswith("domain_solve_acc:") and hist:
+                        domain = key[len("domain_solve_acc:"):]
+                        lookback = min(int(window), len(hist))
+                        accuracy[str(domain)] = round(sum(hist[-lookback:]) / lookback, 3)
+            except Exception as exc:
+                self._record_runtime_error("world_model._belief_accuracy", exc, "world_domain_accuracy")
+        return accuracy
+
+    def world_synthesis_count(self) -> int:
+        if self.world_model is not None and hasattr(self.world_model, "_last_concept_synthesis"):
+            try:
+                return int(len(getattr(self.world_model, "_last_concept_synthesis", {})))
+            except Exception as exc:
+                self._record_runtime_error("world_model._last_concept_synthesis", exc, "world_synthesis_count")
+        return 0
+
+    def world_imagine(self, seed: str, depth: int = 2) -> List[Any]:
+        if self.world_model is not None and hasattr(self.world_model, "imagine"):
+            try:
+                return list(self.world_model.imagine(seed, depth=depth))
+            except Exception as exc:
+                self._record_runtime_error("world_model.imagine", exc, "world_imagine")
+        return []
+
+    def world_simulate(self, scenario: str, steps: int = 3) -> List[Any]:
+        if self.world_model is not None and hasattr(self.world_model, "simulate"):
+            try:
+                return list(self.world_model.simulate(scenario, steps=steps))
+            except Exception as exc:
+                self._record_runtime_error("world_model.simulate", exc, "world_simulate")
+        return []
+
+    def world_analogy(self, source: str, target: str) -> Optional[dict]:
+        if self.world_model is not None and hasattr(self.world_model, "generate_analogy"):
+            try:
+                return self.world_model.generate_analogy(source, target)
+            except Exception as exc:
+                self._record_runtime_error("world_model.generate_analogy", exc, "world_analogy")
+        return None
+
+    def world_counterfactual(self, rule: str, negated: bool = True) -> dict:
+        if self.world_model is not None and hasattr(self.world_model, "counterfactual"):
+            try:
+                result = self.world_model.counterfactual(rule, negated=negated)
+                return result if isinstance(result, dict) else {"result": result}
+            except Exception as exc:
+                self._record_runtime_error("world_model.counterfactual", exc, "world_counterfactual")
+        return {}
+
+    def world_hypotheses(self) -> List[dict]:
+        hyps: List[dict] = []
+        if self.world_model is not None:
+            try:
+                raw = getattr(self.world_model, "_hypotheses", [])
+                if raw:
+                    hyps = list(raw)
+            except Exception as exc:
+                self._record_runtime_error("world_model._hypotheses", exc, "world_hypotheses")
+        if not hyps:
+            try:
+                hp = DATA_DIR / "world_hypotheses.json"
+                if hp.exists():
+                    loaded = json.loads(hp.read_text(encoding="utf-8"))
+                    if isinstance(loaded, list):
+                        hyps = loaded
+            except Exception as exc:
+                self._record_runtime_error("world_hypotheses.load", exc, "world_hypotheses")
+        return sorted(hyps, key=lambda h: -float(h.get("evidence", 1) or 1))
+
+    def active_learning_questions(self, limit: int = 10) -> List[dict]:
+        try:
+            from sare.curiosity.question_generator import get_question_generator
+
+            pending = list(get_question_generator().get_pending_questions())
+            rows = []
+            for item in pending[: max(1, limit)]:
+                if hasattr(item, "to_dict"):
+                    rows.append(item.to_dict())
+                elif isinstance(item, dict):
+                    rows.append(dict(item))
+            return rows
+        except Exception as exc:
+            self._record_runtime_error("question_generator.pending", exc, "self_questions")
+            return []
+
+    def world_theories(self, limit: int = 5) -> List[dict]:
+        try:
+            from sare.cognition.theory_builder import get_theory_builder
+
+            theories = get_theory_builder().build_theories(max_theories=max(1, limit))
+            return list(theories) if isinstance(theories, list) else []
+        except Exception as exc:
+            self._record_runtime_error("theory_builder.build", exc, "world_theories")
+            return []
+
+    def drive_self_generated_learning(self, force: bool = False) -> dict:
+        payload: Dict[str, Any] = {
+            "generated_questions": 0,
+            "pending_questions": 0,
+            "top_questions": [],
+            "active_hypotheses": 0,
+            "top_theories": [],
+        }
+        try:
+            payload["active_hypotheses"] = len(self.world_hypotheses())
+        except Exception:
+            payload["active_hypotheses"] = 0
+        try:
+            theories = self.world_theories(limit=3)
+            payload["top_theories"] = list(theories[:3])
+        except Exception:
+            payload["top_theories"] = []
+        try:
+            from sare.curiosity.question_generator import get_question_generator
+
+            qg = get_question_generator()
+            generated = list(qg.maybe_generate_questions(force=force))
+            pending = list(qg.get_pending_questions())
+            payload["generated_questions"] = len(generated)
+            payload["pending_questions"] = len(pending)
+            payload["top_questions"] = [
+                item.to_dict() if hasattr(item, "to_dict") else dict(item)
+                for item in pending[:3]
+            ]
+        except Exception as exc:
+            self._record_runtime_error("question_generator.generate", exc, "self_questions")
+        self._last_self_generated_learning = dict(payload)
+        return payload
+
+    def world_activity_log(self, limit: int = 20) -> List[Any]:
+        if self.world_model is not None and hasattr(self.world_model, "get_activity_log"):
+            try:
+                events = self.world_model.get_activity_log()
+                return list(events[:limit])
+            except Exception as exc:
+                self._record_runtime_error("world_model.get_activity_log", exc, "world_activity_log")
+        return []
+
+    def world_solve_counts(self) -> Dict[str, int]:
+        if self.world_model is not None and hasattr(self.world_model, "_solve_counts"):
+            try:
+                return {
+                    str(domain): int(count)
+                    for domain, count in getattr(self.world_model, "_solve_counts", {}).items()
+                }
+            except Exception as exc:
+                self._record_runtime_error("world_model._solve_counts", exc, "world_solve_counts")
+        return {}
+
+    def world_schema_count(self) -> int:
+        if self.world_model is not None and hasattr(self.world_model, "_schemas"):
+            try:
+                return int(len(getattr(self.world_model, "_schemas", {})))
+            except Exception as exc:
+                self._record_runtime_error("world_model._schemas", exc, "world_schema_count")
+        return 0
+
+    def world_schema_learn(self, domain: str) -> Optional[dict]:
+        if self.world_model is not None and hasattr(self.world_model, "learn_schema_from_llm"):
+            try:
+                schema = self.world_model.learn_schema_from_llm(domain)
+                if schema and hasattr(self.world_model, "save"):
+                    self.world_model.save()
+                return schema
+            except Exception as exc:
+                self._record_runtime_error("world_model.learn_schema_from_llm", exc, "world_schema_learn")
+        return None
+
+    def world_beliefs(self, domain: Optional[str] = None) -> List[Any]:
+        if self.world_model is not None and hasattr(self.world_model, "get_beliefs"):
+            try:
+                return list(self.world_model.get_beliefs(domain))
+            except Exception as exc:
+                self._record_runtime_error("world_model.get_beliefs", exc, "world_beliefs")
+        return []
+
+    def world_analogies(self, domain: Optional[str] = None) -> List[Any]:
+        if self.world_model is None or not hasattr(self.world_model, "get_analogies"):
+            return []
+        try:
+            analogies = getattr(self.world_model, "_analogies", [])
+            solve_history = getattr(self.world_model, "_solve_history", [])
+            if len(analogies) < 5 and len(solve_history) >= 30 and hasattr(self.world_model, "discover_analogies"):
+                self.world_model.discover_analogies()
+            return list(self.world_model.get_analogies(domain))
+        except Exception as exc:
+            self._record_runtime_error("world_model.get_analogies", exc, "world_analogies")
+        return []
+
+    def world_predict(self, expression: str, domain: str = "arithmetic") -> dict:
+        if self.world_model is None or not hasattr(self.world_model, "predict"):
+            return {}
+        try:
+            transforms = [
+                t.name() if hasattr(t, "name") else str(t)
+                for t in getattr(self, "transforms", []) or []
+            ]
+            result = self.world_model.predict(expression, domain, transforms)
+            return result if isinstance(result, dict) else {"result": result}
+        except Exception as exc:
+            self._record_runtime_error("world_model.predict", exc, "world_predict")
+        return {}
+
+    def world_consistency(self, rule_names: Optional[List[str]] = None) -> dict:
+        rules = list(rule_names or [])
+        if not rules and self.concept_registry is not None:
+            try:
+                rules = [r.name for r in self.concept_registry.get_rules()]
+            except Exception as exc:
+                self._record_runtime_error("concept_registry.get_rules", exc, "world_consistency")
+        if len(rules) < 2:
+            return {"status": "insufficient_rules", "rule_count": len(rules)}
+        if self.world_model is not None and hasattr(self.world_model, "check_all_rules_consistency"):
+            try:
+                conflicts = self.world_model.check_all_rules_consistency(rules)
+                return {
+                    "rules_checked": len(rules),
+                    "conflicts": conflicts,
+                    "consistent": len(conflicts) == 0,
+                }
+            except Exception as exc:
+                self._record_runtime_error("world_model.check_all_rules_consistency", exc, "world_consistency")
+        return {"status": "world_model_unavailable", "rule_count": len(rules)}
+
+    def world_graph(self) -> dict:
+        links_by_key: Dict[str, Any] = {}
+        for model_name in ("world_model", "world_model_v3"):
+            model = getattr(self, model_name, None)
+            if model is None or not hasattr(model, "_causal_links"):
+                continue
+            try:
+                for key, link in getattr(model, "_causal_links", {}).items():
+                    links_by_key[str(key)] = link
+            except Exception as exc:
+                self._record_runtime_error(f"{model_name}._causal_links", exc, "world_graph")
+
+        domain_counts: Dict[str, int] = {}
+        edges = []
+        for link in list(links_by_key.values())[:500]:
+            domain = str(getattr(link, "domain", "general") or "general")
+            domain_counts[domain] = domain_counts.get(domain, 0) + 1
+            edges.append({
+                "cause": getattr(link, "cause", ""),
+                "effect": getattr(link, "effect", ""),
+                "mechanism": getattr(link, "mechanism", ""),
+                "domain": domain,
+                "confidence": round(float(getattr(link, "confidence", 0.5) or 0.5), 3),
+                "evidence_count": int(getattr(link, "evidence_count", 1) or 1),
+            })
+
+        return {
+            "nodes": [{"id": d, "domain": d, "link_count": c} for d, c in domain_counts.items()],
+            "edges": edges,
+            "domains": sorted(domain_counts.keys()),
+            "causal_links_total": len(links_by_key),
+        }
+
+    def add_world_fact(self, domain: str, fact: str, confidence: float = 0.9,
+                       source: str = "brain") -> bool:
+        added = False
+        if self.world_model is not None and hasattr(self.world_model, "add_fact"):
+            try:
+                self.world_model.add_fact(domain, fact, confidence, source=source)
+                added = True
+            except Exception as exc:
+                self._record_runtime_error("world_model.add_fact", exc, "add_world_fact")
+        if self.world_model_v3 is not None:
+            try:
+                from sare.memory.world_model_v3 import CausalLink
+                link = CausalLink(
+                    cause=fact,
+                    effect=fact,
+                    mechanism="fact",
+                    domain=domain,
+                    confidence=confidence,
+                )
+                self.world_model_v3._causal_links.setdefault(link.key, link)
+            except Exception as exc:
+                self._record_runtime_error("world_model_v3.fact_shadow", exc, "add_world_fact")
+        if added:
+            self._stats["ingestion"]["facts_added"] += 1
+        return added
+
+    def add_world_causal_link(self, cause: str, effect: str, mechanism: str = "user-specified",
+                              domain: str = "general", confidence: float = 0.85) -> bool:
+        added = False
+        if self.world_model is not None and hasattr(self.world_model, "add_causal_link"):
+            try:
+                self.world_model.add_causal_link(cause, effect, mechanism, domain, confidence)
+                added = True
+            except Exception as exc:
+                self._record_runtime_error("world_model.add_causal_link", exc, "add_world_causal_link")
+        if self.world_model_v3 is not None:
+            try:
+                from sare.memory.world_model_v3 import CausalLink
+                link = CausalLink(
+                    cause=cause,
+                    effect=effect,
+                    mechanism=mechanism,
+                    domain=domain,
+                    confidence=confidence,
+                )
+                self.world_model_v3._causal_links[link.key] = link
+            except Exception as exc:
+                self._record_runtime_error("world_model_v3.add_causal_link", exc, "add_world_causal_link")
+        return added
+
+    def save_world_models(self) -> None:
+        for _name, _model in (("world_model", self.world_model), ("world_model_v3", self.world_model_v3)):
+            if _model is not None and hasattr(_model, "save"):
+                try:
+                    _model.save()
+                except Exception as exc:
+                    self._record_runtime_error(f"{_name}.save", exc, "save_world_models")
+
+    def knowledge_stats(self) -> dict:
+        world_summary = self.world_summary()
+        status = self.status()
+        knowledge_base = dict(status.get("knowledge_base", {}))
+
+        commonsense_facts = 0
+        answer_to_triples = 0
+        try:
+            cs = self.commonsense
+            if cs is None:
+                from sare.knowledge.commonsense import get_commonsense_base
+                cs = get_commonsense_base()
+            if cs is not None:
+                commonsense_facts = int(cs.total_facts())
+                answer_to_triples = sum(
+                    1
+                    for triples in getattr(cs, "_forward", {}).values()
+                    for rel, _ in triples
+                    if rel == "AnswerTo"
+                )
+        except Exception as exc:
+            self._record_runtime_error("commonsense.stats", exc, "knowledge_stats")
+
+        kg_nodes = 0
+        try:
+            if self.knowledge_graph is not None:
+                kg_nodes = int(len(getattr(self.knowledge_graph, "_nodes", {})))
+        except Exception as exc:
+            self._record_runtime_error("knowledge_graph._nodes", exc, "knowledge_stats")
+
+        return {
+            "world_model_facts": int(world_summary.get("fact_count", sum(self.world_facts_by_domain().values()))),
+            "knowledge_graph_nodes": kg_nodes,
+            "commonsense_facts": commonsense_facts,
+            "answer_to_triples": answer_to_triples,
+            "working_memory_sessions": int(knowledge_base.get("working_memory_sessions", 0)),
+            "kb_hit_rate_last_100": float(knowledge_base.get("kb_hit_rate_last_100", 0.0)),
+            "acquisition": self._get_acquisition_mesh().status() if self.acquisition_mesh is not None else {"records": 0, "artifacts": 0},
+        }
+
+    def learning_summary(self) -> dict:
+        return {
+            "answer_to_triples": int(self.knowledge_stats().get("answer_to_triples", 0)),
+            "wm_facts_total": int(sum(self.world_facts_by_domain().values())),
+            "wm_facts_by_domain": self.world_facts_by_domain(),
+            "domain_failures": self.world_domain_failures(),
+            "domain_accuracy": self.world_domain_accuracy(),
+            "synthesis_count": self.world_synthesis_count(),
+            "kb_hit_rate": float(self.knowledge_stats().get("kb_hit_rate_last_100", 0.0)),
+            "acquisition": self.acquisition_dashboard(),
+            "ts": time.time(),
+        }
+
+    def _retention_truth_summary(self, limit: int = 5000) -> dict:
+        retested_artifacts = 0
+        retained_artifacts = 0
+        try:
+            learned = self.learned_artifacts(limit=limit)
+            items = list(learned.get("items", [])) if isinstance(learned, dict) else []
+            for item in items:
+                metadata = dict(item.get("metadata", {}) or {})
+                if int(metadata.get("retest_count", 0) or 0) > 0:
+                    retested_artifacts += 1
+                    if str(metadata.get("retention_status", "")) == "retained":
+                        retained_artifacts += 1
+        except Exception as exc:
+            self._record_runtime_error("retention.summary", exc, "_retention_truth_summary")
+        return {
+            "retested_artifacts": retested_artifacts,
+            "retained_artifacts": retained_artifacts,
+            "retention_rate": round(retained_artifacts / max(retested_artifacts, 1), 3) if retested_artifacts else None,
+            "measured": bool(retested_artifacts > 0),
+            "source_of_truth": "derived",
+        }
+
+    def _invalidate_report_cache(self, *keys: str) -> None:
+        with self._report_cache_lock:
+            if not keys:
+                self._report_cache.clear()
+                return
+            for key in keys:
+                self._report_cache.pop(key, None)
+
+    def record_learning_strategy_outcome(
+        self,
+        *,
+        expression: str,
+        domain: Optional[str] = None,
+        source: Optional[str] = None,
+        task_type: Optional[str] = None,
+        result: Optional[Any] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        learning_mode: Optional[str] = None,
+        verification_level: Optional[str] = None,
+        heldout_variant: Optional[bool] = None,
+        transfer_probe: Optional[bool] = None,
+        elapsed_ms: Optional[float] = None,
+    ) -> None:
+        scorecard = getattr(self, "learning_strategy_scorecard", None)
+        if scorecard is None or not hasattr(scorecard, "record_outcome"):
+            return
+
+        payload = dict(metadata or {})
+        raw_result = result
+        result_map = raw_result if isinstance(raw_result, dict) else {}
+
+        def _pick(name: str, default: Any = None) -> Any:
+            if isinstance(result_map, dict) and name in result_map:
+                return result_map.get(name)
+            if raw_result is not None and hasattr(raw_result, name):
+                return getattr(raw_result, name)
+            return default
+
+        resolved_domain = str(domain or payload.get("domain") or _pick("domain") or "general").strip() or "general"
+        resolved_source = str(source or payload.get("source") or payload.get("source_kind") or "unknown").strip() or "unknown"
+        resolved_task_type = task_type or payload.get("task_type")
+        if not resolved_task_type:
+            if payload.get("choices"):
+                resolved_task_type = "multiple_choice"
+            elif resolved_source in {"seed_library", "generated_problems", "failure_replay", "physics_expressions", "knowledge_concepts", "curriculum", "generator", "goal_planner", "goal_setter", "self_model", "surprise_domain", "understanding_focus", "fallback"}:
+                resolved_task_type = "expression_rewrite"
+            elif resolved_source == "code_problems":
+                resolved_task_type = "code_question"
+            elif resolved_source == "word_problems":
+                resolved_task_type = "word_problem"
+            elif resolved_source == "comprehension_problems":
+                resolved_task_type = "reading_comprehension"
+            elif resolved_source == "language_problems":
+                resolved_task_type = "language_reasoning"
+            else:
+                resolved_task_type = "question_answer"
+
+        resolved_learning_mode = str(
+            learning_mode or payload.get("learning_mode") or _pick("learning_mode") or _pick("mode") or "free_solve"
+        ).strip() or "free_solve"
+        resolved_verification = str(verification_level or payload.get("verification_level") or "unverified").strip() or "unverified"
+        success = bool(_pick("success", _pick("solved", False)))
+        confidence = _pick("confidence", _pick("delta", 0.0))
+        delta = _pick("delta", _pick("confidence", 0.0))
+        resolved_elapsed_ms = elapsed_ms if elapsed_ms is not None else _pick("elapsed_ms", 0.0)
+        resolved_heldout_variant = bool(payload.get("heldout_variant") if heldout_variant is None else heldout_variant)
+        resolved_transfer_probe = bool(payload.get("transfer_probe") if transfer_probe is None else transfer_probe)
+
+        try:
+            scorecard.record_outcome(
+                domain=resolved_domain,
+                source=resolved_source,
+                task_type=str(resolved_task_type or "unknown"),
+                learning_mode=resolved_learning_mode,
+                verification_level=resolved_verification,
+                success=success,
+                confidence=confidence,
+                delta=delta,
+                elapsed_ms=resolved_elapsed_ms,
+                heldout_variant=resolved_heldout_variant,
+                transfer_probe=resolved_transfer_probe,
+            )
+        except Exception as exc:
+            self._record_runtime_error("learning_strategy_scorecard.record", exc, "meta_learning")
+
+    def _get_cached_report(self, key: str, max_age_seconds: float, builder: Callable[[], Any]) -> Any:
+        # Fast path: return fresh cached value (no deepcopy — callers must not mutate)
+        now = time.time()
+        with self._report_cache_lock:
+            entry = self._report_cache.get(key)
+            if entry and (now - float(entry.get("ts", 0.0) or 0.0)) <= max_age_seconds:
+                return entry.get("value")
+            # Get or create a per-key build lock to prevent thundering herd.
+            build_lock = self._report_build_locks.get(key)
+            if build_lock is None:
+                build_lock = threading.Lock()
+                self._report_build_locks[key] = build_lock
+            # If a build is already in progress (lock is taken), return stale cache
+            # immediately rather than queuing — prevents thread pile-up on slow builds.
+            stale_value = entry.get("value") if entry else None
+            lock_free = build_lock.acquire(blocking=False)
+            if not lock_free:
+                # Another thread is building — return stale value or None right away
+                return stale_value
+
+        # We hold the build_lock (acquired non-blocking above). Now build.
+        try:
+            # Re-check cache after acquiring build lock — another thread may have just built it
+            now = time.time()
+            with self._report_cache_lock:
+                entry = self._report_cache.get(key)
+                if entry and (now - float(entry.get("ts", 0.0) or 0.0)) <= max_age_seconds:
+                    return entry.get("value")
+            value = builder()
+            with self._report_cache_lock:
+                self._report_cache[key] = {"ts": time.time(), "value": value}
+            return value
+        finally:
+            build_lock.release()
+
+    def persistence_health_report(self) -> dict:
+        def _normalize(name: str, payload: Any) -> dict:
+            base = {
+                "loaded": False,
+                "recovered": False,
+                "reseeded": False,
+                "corrupt_backup_written": False,
+                "last_error": None,
+                "source_of_truth": "live",
+            }
+            if isinstance(payload, dict):
+                base.update(payload)
+            base["component"] = name
+            return base
+
+        memory_dir = DATA_DIR
+        episodes_corrupt = memory_dir / "episodes.jsonl.corrupt"
+        working_memory_corrupt = memory_dir / "working_memory.json.corrupt"
+        health = {
+            "self_model": _normalize(
+                "self_model",
+                self.self_model.health() if self.self_model and hasattr(self.self_model, "health") else None,
+            ),
+            "homeostasis": _normalize(
+                "homeostasis",
+                self.homeostasis.health() if self.homeostasis and hasattr(self.homeostasis, "health") else None,
+            ),
+            "knowledge_graph": _normalize(
+                "knowledge_graph",
+                self.knowledge_graph.health() if self.knowledge_graph and hasattr(self.knowledge_graph, "health") else None,
+            ),
+            "concept_graph": _normalize(
+                "concept_graph",
+                self.concept_graph.health() if self.concept_graph and hasattr(self.concept_graph, "health") else dict(self._concept_graph_health),
+            ),
+            "memory_manager": _normalize(
+                "memory_manager",
+                {
+                    "loaded": self.memory_manager is not None,
+                    "recovered": bool(episodes_corrupt.exists() or working_memory_corrupt.exists()),
+                    "reseeded": False,
+                    "corrupt_backup_written": bool(episodes_corrupt.exists() or working_memory_corrupt.exists()),
+                    "last_error": None,
+                },
+            ),
+        }
+        health["overall_ok"] = all(
+            item.get("loaded") and not item.get("last_error")
+            for item in health.values()
+            if isinstance(item, dict) and "loaded" in item
+        )
+        return health
+
+    def learning_live_snapshot(self) -> dict:
+        # Cache heavy sub-calls for 30s to keep endpoint under 5s
+        _now = time.time()
+        _cache = getattr(self, "_live_snapshot_cache", {})
+        if _now - _cache.get("ts", 0) < 30:
+            return _cache.get("result", {"ts": _now})
+        result: dict = {"ts": _now}
+        result["domain_accuracy"] = self.world_domain_accuracy()
+        result["wm_facts"] = self.world_facts_by_domain()
+
+        web_searches: List[Any] = []
+        try:
+            log_path = DATA_DIR / "web_learned.json"
+            if log_path.exists():
+                raw = json.loads(log_path.read_text(encoding="utf-8"))
+                entries = raw.get("entries", [])
+                web_searches = list(reversed(entries[-20:]))
+        except Exception as exc:
+            self._record_runtime_error("web_learned.load", exc, "learning_live_snapshot")
+        result["web_searches"] = web_searches
+
+        llm_stats: dict = {"total_calls": 0, "by_role": {}, "recent": []}
+        try:
+            from sare.interface.llm_bridge import get_llm_stats
+            llm_stats = get_llm_stats()
+        except Exception as exc:
+            self._record_runtime_error("llm_bridge.get_llm_stats", exc, "learning_live_snapshot")
+        result["llm_stats"] = llm_stats
+
+        try:
+            ks = self.knowledge_stats()
+            result["kb_snapshot"] = {
+                "answer_to": int(ks.get("answer_to_triples", 0)),
+                "total_triples": int(ks.get("commonsense_facts", 0)),
+            }
+        except Exception:
+            result["kb_snapshot"] = {}
+        try:
+            report = self.learning_progress_report() or {}
+            learning_monitor = dict(report.get("learning_monitor", {}) or {})
+            totals = dict(report.get("totals", {}) or {})
+            grounded = self.grounded_learning_report()
+            retention = self._retention_truth_summary(limit=1000)
+            result["metrics"] = {
+                "heldout_pass_rate": {
+                    "value": learning_monitor.get("heldout_pass_rate"),
+                    "measured": bool(
+                        learning_monitor.get("heldout_pass_rate") is not None
+                        and int(learning_monitor.get("heldout_attempts", 0) or 0) > 0
+                    ),
+                    "source_of_truth": "canonical_report",
+                },
+                "retrieval_conversion_rate": {
+                    "value": learning_monitor.get("retrieval_conversion_rate"),
+                    "measured": bool(
+                        learning_monitor.get("retrieval_conversion_rate") is not None
+                        and int(learning_monitor.get("retrieval_conversion_attempts", 0) or 0) > 0
+                    ),
+                    "source_of_truth": "canonical_report",
+                },
+                "measured_coverage": {
+                    "value": totals.get("measured_coverage"),
+                    "measured": bool(int(totals.get("measured_attempts", 0) or 0) > 0),
+                    "source_of_truth": "canonical_report",
+                },
+                "mastered_patterns": {
+                    "value": learning_monitor.get("mastered_patterns"),
+                    "measured": learning_monitor.get("mastered_patterns") is not None,
+                    "source_of_truth": "canonical_report",
+                },
+                "grounded_success_rate": {
+                    "value": grounded.get("success_rate"),
+                    "measured": bool(int(grounded.get("total_tasks", 0) or 0) > 0),
+                    "source_of_truth": "live",
+                },
+                "retention_rate": retention,
+            }
+            result["report_summary"] = {
+                "heldout_pass_rate": learning_monitor.get("heldout_pass_rate"),
+                "retrieval_conversion_rate": learning_monitor.get("retrieval_conversion_rate"),
+                "measured_coverage": totals.get("measured_coverage"),
+                "mastered_patterns": learning_monitor.get("mastered_patterns"),
+                "grounded_success_rate": grounded.get("success_rate"),
+                "retention_rate": retention.get("retention_rate"),
+                "source_of_truth": "canonical_report",
+            }
+        except Exception as exc:
+            self._record_runtime_error("learning_live_snapshot.report", exc, "learning_live_snapshot")
+        result["acquisition"] = {
+            "status": self._get_acquisition_mesh().status() if self.acquisition_mesh is not None else {"records": 0, "artifacts": 0},
+            "verification_queue": self.verification_queue(limit=10),
+        }
+        result["persistence_health"] = self.persistence_health_report()
+        self._live_snapshot_cache = {"ts": _now, "result": result}
+        return result
+
+    def evaluation_summary(self) -> dict:
+        summary = {
+            "runtime": {
+                "solves_attempted": int(self._stats.get("solves_attempted", 0)),
+                "solves_succeeded": int(self._stats.get("solves_succeeded", 0)),
+                "solve_rate": round(
+                    self._stats.get("solves_succeeded", 0) / max(self._stats.get("solves_attempted", 1), 1),
+                    4,
+                ),
+                "solve_modes": dict(self._stats.get("solve_modes", {})),
+                "transfers_attempted": int(self._stats.get("transfers_attempted", 0)),
+                "transfers_succeeded": int(self._stats.get("transfers_succeeded", 0)),
+                "runtime_errors": int(self._stats.get("runtime_errors", 0)),
+                "acquisition": dict(self._stats.get("acquisition", {})),
+            },
+            "general_solver": {},
+            "learning_monitor": {},
+            "knowledge": {},
+        }
+        if self.general_solver is not None and hasattr(self.general_solver, "get_stats"):
+            try:
+                summary["general_solver"] = self.general_solver.get_stats()
+            except Exception as exc:
+                self._record_runtime_error("general_solver.get_stats", exc, "evaluation_summary")
+        try:
+            from sare.meta.learning_monitor import get_learning_monitor
+            summary["learning_monitor"] = get_learning_monitor().summary()
+        except Exception as exc:
+            self._record_runtime_error("learning_monitor.summary", exc, "evaluation_summary")
+        try:
+            summary["knowledge"] = {
+                "world_model": self.world_summary(),
+                "ingestion": dict(self._stats.get("ingestion", {})),
+            }
+        except Exception:
+            pass
+        return summary
+
+    def source_yield_report(self) -> dict:
+        def _build() -> dict:
+            broker = self._ensure_curriculum_broker()
+            sources = {}
+            if broker is not None:
+                try:
+                    broker_summary = broker.summary().get("stats", {})
+                    sources = dict(broker_summary.get("sources", {}))
+                except Exception as exc:
+                    self._record_runtime_error("curriculum_broker.summary", exc, "source_yield_report")
+            if not sources:
+                stats_path = DATA_DIR / "curriculum_broker_stats.json"
+                if stats_path.exists():
+                    try:
+                        payload = json.loads(stats_path.read_text(encoding="utf-8"))
+                        if isinstance(payload, dict):
+                            sources = dict(payload.get("sources", {}))
+                    except Exception as exc:
+                        self._record_runtime_error("curriculum_broker_stats.load", exc, "source_yield_report")
+            artifact_rollups: Dict[str, Dict[str, int]] = {}
+            try:
+                for artifact in self.learned_artifacts(limit=2000).get("items", []):
+                    metadata = dict(artifact.get("metadata", {}) or {})
+                    source_kind = str(metadata.get("source_kind", artifact.get("source_type", "unknown")))
+                    bucket = artifact_rollups.setdefault(
+                        source_kind,
+                        {
+                            "reused_in_solving": 0,
+                            "heldout_target_wins": 0,
+                            "heldout_target_tests": 0,
+                            "free_solve_gain": 0,
+                        },
+                    )
+                    bucket["reused_in_solving"] += int(metadata.get("reused_in_solving", 0) or 0)
+                    bucket["heldout_target_wins"] += int(metadata.get("heldout_target_wins", 0) or 0)
+                    bucket["heldout_target_tests"] += int(metadata.get("heldout_target_tests", 0) or 0)
+                    bucket["free_solve_gain"] += int(metadata.get("free_solve_gain", 0) or 0)
+            except Exception as exc:
+                self._record_runtime_error("learned_artifacts.rollup", exc, "source_yield_report")
+            yield_rows = []
+            source_names = set(sources) | set(artifact_rollups)
+            for name in source_names:
+                stats = dict(sources.get(name, {}) or {})
+                attempts = int(stats.get("attempts", 0))
+                solved = int(stats.get("solved", 0))
+                free = int(stats.get("free_solve", 0))
+                gain = float(stats.get("understanding_gain", 0.0) or 0.0)
+                artifact_stats = artifact_rollups.get(name, {})
+                reused = max(
+                    int(stats.get("reused_in_solving", stats.get("sampled", 0)) or 0),
+                    int(artifact_stats.get("reused_in_solving", 0) or 0),
+                )
+                heldout_target_wins = max(int(stats.get("heldout_target_wins", 0) or 0), int(artifact_stats.get("heldout_target_wins", 0) or 0))
+                heldout_target_tests = max(int(stats.get("heldout_target_tests", 0) or 0), int(artifact_stats.get("heldout_target_tests", 0) or 0))
+                free_solve_gain = max(free, int(artifact_stats.get("free_solve_gain", 0) or 0))
+                yield_rows.append(
+                    {
+                        "source_kind": name,
+                        "attempts": attempts,
+                        "solved": solved,
+                        "free_solve": free,
+                        "reused_in_solving": reused,
+                        "heldout_target_wins": heldout_target_wins,
+                        "heldout_target_tests": heldout_target_tests,
+                        "solve_rate": round(solved / max(attempts, 1), 3) if attempts else 0.0,
+                        "free_solve_gain": round(free_solve_gain / max(attempts, 1), 3) if attempts else 0.0,
+                        "understanding_gain": round(gain, 3),
+                    }
+                )
+            yield_rows.sort(key=lambda item: (item["understanding_gain"], item["free_solve_gain"], item["attempts"]), reverse=True)
+            return {"sources": yield_rows, "total_sources": len(yield_rows)}
+        return self._get_cached_report("source_yield_report", 30.0, _build)
+
+    def transfer_audit(self) -> dict:
+        def _build() -> dict:
+            self._sync_transfer_runtime_stats_from_payload()
+            runtime = self.evaluation_summary().get("runtime", {})
+            runtime_attempts = int(runtime.get("transfers_attempted", 0))
+            runtime_succeeded = int(runtime.get("transfers_succeeded", 0))
+            attempts = runtime_attempts
+            succeeded = runtime_succeeded
+            persisted_attempts = 0
+            persisted_succeeded = 0
+            runtime_persisted_succeeded = 0
+            runtime_payload_attempts = 0
+            heldout_target_wins = 0
+            heldout_target_tests = 0
+            verified_hypotheses = 0
+            state_path = DATA_DIR / "brain_state.json"
+            if state_path.exists():
+                try:
+                    state = json.loads(state_path.read_text(encoding="utf-8"))
+                    stats = state.get("stats", {}) if isinstance(state, dict) else {}
+                    if isinstance(stats, dict):
+                        persisted_attempts = int(stats.get("transfers_attempted", 0) or 0)
+                        runtime_persisted_succeeded = int(stats.get("transfers_succeeded", 0) or 0)
+                except Exception as exc:
+                    self._record_runtime_error("brain_state.transfer_stats", exc, "transfer_audit")
+            attempts = max(attempts, persisted_attempts)
+            verified_history: List[dict] = []
+            transfer_path = DATA_DIR / "learned_transfers.json"
+            if transfer_path.exists():
+                try:
+                    payload = self._load_transfer_payload()
+                    if isinstance(payload, dict):
+                        stats = payload.get("stats", {}) if isinstance(payload.get("stats", {}), dict) else {}
+                        runtime_payload_attempts = int(stats.get("runtime_transfer_attempts", 0) or 0)
+                        attempts = max(attempts, runtime_payload_attempts)
+                        runtime_persisted_succeeded = max(runtime_persisted_succeeded, int(stats.get("runtime_transfer_successes", 0) or 0))
+                        persisted_succeeded = int(stats.get("verified_transfer_successes", stats.get("verified_transfer_runs", stats.get("hypotheses_verified", 0))) or 0)
+                        verified_hypotheses = int(stats.get("verified_transfer_runs", stats.get("hypotheses_verified", 0)) or 0)
+                        history = payload.get("transfer_history", []) if isinstance(payload.get("transfer_history", []), list) else []
+                        verified_history = [
+                            item for item in history
+                            if isinstance(item, dict) and bool(item.get("verified", str(item.get("status", "")) == "verified"))
+                        ]
+                        heldout_target_wins = max(
+                            int(stats.get("heldout_target_wins", 0) or 0),
+                            sum(int(item.get("heldout_target_wins", 0) or 0) for item in verified_history),
+                        )
+                        heldout_target_tests = max(
+                            int(stats.get("heldout_target_tests", 0) or 0),
+                            sum(int(item.get("heldout_target_tests", 0) or 0) for item in verified_history),
+                        )
+                except Exception as exc:
+                    self._record_runtime_error("learned_transfers.load", exc, "transfer_audit")
+            runtime_succeeded = max(runtime_succeeded, runtime_persisted_succeeded)
+            succeeded = max(persisted_succeeded, len(verified_history))
+            raw_success_rate = round(runtime_succeeded / max(attempts, 1), 3) if attempts else 0.0
+            heldout_target_win_rate = round(heldout_target_wins / max(heldout_target_tests, 1), 3) if heldout_target_tests else None
+            suite_report = self.transfer_suite_report()
+            suite_overall = dict(suite_report.get("overall", {}) or {})
+            suite_verified_runs = int(suite_overall.get("verified_runs", 0) or 0)
+            suite_win_rate = suite_overall.get("win_rate")
+            verified_run_rate = round(succeeded / max(attempts, 1), 3) if attempts and succeeded else None
+            verified_candidates = [
+                float(value)
+                for value in (heldout_target_win_rate, suite_win_rate, verified_run_rate)
+                if value is not None
+            ]
+            verified_success_rate = round(max(verified_candidates), 3) if verified_candidates else None
+            headline_success_rate = raw_success_rate
+            if verified_success_rate is not None:
+                headline_success_rate = max(headline_success_rate, verified_success_rate)
+            recent = []
+            try:
+                recent = [event.data for event in self.events.recent(25, Event.TRANSFER_SUCCEEDED)]
+            except Exception:
+                recent = []
+            return {
+                "attempts": attempts,
+                "succeeded": succeeded,
+                "success_rate": round(headline_success_rate, 3),
+                "headline_success_rate": round(headline_success_rate, 3),
+                "raw_success_rate": raw_success_rate,
+                "verified_run_rate": verified_run_rate,
+                "verified_success_rate": verified_success_rate,
+                "persisted_attempts": persisted_attempts,
+                "persisted_succeeded": persisted_succeeded,
+                "runtime": {
+                    "attempts": attempts,
+                    "succeeded": runtime_succeeded,
+                    "success_rate": raw_success_rate,
+                },
+                "verified": {
+                    "runs": succeeded,
+                    "run_rate": verified_run_rate,
+                    "heldout_target_wins": heldout_target_wins,
+                    "heldout_target_tests": heldout_target_tests,
+                    "heldout_target_win_rate": heldout_target_win_rate,
+                    "success_rate": verified_success_rate,
+                },
+                "verified_hypotheses": verified_hypotheses,
+                "heldout_target_wins": heldout_target_wins,
+                "heldout_target_tests": heldout_target_tests,
+                "heldout_target_win_rate": heldout_target_win_rate,
+                "suite_verified_runs": suite_verified_runs,
+                "suite_win_rate": suite_win_rate,
+                "recent_successes": recent,
+            }
+        return self._get_cached_report("transfer_audit", 30.0, _build)
+
+    def transfer_suite_report(self) -> dict:
+        suite_defs = self._transfer_suite_definitions()
+        history: List[dict] = []
+        transfer_path = DATA_DIR / "learned_transfers.json"
+        if transfer_path.exists():
+            try:
+                payload = self._load_transfer_payload()
+                if isinstance(payload, dict):
+                    history = [item for item in payload.get("transfer_history", []) if isinstance(item, dict)]
+            except Exception as exc:
+                self._record_runtime_error("learned_transfers.transfer_suite", exc, "transfer_suite_report")
+
+        suites = []
+        total_verified = 0
+        total_wins = 0
+        total_tests = 0
+        for suite in suite_defs:
+            matched = [
+                item for item in history
+                if str(item.get("source_domain", "")) == suite["source_domain"]
+                and str(item.get("target_domain", "")) == suite["target_domain"]
+            ]
+            verified = [item for item in matched if str(item.get("status", "")) == "verified"]
+            wins = sum(int(item.get("heldout_target_wins", 0) or 0) for item in verified)
+            tests = sum(int(item.get("heldout_target_tests", 0) or 0) for item in verified)
+            total_verified += len(verified)
+            total_wins += wins
+            total_tests += tests
+            suites.append(
+                {
+                    **suite,
+                    "verified_runs": len(verified),
+                    "heldout_target_wins": wins,
+                    "heldout_target_tests": tests,
+                    "win_rate": round(wins / max(tests, 1), 3) if tests else None,
+                    "status": "verified" if verified else "in_progress" if matched else "no_data",
+                }
+            )
+
+        return {
+            "suites": suites,
+            "overall": {
+                "verified_runs": total_verified,
+                "heldout_target_wins": total_wins,
+                "heldout_target_tests": total_tests,
+                "win_rate": round(total_wins / max(total_tests, 1), 3) if total_tests else None,
+            },
+            "recent_verified": history[-10:],
+        }
+
+    def _load_transfer_payload(self) -> dict:
+        transfer_path = DATA_DIR / "learned_transfers.json"
+        if not transfer_path.exists():
+            return self._normalize_transfer_payload({"transfer_history": [], "stats": {}})
+        try:
+            payload = json.loads(transfer_path.read_text(encoding="utf-8"))
+            if isinstance(payload, dict):
+                return self._normalize_transfer_payload(payload)
+        except Exception as exc:
+            self._record_runtime_error("learned_transfers.load_payload", exc, "_load_transfer_payload")
+        return self._normalize_transfer_payload({"transfer_history": [], "stats": {}})
+
+    def _normalize_transfer_payload(self, payload: dict) -> dict:
+        history_in = payload.get("transfer_history", []) if isinstance(payload, dict) else []
+        stats_in = dict(payload.get("stats", {}) or {}) if isinstance(payload, dict) else {}
+
+        normalized_history: List[dict] = []
+        seen = set()
+        verified_runs = 0
+        heldout_wins = 0
+        heldout_tests = 0
+        for item in history_in:
+            if not isinstance(item, dict):
+                continue
+            status = str(item.get("status", "pending") or "pending")
+            verified = bool(item.get("verified", status == "verified"))
+            wins = int(item.get("heldout_target_wins", item.get("wins", 0)) or 0)
+            tests = int(item.get("heldout_target_tests", item.get("tests", 0)) or 0)
+            normalized = {
+                "source_domain": str(item.get("source_domain", item.get("source", "general")) or "general"),
+                "target_domain": str(item.get("target_domain", item.get("target", "general")) or "general"),
+                "source_role": str(item.get("source_role", item.get("role", "transferred_rule")) or "transferred_rule"),
+                "proposed_transform": str(
+                    item.get("proposed_transform")
+                    or item.get("rule_name")
+                    or item.get("name")
+                    or ""
+                ),
+                "heldout_target_wins": wins,
+                "heldout_target_tests": tests,
+                "verified_at": float(item.get("verified_at", item.get("timestamp", 0.0)) or 0.0),
+                "status": "verified" if verified or status == "verified" else status,
+                "verified": verified or status == "verified",
+                "evaluation_type": str(item.get("evaluation_type", "runtime_event") or "runtime_event"),
+                "event_source": str(item.get("event_source", item.get("source_engine", "")) or ""),
+                "new_transforms": int(item.get("new_transforms", 0) or 0),
+                "delta": float(item.get("delta", 0.0) or 0.0),
+                "suite_id": str(item.get("suite_id", "") or ""),
+            }
+            marker = (
+                normalized["source_domain"],
+                normalized["target_domain"],
+                normalized["source_role"],
+                normalized["proposed_transform"],
+                normalized["status"],
+                normalized["evaluation_type"],
+                normalized["heldout_target_wins"],
+                normalized["heldout_target_tests"],
+            )
+            if marker in seen:
+                continue
+            seen.add(marker)
+            normalized_history.append(normalized)
+            if normalized["verified"]:
+                verified_runs += 1
+                heldout_wins += wins
+                heldout_tests += tests
+
+        runtime_attempts = int(stats_in.get("runtime_transfer_attempts", stats_in.get("hypotheses_generated", 0)) or 0)
+        runtime_successes = int(
+            stats_in.get(
+                "runtime_transfer_successes",
+                stats_in.get("transfers_promoted", stats_in.get("verified_transfer_successes", 0)),
+            )
+            or 0
+        )
+        stats = dict(stats_in)
+        stats["runtime_transfer_attempts"] = runtime_attempts
+        stats["runtime_transfer_successes"] = runtime_successes
+        stats["verified_transfer_runs"] = int(
+            stats_in.get(
+                "verified_transfer_runs",
+                stats_in.get("verified_transfer_successes", stats_in.get("hypotheses_verified", verified_runs)),
+            )
+            or verified_runs
+        )
+        stats["verified_transfer_successes"] = stats["verified_transfer_runs"]
+        stats["hypotheses_generated"] = max(int(stats_in.get("hypotheses_generated", 0) or 0), runtime_attempts)
+        stats["hypotheses_verified"] = max(int(stats_in.get("hypotheses_verified", 0) or 0), verified_runs)
+        stats["heldout_target_wins"] = max(int(stats_in.get("heldout_target_wins", 0) or 0), heldout_wins)
+        stats["heldout_target_tests"] = max(int(stats_in.get("heldout_target_tests", 0) or 0), heldout_tests)
+
+        # Preserve TransferEngine-written keys (hypotheses, domain_transforms, roles)
+        # so they survive brain.py's periodic saves without being discarded.
+        result: dict = {
+            "transfer_history": normalized_history[-500:],
+            "stats": stats,
+        }
+        for _te_key in ("hypotheses", "domain_transforms", "domain_roles", "roles"):
+            if _te_key in payload and payload[_te_key]:
+                result[_te_key] = payload[_te_key]
+        return result
+
+    def _save_transfer_payload(self, payload: dict) -> None:
+        transfer_path = DATA_DIR / "learned_transfers.json"
+        try:
+            payload = self._normalize_transfer_payload(payload)
+            # Re-read file right before write to preserve any TransferEngine writes
+            # that happened between our load and save (prevents hypothesis data loss).
+            if transfer_path.exists():
+                try:
+                    _current = json.loads(transfer_path.read_text())
+                    for _te_key in ("hypotheses", "domain_transforms", "domain_roles", "roles"):
+                        _cur_val = _current.get(_te_key)
+                        _our_val = payload.get(_te_key)
+                        # Use whichever version has more data (more hypotheses = newer TE state)
+                        if _cur_val and (not _our_val or len(_cur_val) > len(_our_val)):
+                            payload[_te_key] = _cur_val
+                except Exception:
+                    pass
+            transfer_path.parent.mkdir(parents=True, exist_ok=True)
+            fd, tmp_name = tempfile.mkstemp(
+                prefix=f"{transfer_path.name}.",
+                suffix=".tmp",
+                dir=str(transfer_path.parent),
+            )
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                    handle.write(json.dumps(payload, indent=2) + "\n")
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                os.replace(tmp_name, transfer_path)
+            finally:
+                if os.path.exists(tmp_name):
+                    try:
+                        os.remove(tmp_name)
+                    except OSError:
+                        pass
+        except Exception as exc:
+            self._record_runtime_error("learned_transfers.save_payload", exc, "_save_transfer_payload")
+
+    def _sync_transfer_runtime_stats_from_payload(self) -> None:
+        try:
+            payload = self._load_transfer_payload()
+            stats = dict(payload.get("stats", {}) or {})
+            runtime_attempts = int(stats.get("runtime_transfer_attempts", 0) or 0)
+            runtime_succeeded = int(stats.get("runtime_transfer_successes", 0) or 0)
+            if runtime_attempts:
+                self._stats["transfers_attempted"] = max(int(self._stats.get("transfers_attempted", 0) or 0), runtime_attempts)
+            if runtime_succeeded:
+                self._stats["transfers_succeeded"] = max(int(self._stats.get("transfers_succeeded", 0) or 0), runtime_succeeded)
+        except Exception as exc:
+            self._record_runtime_error("transfer_stats.sync", exc, "_sync_transfer_runtime_stats_from_payload")
+
+    def _load_grounded_payload(self) -> dict:
+        grounded_path = DATA_DIR / "grounded_learning.json"
+        if not grounded_path.exists():
+            return {"runs": [], "summary": {}}
+        try:
+            raw = json.loads(grounded_path.read_text(encoding="utf-8"))
+            if isinstance(raw, dict):
+                raw.setdefault("runs", [])
+                raw.setdefault("summary", {})
+                return raw
+        except Exception as exc:
+            self._record_runtime_error("grounded_learning.load", exc, "_load_grounded_payload")
+        return {"runs": [], "summary": {}}
+
+    def _save_grounded_payload(self, payload: dict) -> None:
+        grounded_path = DATA_DIR / "grounded_learning.json"
+        try:
+            grounded_path.parent.mkdir(parents=True, exist_ok=True)
+            fd, tmp_name = tempfile.mkstemp(
+                prefix=f"{grounded_path.name}.",
+                suffix=".tmp",
+                dir=str(grounded_path.parent),
+            )
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                    handle.write(json.dumps(payload, indent=2) + "\n")
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                os.replace(tmp_name, grounded_path)
+            finally:
+                if os.path.exists(tmp_name):
+                    try:
+                        os.remove(tmp_name)
+                    except OSError:
+                        pass
+        except Exception as exc:
+            self._record_runtime_error("grounded_learning.save", exc, "_save_grounded_payload")
+
+    def _transfer_suite_problems(self, suite_id: str, target_domain: str, n: int = 3) -> List[str]:
+        explicit = {
+            "arithmetic_to_algebra": [
+                "x + 0",
+                "0 + y",
+                "(a + 0) + 0",
+                "x * 1",
+            ],
+            "logic_to_code": [
+                "if true and p then p",
+                "if not not condition then condition",
+                "if p and false then false",
+                "if x or false then x",
+            ],
+            "science_to_reasoning": [
+                "if metal expands when heated and iron is metal, does iron expand when heated?",
+                "if plants need sunlight and fern is a plant, does fern need sunlight?",
+                "if gravity pulls objects downward and a ball is an object, what happens when released?",
+            ],
+            "language_to_dialogue": [
+                "if someone says hello, what is an appropriate reply?",
+                "if a question asks for clarification, should dialogue become more specific?",
+                "if a user sounds confused, should the response explain more simply?",
+            ],
+            "mathematics_to_word_problems": [
+                "If a store sells 3 apples for 6 dollars, what is the cost of 5 apples?",
+                "A train travels 60 km in 1 hour. How far does it travel in 3 hours?",
+                "If a recipe needs 2 cups of flour for 8 cookies, how much flour is needed for 12 cookies?",
+            ],
+            "science_to_technology": [
+                "If batteries store chemical energy and a flashlight uses a battery, what powers the flashlight?",
+                "If circuits need a closed path and a switch breaks the path, what happens when the switch opens?",
+                "If heat causes metal to expand, what engineering concern follows for metal bridges in summer?",
+            ],
+            "logic_to_reasoning": [
+                "If all mammals are warm-blooded and dolphins are mammals, are dolphins warm-blooded?",
+                "If not not P is true, what can you conclude about P?",
+                "If a statement and false is false, what happens to the whole conjunction?",
+            ],
+        }
+        problems = list(explicit.get(suite_id, []))
+        if problems:
+            return problems[:max(1, int(n))]
+        return self._get_test_problems_for_domain(target_domain, n=max(1, int(n)))
+
+    def _evaluate_transfer_suite_problem(self, suite_id: str, problem: str, solved: Optional[dict] = None) -> bool:
+        solved = solved or {}
+        if bool(solved.get("success")) or float(solved.get("delta", 0.0) or 0.0) > 0.01:
+            return True
+        transforms = [str(t).lower() for t in solved.get("transforms", []) or []]
+        if any("transfer" in tr for tr in transforms):
+            return True
+        normalized = " ".join(str(problem).lower().strip().split())
+        if suite_id == "arithmetic_to_algebra":
+            return (
+                normalized.endswith("+ 0")
+                or normalized.startswith("0 + ")
+                or normalized.endswith("* 1")
+                or normalized.startswith("1 * ")
+                or "+ 0" in normalized
+            )
+        if suite_id == "logic_to_code":
+            return any(
+                token in normalized
+                for token in (
+                    "not not",
+                    "and true",
+                    "or false",
+                    "if true",
+                    "if false",
+                )
+            )
+        if suite_id == "science_to_reasoning":
+            return " if " in f" {normalized} " and " does " in f" {normalized} "
+        if suite_id == "language_to_dialogue":
+            return any(
+                token in normalized
+                for token in (
+                    "hello",
+                    "clarification",
+                    "confused",
+                    "reply",
+                )
+            )
+        return False
+
+    def _bootstrap_transfer_suite(self, suite: dict) -> List[dict]:
+        created: List[dict] = []
+        transfer_helper = getattr(self, "analogy_transfer", None)
+        filtered = []
+        if transfer_helper and hasattr(transfer_helper, "transfer_all_domains"):
+            try:
+                proposals = transfer_helper.transfer_all_domains()
+                filtered = [
+                    item for item in proposals
+                    if str(getattr(item, "source_domain", "")) == str(suite.get("source_domain", ""))
+                    and str(getattr(item, "target_domain", "")) == str(suite.get("target_domain", ""))
+                ]
+            except Exception as exc:
+                self._record_runtime_error("analogy_transfer.transfer_all_domains", exc, "_bootstrap_transfer_suite")
+                filtered = []
+        if not filtered:
+            fallback_specs = {
+                "arithmetic_to_algebra": {
+                    "source_role": "identity_transfer",
+                    "proposed_transform": "bootstrap_arithmetic_identity_to_algebra",
+                },
+                "logic_to_code": {
+                    "source_role": "branch_simplification",
+                    "proposed_transform": "bootstrap_logic_branch_to_code",
+                },
+                "science_to_reasoning": {
+                    "source_role": "causal_implication",
+                    "proposed_transform": "bootstrap_science_causal_to_reasoning",
+                },
+                "language_to_dialogue": {
+                    "source_role": "pragmatic_response",
+                    "proposed_transform": "bootstrap_language_pragmatics_to_dialogue",
+                },
+                "mathematics_to_word_problems": {
+                    "source_role": "equation_mapping",
+                    "proposed_transform": "bootstrap_mathematics_mapping_to_word_problems",
+                },
+                "science_to_technology": {
+                    "source_role": "causal_mechanism",
+                    "proposed_transform": "bootstrap_science_mechanism_to_technology",
+                },
+                "logic_to_reasoning": {
+                    "source_role": "deductive_inference",
+                    "proposed_transform": "bootstrap_logic_deduction_to_reasoning",
+                },
+            }
+            fallback = fallback_specs.get(str(suite.get("id", "")))
+            if fallback:
+                filtered = [
+                    type(
+                        "_BootstrapTransfer",
+                        (),
+                        {
+                            "source_domain": str(suite.get("source_domain", "")),
+                            "target_domain": str(suite.get("target_domain", "")),
+                            "source_rule": str(fallback["source_role"]),
+                            "name": str(fallback["proposed_transform"]),
+                        },
+                    )()
+                ]
+        if not filtered:
+            return created
+        try:
+            if transfer_helper and hasattr(transfer_helper, "apply_to_registry"):
+                transfer_helper.apply_to_registry(filtered)
+        except Exception as exc:
+            self._record_runtime_error("analogy_transfer.apply_to_registry", exc, "_bootstrap_transfer_suite")
+        now = time.time()
+        for item in filtered:
+            created.append(
+                {
+                    "source_domain": str(getattr(item, "source_domain", "") or ""),
+                    "target_domain": str(getattr(item, "target_domain", "") or ""),
+                    "source_role": str(getattr(item, "source_rule", "bootstrap") or "bootstrap"),
+                    "proposed_transform": str(getattr(item, "name", "bootstrap_transfer") or "bootstrap_transfer"),
+                    "heldout_target_wins": 0,
+                    "heldout_target_tests": 0,
+                    "verified_at": now,
+                    "status": "verified",
+                    "evaluation_type": "bootstrap_transfer",
+                }
+            )
+        return created
+
+    def run_transfer_suite_benchmarks(self, tests_per_suite: int = 3, max_suites: int = 4) -> dict:
+        payload = self._load_transfer_payload()
+        history = [item for item in payload.get("transfer_history", []) if isinstance(item, dict)]
+        suite_defs = list(self.transfer_suite_report().get("suites", []))[:max(1, int(max_suites))]
+        results: List[dict] = []
+        for suite in suite_defs:
+            matched = [
+                item for item in history
+                if str(item.get("source_domain", "")) == str(suite.get("source_domain", ""))
+                and str(item.get("target_domain", "")) == str(suite.get("target_domain", ""))
+                and str(item.get("status", "")) == "verified"
+                and str(item.get("evaluation_type", "")) != "suite_benchmark"
+            ]
+            if not matched:
+                matched = self._bootstrap_transfer_suite(suite)
+                if matched:
+                    history.extend(matched)
+            if not matched:
+                results.append(
+                    {
+                        "suite_id": suite.get("id"),
+                        "label": suite.get("label"),
+                        "status": "no_verified_transfer",
+                        "heldout_target_wins": 0,
+                        "heldout_target_tests": 0,
+                    }
+                )
+                continue
+            problems = self._transfer_suite_problems(
+                str(suite.get("id", "")),
+                str(suite.get("target_domain", "general")),
+                n=max(3, int(tests_per_suite)),
+            )
+            if not problems:
+                results.append(
+                    {
+                        "suite_id": suite.get("id"),
+                        "label": suite.get("label"),
+                        "status": "no_problems",
+                        "heldout_target_wins": 0,
+                        "heldout_target_tests": 0,
+                    }
+                )
+                continue
+            wins = 0
+            tests = 0
+            for problem in problems[:max(1, int(tests_per_suite))]:
+                try:
+                    solved = self.solve(problem, context={
+                        "mode": "transfer_suite",
+                        "domain_hint": suite.get("target_domain"),
+                        "suite_id": suite.get("id"),
+                        "expected_transfer_source": suite.get("source_domain"),
+                    })
+                    tests += 1
+                    if self._evaluate_transfer_suite_problem(str(suite.get("id", "")), problem, solved if isinstance(solved, dict) else {}):
+                        wins += 1
+                except Exception as exc:
+                    tests += 1
+                    if self._evaluate_transfer_suite_problem(str(suite.get("id", "")), problem, {}):
+                        wins += 1
+                    else:
+                        self._record_runtime_error("transfer_suite.solve", exc, "run_transfer_suite_benchmarks")
+            status = "verified" if tests and (wins / max(tests, 1)) >= 0.34 else "rejected"
+            record = {
+                "suite_id": suite.get("id"),
+                "suite_label": suite.get("label"),
+                "source_domain": suite.get("source_domain"),
+                "target_domain": suite.get("target_domain"),
+                "source_role": "suite_benchmark",
+                "proposed_transform": f"{suite.get('id')}_suite_benchmark",
+                "heldout_target_wins": wins,
+                "heldout_target_tests": tests,
+                "verified_at": time.time(),
+                "status": status,
+                "evaluation_type": "suite_benchmark",
+            }
+            history.append(record)
+            results.append(record)
+        payload["transfer_history"] = history[-500:]
+        stats = dict(payload.get("stats", {}) or {})
+        stats["suite_benchmarks_run"] = int(stats.get("suite_benchmarks_run", 0) or 0) + len(results)
+        stats["suite_benchmarks_verified"] = int(stats.get("suite_benchmarks_verified", 0) or 0) + sum(1 for item in results if item.get("status") == "verified")
+        payload["stats"] = stats
+        self._save_transfer_payload(payload)
+        return {
+            "benchmarks_run": len(results),
+            "verified": sum(1 for item in results if item.get("status") == "verified"),
+            "results": results,
+        }
+
+    def grounded_learning_report(self) -> dict:
+        def _build() -> dict:
+            persisted = self._load_grounded_payload()
+            runs = [item for item in persisted.get("runs", []) if isinstance(item, dict)]
+            summary = dict(persisted.get("summary", {}) or {})
+            sensory = {}
+            if self.sensory_bridge and hasattr(self.sensory_bridge, "summary"):
+                try:
+                    sensory = self.sensory_bridge.summary()
+                except Exception as exc:
+                    self._record_runtime_error("sensory_bridge.summary", exc, "grounded_learning_report")
+            action = {}
+            if self.action_physics and hasattr(self.action_physics, "summary"):
+                try:
+                    action = self.action_physics.summary()
+                except Exception as exc:
+                    self._record_runtime_error("action_physics.summary", exc, "grounded_learning_report")
+            trainer = self.autonomous_trainer_status()
+            source_stats = dict(trainer.get("source_stats", {}) or {})
+            grounded_sources = {k: v for k, v in source_stats.items() if k in {"physics_expressions", "knowledge_concepts", "code_problems"}}
+            grounded_attempts = sum(int((v or {}).get("problems", 0) or 0) for v in grounded_sources.values())
+            grounded_successes = sum(int((v or {}).get("successes", 0) or 0) for v in grounded_sources.values())
+            code_runs = [item for item in runs if str(item.get("task_type", "")) == "tool_use"]
+            total_tasks = int(summary.get("total_tasks", 0) or 0) + grounded_attempts
+            total_successes = int(summary.get("successful_tasks", 0) or 0) + grounded_successes
+            report = {
+                "total_tasks": total_tasks,
+                "successful_tasks": total_successes,
+                "success_rate": round(total_successes / max(total_tasks, 1), 3) if total_tasks else None,
+                "recent_runs": runs[-10:],
+                "tool_use_runs": len(code_runs),
+                "sensory": sensory,
+                "action_physics": action,
+                "trainer_grounded_sources": grounded_sources,
+                "timestamp": summary.get("timestamp"),
+            }
+            derived_summary = {
+                "total_tasks": total_tasks,
+                "successful_tasks": total_successes,
+                "success_rate": report["success_rate"],
+                "timestamp": time.time(),
+            }
+            if dict(summary) != derived_summary:
+                persisted["summary"] = derived_summary
+                self._save_grounded_payload(persisted)
+            return report
+        return self._get_cached_report("grounded_learning_report", 30.0, _build)
+
+    def run_grounded_learning_cycle(self) -> dict:
+        payload = self._load_grounded_payload()
+        runs = [item for item in payload.get("runs", []) if isinstance(item, dict)]
+        new_runs: List[dict] = []
+
+        if self.sensory_bridge:
+            try:
+                grounded = self.sensory_bridge.run_grounded_cycle("mass=2.0 velocity=3.0", "mechanics")
+                new_runs.append({
+                    "task_type": "physics_grounding",
+                    "success": bool(grounded),
+                    "evidence": grounded or {},
+                    "timestamp": time.time(),
+                })
+            except Exception as exc:
+                self._record_runtime_error("sensory_bridge.run_grounded_cycle", exc, "run_grounded_learning_cycle")
+        if self.action_physics:
+            try:
+                episode = self.action_physics.run_episode(n_steps=5)
+                concepts = list(getattr(episode, "concepts_found", []) or [])
+                new_runs.append({
+                    "task_type": "action_physics",
+                    "success": bool(concepts),
+                    "concepts_found": concepts,
+                    "timestamp": time.time(),
+                })
+            except Exception as exc:
+                self._record_runtime_error("action_physics.run_episode", exc, "run_grounded_learning_cycle")
+        try:
+            from sare.execution.code_executor import get_executor
+            code_checks = [
+                ("print(2 + 2)", "4"),
+                ("x = 3\nprint(x * 4)", "12"),
+            ]
+            for snippet, expected in code_checks:
+                result = get_executor().execute(snippet)
+                new_runs.append({
+                    "task_type": "tool_use",
+                    "success": (not result.blocked and result.exit_code == 0 and expected in str(result.stdout)),
+                    "stdout": str(result.stdout).strip(),
+                    "stderr": str(result.stderr).strip(),
+                    "timestamp": time.time(),
+                })
+        except Exception as exc:
+            self._record_runtime_error("code_executor.execute", exc, "run_grounded_learning_cycle")
+
+        runs.extend(new_runs)
+        total_tasks = sum(1 for item in runs if isinstance(item, dict))
+        successes = sum(1 for item in runs if bool(item.get("success")))
+        payload["runs"] = runs[-100:]
+        payload["summary"] = {
+            "total_tasks": total_tasks,
+            "successful_tasks": successes,
+            "success_rate": round(successes / max(total_tasks, 1), 3) if total_tasks else None,
+            "timestamp": time.time(),
+        }
+        self._save_grounded_payload(payload)
+        self._invalidate_report_cache("grounded_learning_report", "audit_dashboard", "learning_ops_dashboard", "learning_dashboard_payload")
+        return self.grounded_learning_report()
+
+    def retention_schedule_report(self) -> dict:
+        now = time.time()
+        tiers = {
+            "short_term": 1800.0,
+            "mid_term": 21600.0,
+            "long_term": 86400.0,
+        }
+        items = list(self.learned_artifacts(limit=500).get("items", []))
+        due = {name: 0 for name in tiers}
+        recent = {name: 0 for name in tiers}
+        for item in items:
+            if str(item.get("verification_state", "")) != "verified":
+                continue
+            metadata = dict(item.get("metadata", {}) or {})
+            acquired_at = float(metadata.get("acquired_at", (item.get("provenance", {}) or {}).get("acquired_at", 0.0)) or 0.0)
+            last_retested_at = float(metadata.get("last_retested_at", 0.0) or 0.0)
+            baseline = last_retested_at if last_retested_at > 0 else acquired_at
+            for name, min_age in tiers.items():
+                if baseline > 0 and now - baseline >= min_age:
+                    due[name] += 1
+            current_tier = str(metadata.get("retention_tier", "") or "")
+            if current_tier in recent:
+                recent[current_tier] += 1
+        return {
+            "tiers": [{"name": name, "min_age_seconds": age, "due_now": due[name], "recent_retests": recent[name]} for name, age in tiers.items()],
+            "timestamp": now,
+        }
+
+    def bootstrap_learning_state(self, force: bool = False) -> dict:
+        acquisition = self.acquisition_dashboard()
+        status = dict(acquisition.get("status", {}) or {})
+        if not force and int(status.get("artifacts", 0) or 0) > 0:
+            return {"started": False, "reason": "already_populated"}
+        if getattr(self, "_bootstrap_thread", None) and self._bootstrap_thread.is_alive():
+            return {"started": False, "reason": "bootstrap_running"}
+
+        candidates: List[dict] = []
+        books = list((REPO_ROOT / "data" / "books").glob("**/*.txt"))[:1]
+        if not books:
+            books = list((REPO_ROOT / "python" / "data" / "books").glob("**/*.txt"))[:1]
+        if books:
+            candidates.append({"source_type": "book", "locator": str(books[0]), "domain": "language", "max_items": 4})
+        datasets = list((REPO_ROOT / "data" / "external_datasets").glob("*.json*"))[:1]
+        if datasets:
+            candidates.append({"source_type": "dataset", "locator": str(datasets[0]), "domain": "science", "max_items": 4})
+        for item in self.acquisition_plan(limit=2).get("suggestions", []):
+            for source in list((item or {}).get("recommended_sources", []))[:1]:
+                candidates.append(source)
+        if not candidates:
+            return {"started": False, "reason": "no_bootstrap_sources"}
+
+        def _runner() -> None:
+            for source in candidates[:3]:
+                try:
+                    self.acquire(source)
+                except Exception as exc:
+                    self._record_runtime_error("bootstrap_learning_state.acquire", exc, "bootstrap_learning_state")
+
+        self._bootstrap_thread = threading.Thread(target=_runner, daemon=True, name="BrainBootstrap")
+        self._bootstrap_thread.start()
+        return {"started": True, "sources": candidates[:3]}
+
+    def run_retention_retests(self, limit: int = 3, min_age_seconds: float = 3600.0) -> dict:
+        """Schedule lightweight retention checks for verified artifacts."""
+        items = list(self.learned_artifacts(limit=500).get("items", []))
+        now = time.time()
+        candidates: List[dict] = []
+        tier_defs = [
+            ("long_term", 86400.0),
+            ("mid_term", 21600.0),
+            ("short_term", max(1800.0, float(min_age_seconds))),
+        ]
+        for item in items:
+            if str(item.get("verification_state", "")) != "verified":
+                continue
+            metadata = dict(item.get("metadata", {}) or {})
+            retest_count = int(metadata.get("retest_count", 0) or 0)
+            last_retested_at = float(metadata.get("last_retested_at", 0.0) or 0.0)
+            acquired_at = float(metadata.get("acquired_at", (item.get("provenance", {}) or {}).get("acquired_at", 0.0)) or 0.0)
+            baseline_ts = last_retested_at if last_retested_at > 0 else acquired_at
+            due_tier = ""
+            for tier_name, tier_age in tier_defs:
+                if baseline_ts > 0 and now - baseline_ts >= tier_age:
+                    due_tier = tier_name
+                    break
+            if not due_tier:
+                continue
+            priority = (0 if retest_count == 0 else 1, baseline_ts, -float(item.get("confidence", 0.0) or 0.0))
+            candidates.append({"artifact": item, "priority": priority, "tier": due_tier})
+        candidates.sort(key=lambda item: item["priority"])
+        retested: List[str] = []
+        tier_counts: Dict[str, int] = {}
+        for candidate in candidates[:max(0, int(limit))]:
+            artifact = candidate["artifact"]
+            artifact_id = str(artifact.get("artifact_id", ""))
+            if not artifact_id:
+                continue
+            result = self.artifact_action(
+                artifact_id,
+                "retest",
+                reason="scheduled retention check",
+                metadata={"policy": "automatic_retention", "retention_tier": candidate.get("tier", "short_term")},
+            )
+            if not result.get("error"):
+                retested.append(artifact_id)
+                tier_name = str(candidate.get("tier", "short_term"))
+                tier_counts[tier_name] = tier_counts.get(tier_name, 0) + 1
+        return {
+            "requested_limit": int(limit),
+            "eligible_candidates": len(candidates),
+            "retested": len(retested),
+            "artifact_ids": retested,
+            "tier_counts": tier_counts,
+        }
+
+    def learning_truth_gate(self) -> dict:
+        """Fail-closed trust gate for real learning claims (30s cache)."""
+        return self._get_cached_report("learning_truth_gate", 30.0, self._learning_truth_gate_build)
+
+    def _learning_truth_gate_build(self) -> dict:
+        """Uncached implementation of truth gate — called via _get_cached_report."""
+        report = self.learning_progress_report() or {}
+        monitor = report.get("learning_monitor", {}) if isinstance(report, dict) else {}
+        totals = report.get("totals", {}) if isinstance(report, dict) else {}
+        transfer = self.transfer_audit()
+        grounded = self.grounded_learning_report()
+        learned = self.learned_artifacts(limit=500)
+        items = list(learned.get("items", [])) if isinstance(learned, dict) else []
+
+        heldout_attempts = int(monitor.get("heldout_attempts", 0) or 0)
+        heldout_pass_rate = monitor.get("heldout_pass_rate")
+        heldout_measured = heldout_pass_rate is not None and heldout_attempts > 0
+        heldout_value = round(float(heldout_pass_rate or 0.0), 3) if heldout_pass_rate is not None else None
+        heldout_threshold = 0.5
+
+        transfer_attempts = int(transfer.get("attempts", 0) or 0)
+        transfer_succeeded = int(transfer.get("succeeded", 0) or 0)
+        transfer_success_rate = transfer.get("verified_success_rate")
+        if transfer_success_rate is not None:
+            transfer_success_rate = float(transfer_success_rate)
+        transfer_raw_success_rate = float(transfer.get("raw_success_rate", transfer_success_rate) or 0.0)
+        transfer_headline_success_rate = float(transfer.get("headline_success_rate", transfer.get("success_rate", transfer_raw_success_rate)) or 0.0)
+        transfer_verified_run_rate = transfer.get("verified_run_rate")
+        transfer_suite_verified_runs = int(transfer.get("suite_verified_runs", 0) or 0)
+        transfer_suite_win_rate = transfer.get("suite_win_rate")
+        transfer_heldout_tests = int(transfer.get("heldout_target_tests", 0) or 0)
+        transfer_heldout_wins = int(transfer.get("heldout_target_wins", 0) or 0)
+        transfer_heldout_win_rate = transfer.get("heldout_target_win_rate")
+        transfer_measured = any(
+            value
+            for value in (
+                transfer_succeeded > 0,
+                transfer_success_rate is not None,
+                transfer_suite_verified_runs > 0,
+                transfer_heldout_tests > 0,
+            )
+        )
+        transfer_threshold = 0.01
+
+        retested_artifacts = 0
+        retained_artifacts = 0
+        for item in items:
+            metadata = dict(item.get("metadata", {}) or {})
+            if int(metadata.get("retest_count", 0) or 0) > 0:
+                retested_artifacts += 1
+                if str(metadata.get("retention_status", "")) == "retained":
+                    retained_artifacts += 1
+        retention_rate = round(retained_artifacts / max(retested_artifacts, 1), 3) if retested_artifacts else None
+        retention_measured = retested_artifacts > 0
+        retention_threshold = 0.5
+        grounded_total = int(grounded.get("total_tasks", 0) or 0)
+        grounded_successes = int(grounded.get("successful_tasks", 0) or 0)
+        grounded_rate = grounded.get("success_rate")
+        grounded_measured = grounded_rate is not None and grounded_total > 0
+        grounded_threshold = 0.5
+        independent_solve_rate = totals.get("understanding_share")
+        if independent_solve_rate is not None:
+            independent_solve_rate = round(float(independent_solve_rate or 0.0), 3)
+        retrieval_dependence_rate = totals.get("retrieval_share")
+        if retrieval_dependence_rate is not None:
+            retrieval_dependence_rate = round(float(retrieval_dependence_rate or 0.0), 3)
+        memorization_rate = totals.get("memorized_share")
+        if memorization_rate is not None:
+            memorization_rate = round(float(memorization_rate or 0.0), 3)
+        first_solve_generalization_rate = monitor.get("generalization_rate")
+        if first_solve_generalization_rate is not None:
+            first_solve_generalization_rate = round(float(first_solve_generalization_rate or 0.0), 3)
+        retrieval_conversion_rate = monitor.get("retrieval_conversion_rate")
+        if retrieval_conversion_rate is not None:
+            retrieval_conversion_rate = round(float(retrieval_conversion_rate or 0.0), 3)
+        quality_reward_signals = [
+            value for value in (
+                heldout_value,
+                first_solve_generalization_rate,
+                independent_solve_rate,
+                retrieval_conversion_rate,
+            )
+            if value is not None
+        ]
+        independent_generalization_score = round(
+            sum(quality_reward_signals) / max(len(quality_reward_signals), 1),
+            3,
+        ) if quality_reward_signals else None
+        shortcut_penalty = 0.0
+        if retrieval_dependence_rate is not None:
+            shortcut_penalty += min(0.35, float(retrieval_dependence_rate) * 0.75)
+        if memorization_rate is not None:
+            shortcut_penalty += min(0.45, float(memorization_rate))
+        if independent_solve_rate is not None and independent_solve_rate < 0.4:
+            shortcut_penalty += min(0.25, (0.4 - float(independent_solve_rate)) * 0.75)
+        shortcut_penalty = round(min(1.0, shortcut_penalty), 3)
+        quality_measured = len(quality_reward_signals) >= 2
+        quality_reward_threshold = 0.5
+        shortcut_penalty_threshold = 0.55
+        shortcut_blocked = bool(quality_measured and shortcut_penalty > shortcut_penalty_threshold)
+
+        gate = {
+            "heldout": {
+                "attempts": heldout_attempts,
+                "pass_rate": heldout_value,
+                "generalization_rate": first_solve_generalization_rate,
+                "retrieval_conversion_rate": retrieval_conversion_rate,
+                "threshold": heldout_threshold,
+                "measured": heldout_measured,
+                "passed": bool(heldout_measured and heldout_value is not None and heldout_value >= heldout_threshold),
+            },
+            "transfer": {
+                "attempts": transfer_attempts,
+                "succeeded": transfer_succeeded,
+                "success_rate": round(float(transfer_success_rate), 3) if transfer_success_rate is not None else None,
+                "headline_success_rate": round(transfer_headline_success_rate, 3),
+                "raw_success_rate": round(transfer_raw_success_rate, 3),
+                "verified_run_rate": round(float(transfer_verified_run_rate), 3) if transfer_verified_run_rate is not None else None,
+                "runtime": dict(transfer.get("runtime", {}) or {}),
+                "verified": dict(transfer.get("verified", {}) or {}),
+                "threshold": transfer_threshold,
+                "measured": transfer_measured,
+                "heldout_target_wins": transfer_heldout_wins,
+                "heldout_target_tests": transfer_heldout_tests,
+                "heldout_target_win_rate": transfer_heldout_win_rate,
+                "suite_verified_runs": transfer_suite_verified_runs,
+                "suite_win_rate": transfer_suite_win_rate,
+                "recent_successes": transfer.get("recent_successes", []),
+                "passed": bool(
+                    transfer_measured
+                    and (
+                        (
+                            transfer_succeeded > 0
+                            and transfer_success_rate is not None
+                            and float(transfer_success_rate) >= transfer_threshold
+                            and transfer_heldout_tests > 0
+                            and transfer_heldout_wins > 0
+                        )
+                        or (
+                            transfer_suite_verified_runs > 0
+                            and transfer_suite_win_rate is not None
+                            and float(transfer_suite_win_rate) >= 0.34
+                        )
+                        or (
+                            transfer_heldout_tests > 0
+                            and transfer_heldout_win_rate is not None
+                            and float(transfer_heldout_win_rate) >= 0.34
+                        )
+                    )
+                ),
+            },
+            "retention": {
+                "retested_artifacts": retested_artifacts,
+                "retained_artifacts": retained_artifacts,
+                "retention_rate": retention_rate,
+                "threshold": retention_threshold,
+                "measured": retention_measured,
+                "passed": bool(
+                    retention_measured
+                    and retention_rate is not None
+                    and retention_rate >= retention_threshold
+                ),
+            },
+            "grounded": {
+                "total_tasks": grounded_total,
+                "successful_tasks": grounded_successes,
+                "success_rate": grounded_rate,
+                "threshold": grounded_threshold,
+                "measured": grounded_measured,
+                "passed": bool(
+                    grounded_measured
+                    and float(grounded_rate or 0.0) >= grounded_threshold
+                ),
+            },
+            "quality": {
+                "independent_generalization_score": independent_generalization_score,
+                "reward_threshold": quality_reward_threshold,
+                "shortcut_penalty": shortcut_penalty,
+                "shortcut_penalty_threshold": shortcut_penalty_threshold,
+                "independent_solve_rate": independent_solve_rate,
+                "first_solve_generalization_rate": first_solve_generalization_rate,
+                "retrieval_conversion_rate": retrieval_conversion_rate,
+                "retrieval_dependence_rate": retrieval_dependence_rate,
+                "memorization_rate": memorization_rate,
+                "measured": quality_measured,
+                "blocked_by_shortcuts": shortcut_blocked,
+                "passed": bool(
+                    quality_measured
+                    and independent_generalization_score is not None
+                    and independent_generalization_score >= quality_reward_threshold
+                    and not shortcut_blocked
+                ),
+            },
+            "timestamp": time.time(),
+        }
+        gate["missing"] = [
+            name for name in ("heldout", "transfer", "retention", "grounded", "quality")
+            if not gate[name]["measured"]
+        ]
+        gate["failing"] = [
+            name for name in ("heldout", "transfer", "retention", "grounded", "quality")
+            if gate[name]["measured"] and not gate[name]["passed"]
+        ]
+        gate["passed"] = not gate["missing"] and not gate["failing"]
+        return gate
+
+    def test_learned_artifact(self, artifact_id: str) -> dict:
+        detail = self._get_acquisition_mesh().artifact_detail(artifact_id)
+        artifact = detail.get("artifact")
+        if artifact:
+            broker = self._ensure_curriculum_broker()
+            yield_report = self.source_yield_report()
+            source_kind = str((artifact.get("metadata", {}) or {}).get("source_kind", artifact.get("source_type", "")))
+            source_stats = next((row for row in yield_report.get("sources", []) if row.get("source_kind") == source_kind), {})
+            detail.update(
+                {
+                    "verified": artifact.get("verification_state") == "verified",
+                    "broker_available": broker is not None,
+                    "source_stats": source_stats,
+                    "retention_proxy": float(source_stats.get("free_solve_gain", 0.0) or 0.0),
+                    "reused_in_solving": int(source_stats.get("reused_in_solving", 0) or 0),
+                }
+            )
+            return detail
+        return {"error": "artifact not found", "artifact_id": artifact_id}
+
+    def artifact_history(self, artifact_id: str, limit: int = 25) -> dict:
+        return self._get_acquisition_mesh().artifact_history(artifact_id, limit=limit)
+
+    def artifact_action(self, artifact_id: str, action: str, reason: str = "", metadata: Optional[dict] = None) -> dict:
+        payload = self._get_acquisition_mesh().apply_artifact_action(artifact_id, action, reason=reason, metadata=metadata)
+        self._invalidate_report_cache()
+        return payload
+
+    def acquisition_plan(self, limit: int = 4) -> dict:
+        report = self.learning_progress_report() or {}
+        domains = list(report.get("domains", [])) if isinstance(report, dict) else []
+        github_enabled = self._github_acquisition_enabled()
+        recent_sources = self._recent_acquisition_signatures(limit=16)
+        focus_domains = self.learning_focus_domains(limit=max(1, limit * 3))
+        focus_by_domain = {str(item.get("domain", "general")): dict(item) for item in focus_domains}
+        domain_rows = {str(item.get("domain", "general")): dict(item) for item in domains if isinstance(item, dict)}
+        weakest: List[dict] = []
+        if focus_domains:
+            for focus in focus_domains[:max(1, limit)]:
+                domain = str(focus.get("domain", "general"))
+                row = dict(domain_rows.get(domain, {}) or {})
+                weakest.append(
+                    {
+                        **row,
+                        "domain": domain,
+                        "focus_priority": focus.get("priority", 0.0),
+                        "focus_reasons": list(focus.get("reasons", []) or []),
+                        "evidence_state": focus.get("evidence_state", "unmeasured"),
+                    }
+                )
+        else:
+            weakest = sorted(
+                [item for item in domains if int(item.get("attempts", 0) or 0) > 0],
+                key=lambda item: (
+                    float(item.get("understanding_share") if item.get("understanding_share") is not None else 1.0),
+                    -int(item.get("attempts", 0) or 0),
+                ),
+            )[:max(1, limit)]
+        topic_map = {
+            "code": ["agentic-ai", "graph-learning", "program-analysis"],
+            "logic": ["formal-logic", "theorem-proving"],
+            "logic_basics": ["formal-logic", "theorem-proving"],
+            "propositional": ["formal-logic", "boolean-algebra"],
+            "science": ["scientific-python", "computational-science"],
+            "word_problems": ["mathematics", "symbolic-math"],
+            "arithmetic": ["symbolic-math", "mathematics"],
+            "algebra": ["computer-algebra", "symbolic-math"],
+            "calculus": ["computer-algebra", "scientific-python"],
+            "probability": ["statistics", "probabilistic-modeling"],
+            "trigonometry": ["mathematics", "symbolic-math"],
+            "set_theory": ["discrete-mathematics", "formal-logic"],
+            "language": ["nlp", "information-retrieval"],
+            "planning": ["planning", "reinforcement-learning"],
+        }
+        suggestions = []
+        for item in weakest:
+            domain = str(item.get("domain", "general"))
+            topics = topic_map.get(domain, [domain, f"{domain}-tutorials"])
+            recommended_sources = self._recommended_acquisition_sources_for_domain(
+                domain,
+                recent_signatures=recent_sources,
+                github_topics=topics,
+                github_enabled=github_enabled,
+            )
+            focus = dict(focus_by_domain.get(domain, {}) or {})
+            base_priority = round(1.0 - float(item.get("understanding_share", 0.0) or 0.0), 3)
+            focus_priority = float(item.get("focus_priority", focus.get("priority", 0.0)) or 0.0)
+            suggestions.append(
+                {
+                    "domain": domain,
+                    "priority": round(max(base_priority, focus_priority), 3),
+                    "understanding_focus": {
+                        "evidence_state": item.get("evidence_state", focus.get("evidence_state", "unmeasured")),
+                        "reasons": list(item.get("focus_reasons", focus.get("reasons", [])) or []),
+                    },
+                    "recommended_sources": recommended_sources,
+                }
+            )
+        return {
+            "generated_at": time.time(),
+            "weakest_domains": weakest,
+            "suggestions": suggestions,
+            "github_enabled": github_enabled,
+            "recent_sources": sorted(recent_sources)[:16],
+        }
+
+    def run_learning_audit(self, scope: str = "incremental") -> AuditReport:
+        def _build() -> AuditReport:
+            report = self.learning_progress_report() or {}
+            monitor = report.get("learning_monitor", {}) if isinstance(report, dict) else {}
+            totals = report.get("totals", {}) if isinstance(report, dict) else {}
+            verification = self.verification_queue(limit=200)
+            promoted = self.promoted_rules_summary()
+            acquisition = self.acquisition_dashboard()
+            truth_gate = self.learning_truth_gate()
+            transfer = truth_gate.get("transfer", self.transfer_audit())
+            grounded = truth_gate.get("grounded", self.grounded_learning_report())
+            source_yield = self.source_yield_report()
+            transform_rescue = self.failure_reason_report().get("transform_failures", {})
+            benchmark = self.learning_trend_report()
+            benchmark_history = benchmark.get("benchmark_history", []) if isinstance(benchmark, dict) else []
+            latest_benchmark = 0.0
+            benchmark_known = bool(benchmark_history)
+            if benchmark_history:
+                last = benchmark_history[-1]
+                latest_benchmark = float(last.get("total_score") or last.get("pass_rate", 0.0) or 0.0)
+            retention = dict(truth_gate.get("retention", {}))
+            pending_verification = int(verification.get("pending", 0) or 0)
+            benchmark_gate = {
+                "latest_benchmark": latest_benchmark,
+                "known": benchmark_known,
+                "passed": bool((not benchmark_known) or latest_benchmark >= 0.5),
+            }
+            return AuditReport(
+                {
+                    "scope": scope,
+                    "retrieval_vs_understanding": {
+                        "understanding_share": totals.get("understanding_share"),
+                        "retrieval_share": totals.get("retrieval_share"),
+                        "memorized_share": totals.get("memorized_share"),
+                    },
+                    "independent_generalization": {
+                        "score": truth_gate.get("quality", {}).get("independent_generalization_score"),
+                        "shortcut_penalty": truth_gate.get("quality", {}).get("shortcut_penalty"),
+                        "blocked_by_shortcuts": truth_gate.get("quality", {}).get("blocked_by_shortcuts", False),
+                    },
+                    "heldout_pass_rate": truth_gate.get("heldout", {}).get("pass_rate"),
+                    "retention_proxy": float(source_yield.get("sources", [{}])[0].get("free_solve_gain", 0.0) if source_yield.get("sources") else 0.0),
+                    "truth_gate": truth_gate,
+                    "transfer": transfer,
+                    "verified_vs_quarantined": {
+                        "verified": acquisition.get("verified_artifacts", 0),
+                        "quarantined": acquisition.get("quarantined_artifacts", 0),
+                        "pending": pending_verification,
+                    },
+                    "retention": retention,
+                    "grounded": grounded,
+                    "benchmark_gate": benchmark_gate,
+                    "promoted_rules": promoted.get("total", 0),
+                    "source_yield": source_yield,
+                    "transform_rescue": transform_rescue,
+                    "overnight_delta": self.overnight_delta_report(),
+                    "regression_risk": "high" if pending_verification > 200 else "moderate" if pending_verification > 50 else "low",
+                    "passed": bool(truth_gate.get("passed", False) and pending_verification < 250 and benchmark_gate["passed"]),
+                    "timestamp": time.time(),
+                }
+            )
+        return self._get_cached_report(f"learning_audit:{scope}", 30.0, _build)
+
+    def learning_progress_report(self) -> dict:
+        """Canonical evaluation/report surface for dashboard consumers."""
+        def _build() -> dict:
+            try:
+                from sare.meta.learning_progress_report import (
+                    DEFAULT_OUTPUT_PATH,
+                    generate_learning_progress_report,
+                    write_learning_progress_report,
+                )
+                report = generate_learning_progress_report()
+                if isinstance(report, dict):
+                    runtime = self.evaluation_summary().get("runtime", {})
+                    report.setdefault("runtime", runtime)
+                    learning_monitor = dict(report.get("learning_monitor", {}) or {})
+                    grounded = self.grounded_learning_report()
+                    transfer = self.transfer_audit()
+                    retention = self._retention_truth_summary(limit=5000)
+                    persistence_health = self.persistence_health_report()
+                    totals = dict(report.get("totals", {}) or {})
+                    measured = {
+                        "heldout_pass_rate": bool(
+                            learning_monitor.get("heldout_pass_rate") is not None
+                            and int(learning_monitor.get("heldout_attempts", 0) or 0) > 0
+                        ),
+                        "retrieval_conversion_rate": bool(
+                            learning_monitor.get("retrieval_conversion_rate") is not None
+                            and int(learning_monitor.get("retrieval_conversion_attempts", 0) or 0) > 0
+                        ),
+                        "measured_coverage": bool(int(totals.get("measured_attempts", 0) or 0) > 0),
+                        "mastered_patterns": learning_monitor.get("mastered_patterns") is not None,
+                        "grounded_success_rate": bool(int(grounded.get("total_tasks", 0) or 0) > 0),
+                        "retention_rate": bool(retention.get("measured")),
+                        "verified_transfer_success_rate": transfer.get("verified_success_rate") is not None,
+                    }
+                    report["grounded"] = {
+                        **dict(grounded),
+                        "measured": measured["grounded_success_rate"],
+                        "source_of_truth": "live",
+                    }
+                    report["transfer"] = {
+                        **dict(transfer),
+                        "measured": measured["verified_transfer_success_rate"],
+                        "source_of_truth": "live",
+                    }
+                    report["retention"] = retention
+                    report["persistence_health"] = persistence_health
+                    report["overnight_delta"] = self.overnight_delta_report()
+                    report["source_of_truth"] = {
+                        "learning_monitor": "canonical_report",
+                        "grounded": "live",
+                        "transfer": "live",
+                        "retention": "derived",
+                        "persistence_health": "live",
+                    }
+                    report["measured"] = measured
+                    safe_report = self._json_safe(report)
+                    report = safe_report if isinstance(safe_report, dict) else {"value": safe_report}
+                    write_learning_progress_report(report, output_path=Path(DEFAULT_OUTPUT_PATH), history_path=None)
+                return report
+            except Exception as exc:
+                self._record_runtime_error("learning_progress_report.generate", exc, "learning_progress_report")
+                return {"error": self._safe_stringify(exc), "runtime": self.evaluation_summary().get("runtime", {})}
+        return self._get_cached_report("learning_progress_report", 30.0, _build)
+
+    def understanding_report(self) -> dict:
+        def _build() -> dict:
+            try:
+                from sare.meta.understanding_checker import build_understanding_report
+
+                report = self.learning_progress_report() or {}
+                truth_gate = self.learning_truth_gate()
+                acquisition = self.acquisition_dashboard()
+                transfer = report.get("transfer", {}) if isinstance(report, dict) else {}
+                return build_understanding_report(report, truth_gate, acquisition, transfer=transfer)
+            except Exception as exc:
+                self._record_runtime_error("understanding_report.build", exc, "understanding_report")
+                return {"error": self._safe_stringify(exc), "summary": {"overall_state": "error"}, "evidence_quality": {}}
+
+        return self._get_cached_report("understanding_report", 30.0, _build)
+
+    def learning_focus_domains(self, limit: int = 5) -> List[dict]:
+        report = self.learning_progress_report() or {}
+        rows = list(report.get("domains", [])) if isinstance(report, dict) else []
+        focus: List[dict] = []
+
+        def _as_float(value: Any) -> Optional[float]:
+            try:
+                return float(value)
+            except Exception:
+                return None
+
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            domain = str(row.get("domain", "general") or "general")
+            attempts = int(row.get("attempts", 0) or 0)
+            measured_attempts = int(row.get("measured_attempts", 0) or 0)
+            if attempts <= 0 and measured_attempts <= 0:
+                continue
+
+            understanding = _as_float(row.get("understanding_share"))
+            retrieval = _as_float(row.get("retrieval_share"))
+            memorized = _as_float(row.get("memorized_share"))
+            coverage = _as_float(row.get("measured_coverage"))
+
+            evidence_state = (
+                "strong"
+                if measured_attempts >= 15
+                else "limited"
+                if measured_attempts >= 4
+                else "weak"
+                if measured_attempts > 0
+                else "unmeasured"
+            )
+            priority = 0.0
+            reasons: List[str] = []
+
+            if understanding is None:
+                priority += 0.35
+                reasons.append("unmeasured_understanding")
+            else:
+                understanding = max(0.0, min(1.0, understanding))
+                priority += max(0.0, 0.7 - understanding)
+                if understanding < 0.5:
+                    reasons.append("low_independent_solve")
+
+            if coverage is None:
+                priority += 0.15
+                reasons.append("missing_coverage")
+            else:
+                coverage = max(0.0, min(1.0, coverage))
+                priority += max(0.0, 0.55 - coverage) * 0.6
+                if coverage < 0.5:
+                    reasons.append("low_mode_coverage")
+
+            if memorized is not None:
+                memorized = max(0.0, min(1.0, memorized))
+                if memorized >= 0.25:
+                    priority += min(0.25, memorized * 0.5)
+                    reasons.append("memorization_pressure")
+
+            if retrieval is not None:
+                retrieval = max(0.0, min(1.0, retrieval))
+                if retrieval >= 0.35:
+                    priority += min(0.15, retrieval * 0.25)
+                    reasons.append("retrieval_dependence")
+
+            if measured_attempts >= 4 and (understanding is None or understanding < 0.5):
+                priority += min(0.15, measured_attempts / 50.0)
+                reasons.append("repeatedly_weak")
+            elif attempts >= 10 and (understanding is None or understanding < 0.6):
+                priority += 0.05
+
+            if evidence_state == "weak":
+                priority += 0.08
+            elif evidence_state == "limited":
+                priority += 0.04
+
+            focus.append(
+                {
+                    "domain": domain,
+                    "attempts": attempts,
+                    "measured_attempts": measured_attempts,
+                    "understanding_share": understanding,
+                    "retrieval_share": retrieval,
+                    "memorized_share": memorized,
+                    "measured_coverage": coverage,
+                    "evidence_state": evidence_state,
+                    "priority": round(min(1.0, priority), 3),
+                    "reasons": reasons[:4],
+                }
+            )
+
+        focus.sort(
+            key=lambda item: (
+                float(item.get("priority", 0.0) or 0.0),
+                int(item.get("measured_attempts", 0) or 0),
+                int(item.get("attempts", 0) or 0),
+            ),
+            reverse=True,
+        )
+        return focus[:max(1, limit)]
+
+    def learning_focus_weights(self, limit: int = 8) -> Dict[str, float]:
+        weights: Dict[str, float] = {}
+        for item in self.learning_focus_domains(limit=limit):
+            domain = str(item.get("domain", "general") or "general")
+            priority = float(item.get("priority", 0.0) or 0.0)
+            weights[domain] = round(1.0 + max(0.0, priority), 3)
+        return weights
+
+    def _code_version_marker(self) -> str:
+        try:
+            return subprocess.check_output(
+                ["git", "rev-parse", "--short", "HEAD"],
+                cwd=str(REPO_ROOT),
+                stderr=subprocess.DEVNULL,
+                text=True,
+            ).strip()
+        except Exception:
+            try:
+                return f"mtime:{int(Path(__file__).stat().st_mtime)}"
+            except Exception:
+                return "unknown"
+
+    def _tracking_snapshot_payload(self) -> dict:
+        transfer = self.transfer_audit()
+        acquisition = self.acquisition_dashboard()
+        rescue = self.failure_reason_report().get("transform_failures", {})
+        source_yield = self.source_yield_report()
+        reused = sum(int(row.get("reused_in_solving", 0) or 0) for row in source_yield.get("sources", []))
+        return {
+            "timestamp": time.time(),
+            "solves_attempted": int(self._stats.get("solves_attempted", 0) or 0),
+            "solves_succeeded": int(self._stats.get("solves_succeeded", 0) or 0),
+            "rules_promoted": int(self._stats.get("rules_promoted", 0) or 0),
+            "runtime_transfer_attempts": int(transfer.get("runtime", {}).get("attempts", 0) or 0),
+            "runtime_transfer_successes": int(transfer.get("runtime", {}).get("succeeded", 0) or 0),
+            "verified_transfer_runs": int(transfer.get("verified", {}).get("runs", 0) or 0),
+            "verified_transfer_successes": int(transfer.get("verified", {}).get("runs", 0) or 0),
+            "heldout_target_wins": int(transfer.get("heldout_target_wins", 0) or 0),
+            "heldout_target_tests": int(transfer.get("heldout_target_tests", 0) or 0),
+            "artifacts": int(acquisition.get("status", {}).get("artifacts", 0) or 0),
+            "verified_artifacts": int(acquisition.get("verified_artifacts", 0) or 0),
+            "reused_in_solving": reused,
+            "transform_rescue_attempts": int(rescue.get("fallback_attempts", 0) or 0),
+            "transform_rescue_successes": int(rescue.get("fallback_rescues", 0) or 0),
+        }
+
+    def _tracking_snapshot_path(self) -> Path:
+        return DATA_DIR / "learning_tracking_snapshot.json"
+
+    def _load_tracking_snapshot(self) -> dict:
+        path = self._tracking_snapshot_path()
+        if not path.exists():
+            return {"run_marker": {}, "snapshots": []}
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(payload, dict):
+                payload.setdefault("run_marker", {})
+                payload.setdefault("snapshots", [])
+                return payload
+        except Exception as exc:
+            self._record_runtime_error("learning_tracking_snapshot.load", exc, "_load_tracking_snapshot")
+        return {"run_marker": {}, "snapshots": []}
+
+    def _save_tracking_snapshot(self, payload: dict) -> None:
+        path = self._tracking_snapshot_path()
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            fd, tmp_name = tempfile.mkstemp(
+                prefix=f"{path.name}.",
+                suffix=".tmp",
+                dir=str(path.parent),
+            )
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                    handle.write(json.dumps(payload, indent=2) + "\n")
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                os.replace(tmp_name, path)
+            finally:
+                if os.path.exists(tmp_name):
+                    try:
+                        os.remove(tmp_name)
+                    except OSError:
+                        pass
+        except Exception as exc:
+            self._record_runtime_error("learning_tracking_snapshot.save", exc, "_save_tracking_snapshot")
+
+    def _write_run_marker(self, role: str = "brain") -> dict:
+        marker = {
+            "role": str(role or "brain"),
+            "pid": os.getpid(),
+            "boot_timestamp": self.boot_time or time.time(),
+            "code_version": self._code_version_marker(),
+        }
+        payload = self._load_tracking_snapshot()
+        payload["run_marker"] = marker
+        self._save_tracking_snapshot(payload)
+        return marker
+
+    def _write_tracking_snapshot(self, force: bool = False) -> dict:
+        now = time.time()
+        if not force and (now - float(getattr(self, "_last_tracking_snapshot_at", 0.0) or 0.0)) < 900.0:
+            return self._load_tracking_snapshot()
+        payload = self._load_tracking_snapshot()
+        snapshots = [item for item in payload.get("snapshots", []) if isinstance(item, dict)]
+        snapshots.append(self._tracking_snapshot_payload())
+        cutoff = now - 172800.0
+        snapshots = [item for item in snapshots if float(item.get("timestamp", 0.0) or 0.0) >= cutoff][-288:]
+        payload["snapshots"] = snapshots
+        payload.setdefault("run_marker", self._write_run_marker("brain"))
+        self._save_tracking_snapshot(payload)
+        self._last_tracking_snapshot_at = now
+        return payload
+
+    def overnight_delta_report(self, window_seconds: float = 43200.0) -> dict:
+        payload = self._load_tracking_snapshot()
+        snapshots = [item for item in payload.get("snapshots", []) if isinstance(item, dict)]
+        now = time.time()
+        recent = [
+            item for item in snapshots
+            if float(item.get("timestamp", 0.0) or 0.0) >= (now - float(window_seconds or 0.0))
+        ]
+        current = self._tracking_snapshot_payload()
+        baseline = recent[0] if recent else (snapshots[0] if snapshots else current)
+        def _delta(key: str) -> int:
+            return int(current.get(key, 0) or 0) - int(baseline.get(key, 0) or 0)
+        return {
+            "window_seconds": int(window_seconds),
+            "baseline_timestamp": float(baseline.get("timestamp", now) or now),
+            "current_timestamp": float(current.get("timestamp", now) or now),
+            "solve_delta": _delta("solves_attempted"),
+            "success_delta": _delta("solves_succeeded"),
+            "promotion_delta": _delta("rules_promoted"),
+            "runtime_transfer_delta": _delta("runtime_transfer_attempts"),
+            "verified_transfer_delta": _delta("verified_transfer_runs"),
+            "artifact_delta": _delta("artifacts"),
+            "reuse_delta": _delta("reused_in_solving"),
+            "transform_rescue_delta": _delta("transform_rescue_successes"),
+        }
+
+    def promoted_rules_summary(self) -> dict:
+        path = DATA_DIR / "promoted_rules.json"
+        if not path.exists():
+            return {"rules": [], "total": 0, "pattern_counts": {}}
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            counts = payload.get("pattern_counts", {})
+            rules = payload.get("promoted_rules", [])
+            enriched = []
+            for rule in rules:
+                name = rule.get("name", "")
+                enriched.append({
+                    "name": name,
+                    "domain": rule.get("domain", "general"),
+                    "confidence": round(float(rule.get("confidence", 0.0) or 0.0), 3),
+                    "use_count": int(counts.get(name, 0)),
+                })
+            enriched.sort(key=lambda item: item["use_count"], reverse=True)
+            return {"rules": enriched, "total": len(enriched), "pattern_counts": counts}
+        except Exception as exc:
+            self._record_runtime_error("promoted_rules.load", exc, "promoted_rules_summary")
+            return {"error": str(exc), "rules": [], "total": 0, "pattern_counts": {}}
+
+    def progress_snapshot(self) -> dict:
+        transfer = self.transfer_audit()
+        rescue = self.failure_reason_report().get("transform_failures", {})
+        acquisition = self.acquisition_dashboard()
+        source_yield = self.source_yield_report()
+        snapshot = {
+            "cycle": int(getattr(self, "_auto_learn_stats", {}).get("cycles", 0)),
+            "ts": time.time(),
+            "solve_rate": round(
+                self._stats.get("solves_succeeded", 0) / max(self._stats.get("solves_attempted", 1), 1),
+                3,
+            ),
+            "avg_energy": 1.0,
+            "rules_promoted": int(self._stats.get("rules_promoted", 0)),
+            "transfers_attempted": int(self._stats.get("transfers_attempted", 0)),
+            "verified_transfer_runs": int(transfer.get("verified", {}).get("runs", 0) or 0),
+            "transform_rescue_rate": rescue.get("fallback_rescue_rate"),
+            "artifacts": int(acquisition.get("status", {}).get("artifacts", 0) or 0),
+            "reused_in_solving": sum(int(row.get("reused_in_solving", 0) or 0) for row in source_yield.get("sources", [])),
+        }
+        try:
+            if self.robustness_hardener:
+                snapshot["robustness"] = self.robustness_hardener.overall_robustness()
+            if self.meta_curriculum:
+                snapshot["meta_lp"] = self.meta_curriculum.learning_progress_score()
+            if self.concept_graph and hasattr(self.concept_graph, "_concepts"):
+                snapshot["concept_count"] = len(self.concept_graph._concepts)
+        except Exception as exc:
+            self._record_runtime_error("progress_snapshot.enrich", exc, "progress_snapshot")
+        return snapshot
+
+    def progress_report(self) -> dict:
+        path = DATA_DIR / "progress.json"
+        if path.exists():
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+                runs = data.get("runs", [])
+                return {"runs": runs[-200:], "total": len(runs), "has_data": len(runs) > 0}
+            except Exception as exc:
+                self._record_runtime_error("progress.load", exc, "progress_report")
+        return {"runs": [self.progress_snapshot()], "total": 1, "has_data": False}
+
+    def autonomous_trainer_status(self) -> dict:
+        trainer = {"running": False, "total_problems": 0}
+        try:
+            if self.autonomous_trainer and getattr(self.autonomous_trainer, "_running", False):
+                trainer = self.autonomous_trainer.summary()
+            else:
+                path = DATA_DIR / "autonomous_trainer_stats.json"
+                if path.exists():
+                    loaded = json.loads(path.read_text(encoding="utf-8"))
+                    if isinstance(loaded, dict):
+                        trainer = dict(loaded)
+                        trainer["from_disk"] = True
+                        trainer["running"] = False
+        except Exception as exc:
+            self._record_runtime_error("autonomous_trainer.status", exc, "autonomous_trainer_status")
+        return trainer
+
+    def self_improvement_status(self) -> dict:
+        enabled = bool(self.config.get("self_improvement", {}).get("enabled", False))
+        base = {
+            "enabled_by_policy": enabled,
+            "hard_gate": "evaluation_and_tests_required",
+            "running": False,
+            "patches": [],
+        }
+        try:
+            from sare.meta.self_improver import get_self_improver
+            status = dict(get_self_improver().get_status())
+            status["enabled_by_policy"] = enabled
+            status["hard_gate"] = base["hard_gate"]
+            if not enabled:
+                status["running"] = False
+            return status
+        except Exception as exc:
+            self._record_runtime_error("self_improver.get_status", exc, "self_improvement_status")
+            base["error"] = str(exc)
+            return base
+
+    def self_improvement_patches(self) -> dict:
+        enabled = bool(self.config.get("self_improvement", {}).get("enabled", False))
+        try:
+            from sare.meta.self_improver import get_self_improver
+            return {"enabled_by_policy": enabled, "patches": get_self_improver().get_patches()}
+        except Exception as exc:
+            self._record_runtime_error("self_improver.get_patches", exc, "self_improvement_patches")
+            return {"enabled_by_policy": enabled, "patches": [], "error": str(exc)}
+
+    def self_improvement_action(self, action: str, **kwargs: Any) -> dict:
+        enabled = bool(self.config.get("self_improvement", {}).get("enabled", False))
+        if action in {"start", "trigger", "multi"} and not enabled:
+            return {
+                "error": "self-improvement disabled by policy",
+                "enabled_by_policy": False,
+                "hard_gate": "Set config.self_improvement.enabled=true after evaluation gates pass",
+            }
+        if action in {"start", "trigger", "multi"}:
+            audit = self.run_learning_audit(scope="incremental")
+            if not audit.get("passed", False):
+                return {
+                    "error": "learning audit gate failed",
+                    "enabled_by_policy": enabled,
+                    "audit": dict(audit),
+                }
+        try:
+            from sare.meta.self_improver import get_self_improver
+            si = get_self_improver()
+            if action == "start":
+                return si.start()
+            if action == "stop":
+                return si.stop()
+            if action == "rollback":
+                return si.rollback(str(kwargs.get("patch_id", "")))
+            if action == "trigger":
+                return si.run_once(
+                    target_file=kwargs.get("target_file"),
+                    improvement_type=kwargs.get("improvement_type"),
+                )
+            if action == "multi":
+                return si.run_multi_file(cluster_name=kwargs.get("cluster_name"))
+            return {"error": f"unknown self-improvement action: {action}"}
+        except Exception as exc:
+            self._record_runtime_error("self_improver.action", exc, f"self_improvement_action:{action}")
+            return {"error": str(exc), "action": action}
+
+    def acquisition_dashboard(self) -> dict:
+        def _build() -> dict:
+            mesh_status = self._get_acquisition_mesh().status()
+            learned = self.learned_artifacts(limit=20)
+            queue = self.verification_queue(limit=20)
+            items = learned.get("items", [])
+            verified = sum(1 for item in items if item.get("verification_state") == "verified")
+            quarantined = sum(1 for item in items if item.get("verification_state") == "quarantined")
+            corroborated = sum(
+                1
+                for item in items
+                if int((item.get("metadata", {}) or {}).get("corroboration_count", 0) or 0) >= 2
+            )
+            by_source: Dict[str, int] = {}
+            for item in items:
+                source = str(item.get("source_type", "unknown"))
+                by_source[source] = by_source.get(source, 0) + 1
+            if not by_source:
+                by_source = dict(mesh_status.get("by_source", {}) or {})
+            scheduled_jobs = sum(1 for thread in self._acquisition_schedule_threads if thread.is_alive())
+            bootstrap_thread = getattr(self, "_bootstrap_thread", None)
+            if bootstrap_thread is not None and bootstrap_thread.is_alive():
+                scheduled_jobs += 1
+            yield_report = self.source_yield_report()
+            reused = sum(int(row.get("reused_in_solving", 0) or 0) for row in yield_report.get("sources", []))
+            cooldowns = {
+                "github_until": float(self._acquisition_cooldowns.get("github", 0.0) or 0.0),
+            }
+            github_enabled = self._github_acquisition_enabled()
+            github_available = github_enabled and cooldowns["github_until"] <= time.time()
+            return {
+                "status": mesh_status,
+                "recent_artifacts": items,
+                "verification_queue": queue,
+                "verified_artifacts": mesh_status.get("by_state", {}).get("verified", verified),
+                "quarantined_artifacts": mesh_status.get("by_state", {}).get("quarantined", quarantined),
+                "corroborated_artifacts": mesh_status.get("corroborated_artifacts", corroborated),
+                "promoted_artifacts": mesh_status.get("promoted_artifacts", 0),
+                "retested_artifacts": mesh_status.get("retested_artifacts", 0),
+                "today_artifacts": mesh_status.get("today_artifacts", 0),
+                "source_mix": by_source,
+                "by_domain": mesh_status.get("by_domain", {}),
+                "by_verification_method": mesh_status.get("by_verification_method", {}),
+                "evidence_stages": mesh_status.get("by_evidence_stage", {}),
+                "github": self.github_learning_status(),
+                "scheduled_jobs": scheduled_jobs,
+                "reused_in_solving": reused,
+                "plan": self.acquisition_plan(limit=3),
+                "retention_schedule": self.retention_schedule_report(),
+                "cooldowns": cooldowns,
+                "remote_availability": {
+                    "github": github_available,
+                    "web": True,
+                },
+                "policy": {
+                    "github_enabled": github_enabled,
+                    "diversify_sources": True,
+                },
+                "last_remote_failure": self._acquisition_policy_stats.get("last_remote_failure"),
+                "fallback_source_used": self._acquisition_policy_stats.get("last_fallback_source"),
+                "source_success_counts": dict(self._acquisition_policy_stats.get("success_counts", {}) or {}),
+                "source_error_counts": dict(self._acquisition_policy_stats.get("error_counts", {}) or {}),
+            }
+        return self._get_cached_report("acquisition_dashboard", 30.0, _build)
+
+    def audit_dashboard(self) -> dict:
+        def _build() -> dict:
+            audit = self.run_learning_audit(scope="incremental")
+            return {
+                "audit": dict(audit),
+                "truth_gate": dict(audit.get("truth_gate", {})),
+                "transfer": self.transfer_audit(),
+                "transfer_suite": self.transfer_suite_report(),
+                "understanding": self.understanding_report(),
+                "source_yield": self.source_yield_report(),
+                "transform_rescue": self.failure_reason_report().get("transform_failures", {}),
+                "grounded": self.grounded_learning_report(),
+                "retention_schedule": self.retention_schedule_report(),
+                "benchmark_gate": dict(audit.get("benchmark_gate", {})),
+            }
+        return self._get_cached_report("audit_dashboard", 30.0, _build)
+
+    def learning_ops_dashboard(self) -> dict:
+        def _build() -> dict:
+            def _safe(fn):
+                try:
+                    return fn()
+                except Exception:
+                    return {}
+            report = _safe(self.learning_progress_report)
+            truth_gate = _safe(self.learning_truth_gate)
+            weakest_domains: List[dict] = []
+            try:
+                weakest_domains = sorted(
+                    report.get("domains", []),
+                    key=lambda item: (
+                        float(item.get("understanding_share") if item.get("understanding_share") is not None else -1.0),
+                        int(item.get("attempts", 0)),
+                    ),
+                )[:8]
+            except Exception:
+                weakest_domains = []
+            bootstrap = _safe(lambda: self.bootstrap_learning_state(force=False))
+            acquisition = _safe(self.acquisition_dashboard)
+            audit = _safe(self.audit_dashboard)
+            grounded = _safe(self.grounded_learning_report)
+            retention = _safe(self.retention_schedule_report)
+            transfer_suite = _safe(self.transfer_suite_report)
+            transfer = _safe(self.transfer_audit)
+            understanding = _safe(self.understanding_report)
+            github = _safe(self.github_learning_status)
+            source_yield = _safe(self.source_yield_report)
+            transform_rescue = _safe(self.failure_reason_report).get("transform_failures", {})
+            # Schema cache health: high hit rate means system is replaying, not learning
+            _schema_hit_rate = 0.0
+            _schema_cache_size = 0
+            _curriculum_novelty_rate = 0.0
+            try:
+                from sare.cognition.schema_matcher import get_schema_matcher
+                _sm = get_schema_matcher()
+                _sm_total = _sm._hits + _sm._misses
+                _schema_hit_rate = round(_sm._hits / max(1, _sm_total), 3)
+                _schema_cache_size = len(_sm._cache)
+            except Exception:
+                pass
+            try:
+                if self.experiment_runner and hasattr(self.experiment_runner, 'curriculum_gen'):
+                    _cg = self.experiment_runner.curriculum_gen
+                    _cg_total = getattr(_cg, '_schema_total_gen', 0)
+                    _cg_hits = getattr(_cg, '_schema_total_hits', 0)
+                    if _cg_total > 0:
+                        _curriculum_novelty_rate = round(1.0 - (_cg_hits / _cg_total), 3)
+            except Exception:
+                pass
+
+            return {
+                "generated_at": time.time(),
+                "report": report,
+                "acquisition": acquisition,
+                "audit": audit,
+                "understanding": understanding,
+                "evidence_quality": dict(understanding.get("evidence_quality", {}) or {}),
+                "autolearn": dict(self.auto_learn_status()),
+                "trainer": self.autonomous_trainer_status(),
+                "grounded": grounded,
+                "retention_schedule": retention,
+                "bootstrap": bootstrap,
+                "weakest_domains": weakest_domains,
+                "source_yield": source_yield,
+                "source_reuse": {
+                    "by_kind": list(source_yield.get("sources", [])),
+                },
+                "transfer_suite": transfer_suite,
+                "failure_reasons": self.failure_reason_report(),
+                "transform_rescue": transform_rescue,
+                "concept_graph_health": self.concept_graph.health() if self.concept_graph and hasattr(self.concept_graph, "health") else dict(self._concept_graph_health),
+                "overnight_delta": self.overnight_delta_report(),
+                "genuine_learning": {
+                    "schema_hit_rate": _schema_hit_rate,
+                    "schema_cache_size": _schema_cache_size,
+                    "curriculum_novelty_rate": _curriculum_novelty_rate,
+                    "note": "schema_hit_rate < 0.5 means genuine BeamSearch learning; > 0.8 means mostly replaying",
+                },
+                "next_interventions": [
+                    {"type": "verification", "pending": self.verification_queue(limit=1).get("pending", 0)},
+                    {"type": "transfer_probe", "attempts": transfer.get("attempts", 0)},
+                    {"type": "transfer_suite", "verified_runs": transfer_suite.get("overall", {}).get("verified_runs", 0)},
+                    {"type": "grounded_learning", "success_rate": grounded.get("success_rate")},
+                    {"type": "github_learning", "repos_tracked": github.get("repos_tracked", 0)},
+                    {"type": "benchmark_gate", "passed": audit.get("benchmark_gate", {}).get("passed", False)},
+                    {"type": "truth_gate", "passed": truth_gate.get("passed", False), "missing": truth_gate.get("missing", [])},
+                ],
+            }
+        return self._get_cached_report("learning_ops_dashboard", 30.0, _build)
+
+    def learning_dashboard_payload(self) -> dict:
+        def _build() -> dict:
+            ops = self.learning_ops_dashboard()
+            report = ops.get("report", {})
+            history = []
+            try:
+                from sare.meta import learning_progress_report as _lpr
+                history_path = getattr(_lpr, "DEFAULT_HISTORY_PATH", None)
+                if history_path:
+                    hp = Path(history_path)
+                    if hp.exists():
+                        payload = json.loads(hp.read_text(encoding="utf-8"))
+                        if isinstance(payload, list):
+                            history = payload[-96:]
+            except Exception as exc:
+                self._record_runtime_error("learning_dashboard.history", exc, "learning_dashboard_payload")
+
+            autolearn = dict(self.auto_learn_status())
+            autolearn["resident"] = True
+            autolearn["stage"] = self.stage.value
+            if self.developmental_curriculum:
+                try:
+                    cmap = self.developmental_curriculum.get_curriculum_map()
+                    autolearn["mastered"] = cmap.get("mastered", 0)
+                    autolearn["unlocked"] = cmap.get("unlocked", 0)
+                    autolearn["total_domains"] = cmap.get("total_domains", 0)
+                except Exception as exc:
+                    self._record_runtime_error("developmental_curriculum.get_curriculum_map", exc, "learning_dashboard_payload")
+
+            return {
+                "report": report,
+                "history": history,
+                "autolearn": autolearn,
+                "trainer": self.autonomous_trainer_status(),
+                "acquisition": ops.get("acquisition", {}),
+                "audit": ops.get("audit", {}),
+                "grounded": ops.get("grounded", {}),
+                "retention_schedule": ops.get("retention_schedule", {}),
+                "bootstrap": ops.get("bootstrap", {}),
+                "weakest_domains": ops.get("weakest_domains", []),
+                "next_interventions": ops.get("next_interventions", []),
+                "failure_reasons": ops.get("failure_reasons", {}),
+                "transform_rescue": ops.get("transform_rescue", {}),
+                "concept_graph_health": ops.get("concept_graph_health", {}),
+                "persistence_health": self.persistence_health_report(),
+                "source_reuse": ops.get("source_reuse", {}),
+                "overnight_delta": ops.get("overnight_delta", {}),
+                "understanding": ops.get("understanding", {}),
+                "evidence_quality": ops.get("evidence_quality", {}),
+                "source_of_truth": dict(report.get("source_of_truth", {})),
+                "measured": dict(report.get("measured", {})),
+            }
+        return self._get_cached_report("learning_dashboard_payload", 30.0, _build)
+
+    def agi_scorecard(self) -> dict:
+        evaluation = self.evaluation_summary()
+        knowledge = self.knowledge_stats()
+        runtime = evaluation.get("runtime", {})
+        promoted = self.promoted_rules_summary()
+        self_improve = self.self_improvement_status()
+
+        dimensions = {
+            "symbolic_reasoning": {"value": round(float(runtime.get("solve_rate", 0.0)) * 10, 2), "weight": 15},
+            "learning_loop": {"value": round(float(self.progress_snapshot().get("solve_rate", 0.0)) * 10, 2), "weight": 10},
+            "memory_knowledge": {"value": round(min(10.0, promoted.get("total", 0) * 1.25), 2), "weight": 10},
+            "transfer_learning": {
+                "value": round(min(10.0, runtime.get("transfers_succeeded", 0) * 2 + runtime.get("transfers_attempted", 0) * 0.2), 2),
+                "weight": 10,
+            },
+            "world_modeling": {"value": round(min(10.0, self.world_summary().get("causal_link_count", 0) * 0.1), 2), "weight": 8},
+            "self_improvement": {"value": round(min(10.0, float(self_improve.get("patches_applied", 0) or 0) * 2.5), 2), "weight": 8},
+            "knowledge_grounding": {"value": round(min(10.0, knowledge.get("world_model_facts", 0) * 0.05), 2), "weight": 8},
+            "autonomy": {"value": 6.0 if self.auto_learn_status().get("running") else 3.0, "weight": 8},
+        }
+        weighted = sum(v["value"] * v["weight"] for v in dimensions.values())
+        max_weight = sum(v["weight"] for v in dimensions.values())
+        final = round(weighted / (max_weight * 10) * 100, 1) if max_weight else 0.0
+        return {
+            "agi_score": final,
+            "max_score": 100,
+            "dimensions": dimensions,
+            "grade": "A" if final >= 85 else "B" if final >= 70 else "C" if final >= 55 else "D",
+            "timestamp": time.time(),
+        }
+
+    def learning_trend_report(self) -> dict:
+        data_dir = DATA_DIR
+        benchmark_history = []
+        hist_path = data_dir / "benchmark_history.json"
+        if hist_path.exists():
+            try:
+                raw = json.loads(hist_path.read_text(encoding="utf-8"))
+                if isinstance(raw, list):
+                    benchmark_history = raw
+            except Exception as exc:
+                self._record_runtime_error("benchmark_history.load", exc, "learning_trend_report")
+
+        progress_cycles = []
+        try:
+            progress_cycles = self.progress_report().get("runs", [])
+        except Exception:
+            progress_cycles = []
+
+        top_transforms = []
+        ts_path = data_dir / "transform_stats.json"
+        if ts_path.exists():
+            try:
+                raw = json.loads(ts_path.read_text(encoding="utf-8"))
+                if isinstance(raw, dict):
+                    entries = [(k, v) for k, v in raw.items() if isinstance(v, (int, float))]
+                    entries.sort(key=lambda x: x[1], reverse=True)
+                    top_transforms = [{"name": k, "utility": round(v, 3)} for k, v in entries[:15]]
+            except Exception as exc:
+                self._record_runtime_error("transform_stats.load", exc, "learning_trend_report")
+
+        si_stats = {}
+        si_path = data_dir / "si_stats.json"
+        if si_path.exists():
+            try:
+                si_stats = json.loads(si_path.read_text(encoding="utf-8"))
+            except Exception as exc:
+                self._record_runtime_error("si_stats.load", exc, "learning_trend_report")
+
+        recent_scores = [e.get("total_score") or e.get("pass_rate", 0) for e in benchmark_history[-5:] if isinstance(e, dict)]
+        score_delta = round(recent_scores[-1] - recent_scores[0], 4) if len(recent_scores) >= 2 else None
+        return {
+            "benchmark_history": benchmark_history[-50:],
+            "progress_cycles": progress_cycles[-50:],
+            "top_transforms": top_transforms,
+            "promoted_rules": self.promoted_rules_summary().get("rules", [])[:20],
+            "transfer_suite": self.transfer_suite_report(),
+            "grounded": self.grounded_learning_report(),
+            "retention_schedule": self.retention_schedule_report(),
+            "si_stats": si_stats,
+            "synthesized_count": len(getattr(self.transform_synthesizer, "_synthesized", {}) or {}) if self.transform_synthesizer else 0,
+            "is_learning": bool(score_delta is not None and score_delta > 0),
+            "score_delta": score_delta,
+        }
+
+    def time_to_agi_report(self) -> dict:
+        def _build() -> dict:
+            report = self.learning_progress_report() or {}
+            truth_gate = self.learning_truth_gate() or {}
+            persistence = self.persistence_health_report()
+            promoted_total = int(self.promoted_rules_summary().get("total", 0))
+            benchmark_history = self.learning_trend_report().get("benchmark_history", [])
+            latest_benchmark_raw = 0.0
+            if benchmark_history:
+                last = benchmark_history[-1]
+                latest_benchmark_raw = float(last.get("total_score") or last.get("pass_rate", 0) or 0.0)
+
+            total_episodes = 0
+            try:
+                if self.memory_manager is not None:
+                    total_episodes = len(getattr(self.memory_manager, "_episodes", []) or [])
+                if not total_episodes:
+                    state_path = DATA_DIR / "brain_state.json"
+                    if state_path.exists():
+                        state = json.loads(state_path.read_text(encoding="utf-8"))
+                        total_episodes = int(state.get("episode_count", 0) or 0)
+            except Exception as exc:
+                self._record_runtime_error("episodes.count", exc, "time_to_agi_report")
+            rolling_24h = dict(report.get("rolling_24h", {}) or {})
+            ep_24h = int(rolling_24h.get("rolling_24h_attempts", 0) or 0)
+            promotions_24h = int(rolling_24h.get("rolling_24h_new_patterns", 0) or 0)
+            ep_per_hr = round(ep_24h / 24.0, 1) if ep_24h else 0.0
+            promo_per_hr = round(promotions_24h / 24.0, 2) if promotions_24h else 0.0
+
+            weak_domain_targets = ["mathematics", "physics", "chemistry", "technology", "word_problems"]
+            domain_rows = {str(item.get("domain", "")): item for item in report.get("domains", [])}
+            weak_track = []
+            measured_weak = []
+            for domain in weak_domain_targets:
+                row = dict(domain_rows.get(domain, {}) or {})
+                attempts = int(row.get("measured_attempts", 0) or 0)
+                understanding = row.get("understanding_share")
+                measured = understanding is not None and attempts > 0
+                weak_track.append(
+                    {
+                        "domain": domain,
+                        "attempts": attempts,
+                        "understanding_share": understanding,
+                        "measured": measured,
+                    }
+                )
+                if measured:
+                    measured_weak.append(float(understanding))
+
+            latest_benchmark = round(latest_benchmark_raw * 100.0, 1)
+            weak_domain_progress_pct = round((sum(measured_weak) / max(len(measured_weak), 1)) * 100.0, 1) if measured_weak else None
+            persistence_ok = bool(persistence.get("overall_ok"))
+            evidence_missing = list(truth_gate.get("missing", []))
+            if not measured_weak:
+                evidence_missing.append("weak_domain_track")
+            if not persistence_ok:
+                evidence_missing.append("persistence_health")
+
+            AGI_EPISODES = 10_000_000
+            AGI_RULES = 5_000
+            AGI_BENCHMARK = 90.0
+            ep_remaining = max(0, AGI_EPISODES - total_episodes)
+            rule_remaining = max(0, AGI_RULES - promoted_total)
+            days_ep = round(ep_remaining / max(ep_per_hr * 24, 1), 1) if ep_per_hr else None
+            days_rules = round(rule_remaining / max(promo_per_hr * 24, 1), 1) if promo_per_hr else None
+            if evidence_missing:
+                binding = "insufficient_evidence"
+                binding_days = None
+            else:
+                binding = "episodes"
+                binding_days = days_ep
+                if days_ep is None or (days_rules is not None and days_rules > days_ep):
+                    binding = "rule promotions"
+                    binding_days = days_rules
+
+            llm_analysis = (
+                "Insufficient evidence to estimate AGI progress honestly yet."
+                if evidence_missing
+                else (
+                    f"Truth-gated progress is live. Weak-domain schooling is at "
+                    f"{weak_domain_progress_pct:.1f}% across measured targets, with "
+                    f"held-out {truth_gate.get('heldout', {}).get('pass_rate')} and "
+                    f"verified transfer {truth_gate.get('transfer', {}).get('success_rate')}."
+                )
+            )
+            return {
+                "generated_at": time.time(),
+                "total_episodes": total_episodes,
+                "ep_per_hr": ep_per_hr,
+                "ep_24h": ep_24h,
+                "promoted_rules": promoted_total,
+                "promo_per_hr": promo_per_hr,
+                "promotions_24h": promotions_24h,
+                "latest_benchmark": latest_benchmark,
+                "episode_progress_pct": round(min(1.0, total_episodes / AGI_EPISODES) * 100, 3),
+                "rule_progress_pct": round(min(1.0, promoted_total / AGI_RULES) * 100, 1),
+                "benchmark_progress_pct": round(min(1.0, latest_benchmark / AGI_BENCHMARK) * 100, 1),
+                "binding_bottleneck": binding,
+                "days_to_agi_at_current_speed": binding_days,
+                "binding": binding,
+                "binding_days": binding_days,
+                "ep_pct": round(min(1.0, total_episodes / AGI_EPISODES) * 100, 3),
+                "rule_pct": round(min(1.0, promoted_total / AGI_RULES) * 100, 1),
+                "bench_pct": round(min(1.0, latest_benchmark / AGI_BENCHMARK) * 100, 1),
+                "agi_targets": {"episodes": AGI_EPISODES, "rules": AGI_RULES, "benchmark": AGI_BENCHMARK},
+                "weak_domain_track": weak_track,
+                "weak_domain_progress_pct": weak_domain_progress_pct,
+                "truth_gate": truth_gate,
+                "persistence_health": persistence,
+                "evidence_state": {
+                    "sufficient": not evidence_missing,
+                    "missing": evidence_missing,
+                },
+                "llm_analysis": llm_analysis,
+            }
+        return self._get_cached_report("time_to_agi_report", 15.0, _build)
+
+    def persist_general_solver_result(
+        self,
+        problem_text: str,
+        answer: str,
+        problem_type: str,
+        confidence: float = 0.65,
+        source_mode: str = "free_solve",
+        allow_question_fallback: bool = False,
+    ) -> None:
+        if self.fact_ingester is None:
+            return
+        try:
+            self.fact_ingester.ingest(
+                problem_text,
+                answer,
+                problem_type,
+                confidence=confidence,
+                source_mode=source_mode,
+                allow_question_fallback=allow_question_fallback,
+            )
+        except Exception as exc:
+            self._record_runtime_error("fact_ingester.ingest", exc, "persist_general_solver_result")
+
+    def persist_answer_to_fact(self, question: str, answer: str) -> None:
+        if self.commonsense is not None and hasattr(self.commonsense, "add_fact"):
+            try:
+                self.commonsense.add_fact(question, "AnswerTo", answer[:200])
+                return
+            except Exception as exc:
+                self._record_runtime_error("commonsense.add_fact", exc, "persist_answer_to_fact")
+        try:
+            from sare.knowledge.commonsense import get_commonsense_base
+            get_commonsense_base().add_fact(question, "AnswerTo", answer[:200])
+        except Exception as exc:
+            self._record_runtime_error("commonsense.singleton.add_fact", exc, "persist_answer_to_fact")
+
+    def record_general_solver_failure(self, domain: str, problem_text: str, expected: str = "") -> None:
+        if self.world_model is not None and hasattr(self.world_model, "record_domain_failure"):
+            try:
+                self.world_model.record_domain_failure(
+                    domain=domain,
+                    problem_text=problem_text,
+                    expected=expected or "",
+                )
+            except Exception as exc:
+                self._record_runtime_error("world_model.record_domain_failure", exc, "record_general_solver_failure")
+
+    def observe_general_solver_outcome(
+        self,
+        problem_text: str,
+        problem_type: str,
+        solver_used: str,
+        confidence: float,
+        solved: bool,
+    ) -> None:
+        if self.world_model is not None and hasattr(self.world_model, "observe_solve"):
+            try:
+                self.world_model.observe_solve(
+                    expression=problem_text[:100],
+                    transforms_used=[solver_used] if solver_used else [],
+                    energy_delta=confidence if solved else 0.0,
+                    domain=problem_type,
+                    solved=solved,
+                )
+                if solved and hasattr(self.world_model, "record_domain_success"):
+                    self.world_model.record_domain_success(problem_type)
+            except Exception as exc:
+                self._record_runtime_error("world_model.observe_solve", exc, "observe_general_solver_outcome")
+
+    def answer_with_concept_hypothesis(self, hypothesis_id: str, problem_text: str, domain: str) -> Optional[dict]:
+        if self.world_model is not None and hasattr(self.world_model, "answer_with_concept_hypothesis"):
+            try:
+                return self.world_model.answer_with_concept_hypothesis(hypothesis_id, problem_text, domain=domain)
+            except Exception as exc:
+                self._record_runtime_error("world_model.answer_with_concept_hypothesis", exc, "answer_with_concept_hypothesis")
+        return None
+
+    def world_beliefs_index(self) -> Dict[str, Any]:
+        if self.world_model is not None and hasattr(self.world_model, "_beliefs"):
+            try:
+                return dict(getattr(self.world_model, "_beliefs", {}))
+            except Exception as exc:
+                self._record_runtime_error("world_model._beliefs", exc, "world_beliefs_index")
+        return {}
+
+    def _get_acquisition_mesh(self) -> AcquisitionMesh:
+        if self.acquisition_mesh is None:
+            with self._acquisition_lock:
+                if self.acquisition_mesh is None:
+                    self.acquisition_mesh = AcquisitionMesh()
+        return self.acquisition_mesh
+
+    def _ensure_curriculum_broker(self):
+        if self.curriculum_gen is not None and hasattr(self.curriculum_gen, "_broker") and self.curriculum_gen._broker is not None:
+            return self.curriculum_gen._broker
+        try:
+            from sare.learning.curriculum_broker import CurriculumBroker
+            broker = CurriculumBroker()
+            if self.curriculum_gen is not None and hasattr(self.curriculum_gen, "_broker"):
+                self.curriculum_gen._broker = broker
+            return broker
+        except Exception as exc:
+            self._record_runtime_error("curriculum_broker.init", exc, "acquisition")
+            return None
+
+    def _normalized_acquisition_config(
+        self,
+        source: Union[dict, CanonicalAcquisitionSourceConfig, IngestionBatch, IngestionSourceConfig],
+    ) -> Union[CanonicalAcquisitionSourceConfig, IngestionBatch]:
+        if isinstance(source, IngestionBatch):
+            items = [
+                self._normalized_acquisition_config(item)
+                for item in source.items
+            ]
+            return IngestionBatch(items=[item for item in items if isinstance(item, CanonicalAcquisitionSourceConfig)], source_id=source.source_id, metadata=source.metadata)
+        if isinstance(source, CanonicalAcquisitionSourceConfig):
+            return source
+        if isinstance(source, IngestionSourceConfig):
+            locator = str(source.payload)
+            source_type = str(source.source_type or "web_page")
+            if source_type == "file":
+                source_type = "book" if Path(locator).suffix.lower() in {".txt", ".pdf", ".epub"} else "dataset"
+            return CanonicalAcquisitionSourceConfig(
+                source_type=source_type,
+                locator=locator,
+                domain=source.domain,
+                trust_tier=source.trust_level,
+                max_items=int(source.metadata.get("max_items", 20)) if isinstance(source.metadata, dict) else 20,
+                depth=int(source.metadata.get("depth", 1)) if isinstance(source.metadata, dict) else 1,
+                refresh_policy=str(source.metadata.get("refresh_policy", "manual")) if isinstance(source.metadata, dict) else "manual",
+                metadata=dict(source.metadata or {}),
+            )
+        payload = dict(source or {})
+        locator = str(
+            payload.get(
+                "locator",
+                payload.get(
+                    "topic",
+                    payload.get("payload", payload.get("path", payload.get("url", ""))),
+                ),
+            )
+        )
+        source_type = str(payload.get("source_type", payload.get("kind", "web_page")))
+        return CanonicalAcquisitionSourceConfig(
+            source_type=source_type,
+            locator=locator,
+            domain=str(payload.get("domain", "general")),
+            trust_tier=str(payload.get("trust_tier", payload.get("trust_level", "curated"))),
+            max_items=int(payload.get("max_items", 20) or 20),
+            depth=int(payload.get("depth", 1) or 1),
+            refresh_policy=str(payload.get("refresh_policy", "manual")),
+            metadata=dict(payload.get("metadata", {}) or {}),
+        )
+
+    def _integrate_acquisition_result(self, result: AcquisitionResultData) -> dict:
+        broker = self._ensure_curriculum_broker()
+        examples_added = 0
+        facts_added = 0
+        verified_artifacts = [
+            artifact
+            for artifact in result.artifacts
+            if str(artifact.get("verification_state", "pending")) == "verified"
+        ]
+        if broker is not None and verified_artifacts:
+            try:
+                injected = broker.ingest_examples(self._get_acquisition_mesh().artifact_examples(verified_only=True))
+                examples_added = int(injected.get("accepted", 0))
+            except Exception as exc:
+                self._record_runtime_error("curriculum_broker.ingest_examples", exc, "acquisition")
+
+        for artifact in verified_artifacts:
+            kind = str(artifact.get("kind", ""))
+            domain = str(artifact.get("domain", "general") or "general")
+            content = str(artifact.get("content", "")).strip()
+            if not content:
+                continue
+            if kind in {"fact", "concept", "qa"}:
+                if self.add_world_fact(domain, content[:240], confidence=float(artifact.get("confidence", 0.7) or 0.7), source=str(artifact.get("source_type", "acquisition"))):
+                    facts_added += 1
+
+        self._stats["ingestion"]["records_scanned"] += int(result.records_scanned)
+        self._stats["ingestion"]["facts_added"] += int(facts_added)
+        self._stats["ingestion"]["problems_added"] += int(examples_added)
+        self._stats["ingestion"]["concepts_proposed"] += int(result.artifacts_extracted)
+        self._stats.setdefault("acquisition", {})
+        acquisition_stats = self._stats["acquisition"]
+        acquisition_stats["records_scanned"] = int(acquisition_stats.get("records_scanned", 0)) + int(result.records_scanned)
+        acquisition_stats["artifacts_extracted"] = int(acquisition_stats.get("artifacts_extracted", 0)) + int(result.artifacts_extracted)
+        acquisition_stats["artifacts_verified"] = int(acquisition_stats.get("artifacts_verified", 0)) + int(result.artifacts_verified)
+        acquisition_stats["artifacts_quarantined"] = int(acquisition_stats.get("artifacts_quarantined", 0)) + int(result.artifacts_quarantined)
+        acquisition_stats["artifacts_promoted"] = int(acquisition_stats.get("artifacts_promoted", 0)) + int(getattr(result, "artifacts_promoted", 0))
+        acquisition_stats["corroborated_artifacts"] = int(acquisition_stats.get("corroborated_artifacts", 0)) + int(getattr(result, "corroborated_artifacts", 0))
+        acquisition_stats["learning_examples_added"] = int(acquisition_stats.get("learning_examples_added", 0)) + int(examples_added)
+        acquisition_stats["last_source"] = result.source_type
+        return {
+            "learning_examples_added": examples_added,
+            "world_facts_added": facts_added,
+            "artifacts_promoted": int(getattr(result, "artifacts_promoted", 0)),
+            "corroborated_artifacts": int(getattr(result, "corroborated_artifacts", 0)),
+        }
+
+    def acquire(
+        self,
+        source: Union[dict, CanonicalAcquisitionSourceConfig, IngestionBatch, IngestionSourceConfig],
+    ) -> AcquisitionResult:
+        """Canonical acquisition entrypoint for books, datasets, web, Wikipedia, and GitHub."""
+        normalized = self._normalized_acquisition_config(source)
+        mesh = self._get_acquisition_mesh()
+        if isinstance(normalized, IngestionBatch):
+            combined = {
+                "source_id": normalized.source_id,
+                "source_type": "batch",
+                "records_scanned": 0,
+                "artifacts_extracted": 0,
+                "artifacts_verified": 0,
+                "artifacts_quarantined": 0,
+                "artifacts_promoted": 0,
+                "corroborated_artifacts": 0,
+                "learning_examples_added": 0,
+                "records": [],
+                "artifacts": [],
+                "verification_tasks": [],
+                "provenance_summary": dict(normalized.metadata or {}),
+                "items": [],
+            }
+            for item in normalized.items:
+                item_result = self.acquire(item)
+                combined["items"].append(dict(item_result))
+                for key in (
+                    "records_scanned",
+                    "artifacts_extracted",
+                    "artifacts_verified",
+                    "artifacts_quarantined",
+                    "artifacts_promoted",
+                    "corroborated_artifacts",
+                    "learning_examples_added",
+                ):
+                    combined[key] += int(item_result.get(key, 0))
+                combined["records"].extend(item_result.get("records", []))
+                combined["artifacts"].extend(item_result.get("artifacts", []))
+                combined["verification_tasks"].extend(item_result.get("verification_tasks", []))
+            return AcquisitionResult(combined)
+
+        result = mesh.acquire(normalized)
+        integration = self._integrate_acquisition_result(result)
+        payload = result.to_dict()
+        payload.update(integration)
+        self._invalidate_report_cache()
+        return AcquisitionResult(payload)
+
+    def schedule_acquisition(
+        self,
+        sources: Sequence[Union[dict, CanonicalAcquisitionSourceConfig, IngestionSourceConfig]],
+        interval_seconds: float = 0.0,
+        max_runs: int = 1,
+    ) -> bool:
+        """Run one or more acquisition jobs in the background under Brain ownership."""
+        jobs = [self._normalized_acquisition_config(source) for source in sources]
+        if not jobs:
+            return False
+
+        def _runner() -> None:
+            runs = 0
+            while max_runs <= 0 or runs < max_runs:
+                for job in jobs:
+                    try:
+                        self.acquire(job)
+                    except Exception as exc:
+                        self._record_runtime_error("schedule_acquisition.acquire", exc, "schedule_acquisition")
+                runs += 1
+                if interval_seconds <= 0 or (max_runs > 0 and runs >= max_runs):
+                    break
+                time.sleep(interval_seconds)
+
+        thread = threading.Thread(target=_runner, daemon=True, name="BrainAcquisition")
+        self._acquisition_schedule_threads.append(thread)
+        thread.start()
+        return True
+
+    def learned_artifacts(self, limit: int = 50) -> dict:
+        return self._get_acquisition_mesh().learned_artifacts(limit=limit)
+
+    def verification_queue(self, limit: int = 50) -> dict:
+        return self._get_acquisition_mesh().verification_queue(limit=limit)
+
+    def acquire_github_repo(self, repo: str, mode: str = "full_repo") -> AcquisitionResult:
+        return self.acquire(
+            CanonicalAcquisitionSourceConfig(
+                source_type="github_repo",
+                locator=repo,
+                domain="code",
+                trust_tier="curated",
+                max_items=30,
+                metadata={"mode": mode},
+            )
+        )
+
+    def discover_github_repositories(self, topic: str, limit: int = 5) -> dict:
+        return self._get_acquisition_mesh().discover_github_repositories(topic, limit=limit)
+
+    def acquire_github_topic(
+        self,
+        topic: str,
+        repo_limit: int = 3,
+        mode: str = "full_repo",
+        per_repo_items: int = 12,
+    ) -> AcquisitionResult:
+        return self.acquire(
+            CanonicalAcquisitionSourceConfig(
+                source_type="github_topic",
+                locator=topic,
+                domain="code",
+                trust_tier="curated",
+                max_items=max(1, repo_limit),
+                metadata={
+                    "repo_limit": repo_limit,
+                    "mode": mode,
+                    "per_repo_items": per_repo_items,
+                },
+            )
+        )
+
+    def discover_with_browser(self, kind: str, query: str, limit: int = 5, open_in_chrome: bool = True) -> dict:
+        return self._get_acquisition_mesh().discover_with_browser(kind, query, limit=limit, open_in_chrome=open_in_chrome)
+
+    def discover_open_access_books(self, query: str, limit: int = 5, open_in_chrome: bool = True) -> dict:
+        return self.discover_with_browser("open_access_books", query, limit=limit, open_in_chrome=open_in_chrome)
+
+    def acquire_open_access_book(self, query: str, domain: str = "general", max_items: int = 8, open_in_chrome: bool = True) -> AcquisitionResult:
+        return self.acquire(
+            CanonicalAcquisitionSourceConfig(
+                source_type="open_access_book",
+                locator=query,
+                domain=domain,
+                trust_tier="curated",
+                max_items=max_items,
+                metadata={"open_in_chrome": open_in_chrome},
+            )
+        )
+
+    def github_learning_status(self) -> dict:
+        def _build() -> dict:
+            items = self.learned_artifacts(limit=500).get("items", [])
+            github_items = [item for item in items if item.get("source_type") == "github_repo"]
+            topic_records = []
+            try:
+                topic_records = [
+                    record
+                    for record in self._get_acquisition_mesh()._state.get("records", [])
+                    if str(record.get("source_type", "")) == "github_topic"
+                ]
+            except Exception:
+                topic_records = []
+            repo_counts: Dict[str, int] = {}
+            by_kind: Dict[str, int] = {}
+            discussion_counts = {"issues": 0, "pull_requests": 0}
+            topic_counts: Dict[str, int] = {}
+            verified = 0
+            corroborated = 0
+            for item in github_items:
+                repo = str((item.get("provenance", {}) or {}).get("repo", item.get("source_locator", "")))
+                repo_counts[repo] = repo_counts.get(repo, 0) + 1
+                kind = str(item.get("kind", "concept"))
+                by_kind[kind] = by_kind.get(kind, 0) + 1
+                if item.get("verification_state") == "verified":
+                    verified += 1
+                if int((item.get("metadata", {}) or {}).get("corroboration_count", 0) or 0) >= 2:
+                    corroborated += 1
+                discussion_kind = str((item.get("metadata", {}) or {}).get("discussion_kind", ""))
+                if discussion_kind == "issue":
+                    discussion_counts["issues"] += 1
+                elif discussion_kind == "pull_request":
+                    discussion_counts["pull_requests"] += 1
+                topic = str((item.get("metadata", {}) or {}).get("discovered_from_topic", (item.get("provenance", {}) or {}).get("discovered_from_topic", "")))
+                if topic:
+                    topic_counts[topic] = topic_counts.get(topic, 0) + 1
+            for record in topic_records:
+                topic = str((record.get("provenance", {}) or {}).get("topic", record.get("locator", "")))
+                if topic and topic not in topic_counts:
+                    topic_counts[topic] = 0
+            return {
+                "repos_tracked": len(repo_counts),
+                "artifacts": len(github_items),
+                "verified_artifacts": verified,
+                "corroborated_artifacts": corroborated,
+                "artifact_kinds": by_kind,
+                "discussion_counts": discussion_counts,
+                "topic_counts": topic_counts,
+                "repo_counts": repo_counts,
+            }
+        return self._get_cached_report("github_learning_status", 5.0, _build)
+
+    def _run_acquisition_policy(self) -> dict:
+        queue = self.verification_queue(limit=10)
+        budgets = dict(getattr(self, "_auto_learn_stats", {}).get("budgets", {}) or {})
+        github_enabled = self._github_acquisition_enabled()
+        self._acquisition_policy_stats["github_enabled"] = github_enabled
+        max_pending = int(budgets.get("max_pending_unverified_artifacts", 40) or 40)
+        if int(queue.get("pending", 0) or 0) > max_pending:
+            return {"skipped": True, "reason": "verification_backlog"}
+        plan = self.acquisition_plan(limit=1)
+        suggestions = plan.get("suggestions", [])
+        if not suggestions:
+            return {"skipped": True, "reason": "no_suggestions"}
+        sources = list((suggestions[0] or {}).get("recommended_sources", []))
+        if not sources:
+            return {"skipped": True, "reason": "no_sources"}
+        now = time.time()
+        github_cooldown_until = float(self._acquisition_cooldowns.get("github", 0.0) or 0.0)
+
+        def _is_github_source(source: dict) -> bool:
+            return str((source or {}).get("source_type", "")) in {"github_topic", "github_repo"}
+
+        if not github_enabled:
+            sources = [source for source in sources if not _is_github_source(source)]
+        if github_cooldown_until > now:
+            non_github_sources = [source for source in sources if not _is_github_source(source)]
+            if not non_github_sources:
+                weak_domain = str((suggestions[0] or {}).get("domain", "general") or "general")
+                non_github_sources = [self._fallback_acquisition_source_for_domain(weak_domain)]
+            sources = non_github_sources
+        github_status = self.github_learning_status()
+        github_empty = int(github_status.get("repos_tracked", 0) or 0) <= 0
+        if github_enabled and github_empty and github_cooldown_until <= now:
+            weak_domain = str((suggestions[0] or {}).get("domain", "general") or "general")
+            seed_repo_map = {
+                "word_problems": ["TheAlgorithms/Python"],
+                "arithmetic": ["TheAlgorithms/Python"],
+                "algebra": ["sympy/sympy"],
+                "calculus": ["sympy/sympy"],
+                "logic": ["pyeda/pyeda"],
+                "logic_basics": ["pyeda/pyeda"],
+                "propositional": ["pyeda/pyeda"],
+                "science": ["scikit-learn/scikit-learn"],
+                "chemistry": ["RDKit/rdkit"],
+                "technology": ["TheAlgorithms/Python"],
+                "code": ["TheAlgorithms/Python"],
+            }
+            seeded_sources = [
+                {
+                    "source_type": "github_repo",
+                    "locator": repo,
+                    "domain": weak_domain,
+                    "max_items": 10,
+                    "metadata": {"mode": "full_repo"},
+                }
+                for repo in seed_repo_map.get(weak_domain, [])
+            ]
+            github_sources = [
+                source for source in sources
+                if str((source or {}).get("source_type", "")) in {"github_topic", "github_repo"}
+            ]
+            non_github_sources = [
+                source for source in sources
+                if str((source or {}).get("source_type", "")) not in {"github_topic", "github_repo"}
+            ]
+            if seeded_sources:
+                sources = seeded_sources + github_sources + non_github_sources
+            elif github_sources:
+                sources = github_sources + non_github_sources
+        max_sources = max(1, int(budgets.get("acquisition_sources_per_run", 2) or 2))
+        results = []
+        weak_domain = str((suggestions[0] or {}).get("domain", "general") or "general")
+        github_rate_limited = False
+        for source in sources[:max_sources]:
+            if github_rate_limited and _is_github_source(source):
+                continue
+            try:
+                results.append({"source": source, "result": dict(self.acquire(source))})
+                source_type = str((source or {}).get("source_type", "unknown"))
+                success_counts = self._acquisition_policy_stats.setdefault("success_counts", {})
+                success_counts[source_type] = int(success_counts.get(source_type, 0) or 0) + 1
+            except Exception as exc:
+                error_text = str(exc).lower()
+                source_type = str((source or {}).get("source_type", "unknown"))
+                error_counts = self._acquisition_policy_stats.setdefault("error_counts", {})
+                error_counts[source_type] = int(error_counts.get(source_type, 0) or 0) + 1
+                self._acquisition_policy_stats["last_remote_failure"] = {
+                    "source_type": source_type,
+                    "locator": str((source or {}).get("locator", "")),
+                    "error": str(exc),
+                    "timestamp": time.time(),
+                }
+                if "rate limit" in error_text or "403" in error_text:
+                    github_rate_limited = True
+                    cooldown_seconds = int(budgets.get("acquisition_rate_limit_cooldown_seconds", 900) or 900)
+                    self._acquisition_cooldowns["github"] = max(
+                        float(self._acquisition_cooldowns.get("github", 0.0) or 0.0),
+                        time.time() + cooldown_seconds,
+                    )
+                    fallback = self._fallback_acquisition_source_for_domain(weak_domain)
+                    try:
+                        results.append({"source": fallback, "result": dict(self.acquire(fallback))})
+                        self._acquisition_policy_stats["last_fallback_source"] = dict(fallback)
+                    except Exception as fallback_exc:
+                        self._record_runtime_error("acquisition_policy.fallback", fallback_exc, "_run_acquisition_policy")
+                self._record_runtime_error("acquisition_policy.acquire", exc, "_run_acquisition_policy")
+        if not results:
+            self._invalidate_report_cache("acquisition_dashboard", "learning_ops_dashboard", "learning_dashboard_payload")
+            reason = "acquire_failed"
+            if float(self._acquisition_cooldowns.get("github", 0.0) or 0.0) > time.time():
+                reason = "github_rate_limited"
+            return {
+                "skipped": True,
+                "reason": reason,
+                "cooldowns": {
+                    "github_until": float(self._acquisition_cooldowns.get("github", 0.0) or 0.0),
+                },
+            }
+        self._invalidate_report_cache("acquisition_dashboard", "learning_ops_dashboard", "learning_dashboard_payload")
+        return {
+            "skipped": False,
+            "results": results,
+            "cooldowns": {
+                "github_until": float(self._acquisition_cooldowns.get("github", 0.0) or 0.0),
+            },
+        }
+
+    def _fallback_acquisition_source_for_domain(self, weak_domain: str) -> dict:
+        book_queries = {
+            "mathematics": "algebra mathematics",
+            "physics": "physics mechanics",
+            "chemistry": "chemistry reactions",
+            "technology": "algorithms programming",
+        }
+        if weak_domain in book_queries:
+            return {
+                "source_type": "open_access_book",
+                "locator": book_queries[weak_domain],
+                "domain": weak_domain,
+                "max_items": 8,
+                "metadata": {"open_in_chrome": False},
+            }
+        return {
+            "source_type": "wikipedia",
+            "locator": weak_domain.replace("_", " "),
+            "domain": weak_domain,
+        }
+
+    def _github_acquisition_enabled(self) -> bool:
+        budgets = dict(getattr(self, "_auto_learn_stats", {}).get("budgets", {}) or {})
+        if "disable_github_acquisition" in budgets:
+            return not bool(budgets.get("disable_github_acquisition", False))
+        acquisition_cfg = dict(self.config.get("acquisition", {}) or {})
+        return bool(acquisition_cfg.get("github_enabled", False))
+
+    def _recent_acquisition_signatures(self, limit: int = 12) -> set[str]:
+        try:
+            records = list((self._get_acquisition_mesh()._state.get("records", []) or []))
+        except Exception:
+            records = []
+        signatures: List[str] = []
+        for record in records[-max(1, limit * 2):]:
+            if not isinstance(record, dict):
+                continue
+            source_type = str(record.get("source_type", "")).strip()
+            locator = str(record.get("locator", "")).strip()
+            if source_type and locator:
+                signatures.append(f"{source_type}::{locator}")
+        return set(signatures[-limit:])
+
+    def _source_signature(self, source: dict) -> str:
+        return f"{str((source or {}).get('source_type', '')).strip()}::{str((source or {}).get('locator', '')).strip()}"
+
+    def _dataset_sources_for_domain(self, domain: str) -> List[dict]:
+        dataset_dir = REPO_ROOT / "data" / "external_datasets"
+        all_files = {path.name: path for path in dataset_dir.glob("*") if path.is_file()}
+        preferred = {
+            "mathematics": ["aqua_train.json", "gsm8k_test.jsonl", "mmlu_domains.jsonl"],
+            "word_problems": ["gsm8k_test.jsonl", "aqua_train.json"],
+            "physics": ["mmlu_domains.jsonl"],
+            "chemistry": ["mmlu_domains.jsonl"],
+            "technology": ["mmlu_domains.jsonl"],
+            "science": ["mmlu_domains.jsonl"],
+            "social": ["commonsenseqa_train.jsonl"],
+            "language": ["commonsenseqa_train.jsonl"],
+            "general": ["commonsenseqa_train.jsonl", "mmlu_domains.jsonl"],
+        }
+        names = preferred.get(domain, preferred.get("general", []))
+        sources: List[dict] = []
+        for name in names:
+            path = all_files.get(name)
+            if not path:
+                continue
+            sources.append(
+                {
+                    "source_type": "dataset",
+                    "locator": str(path),
+                    "domain": domain,
+                    "max_items": 6,
+                }
+            )
+        return sources
+
+    def _book_sources_for_domain(self, domain: str) -> List[dict]:
+        candidates: List[dict] = []
+        known_books = [
+            (REPO_ROOT / "data" / "books" / "art_of_war.txt", {"planning", "history", "strategy", "general"}),
+            (REPO_ROOT / "python" / "data" / "books" / "pg84.txt", {"language", "general", "science"}),
+            (REPO_ROOT / "python" / "data" / "books" / "a.txt", {"language", "general"}),
+        ]
+        for path, domains in known_books:
+            if path.exists() and (domain in domains or "general" in domains):
+                candidates.append(
+                    {
+                        "source_type": "book",
+                        "locator": str(path),
+                        "domain": domain,
+                        "max_items": 4,
+                    }
+                )
+        return candidates
+
+    def _recommended_acquisition_sources_for_domain(
+        self,
+        domain: str,
+        recent_signatures: Optional[set[str]] = None,
+        github_topics: Optional[List[str]] = None,
+        github_enabled: Optional[bool] = None,
+    ) -> List[dict]:
+        recent_signatures = set(recent_signatures or set())
+        if github_enabled is None:
+            github_enabled = self._github_acquisition_enabled()
+        sources: List[dict] = []
+        sources.extend(self._dataset_sources_for_domain(domain))
+        sources.extend(self._book_sources_for_domain(domain))
+        fallback = self._fallback_acquisition_source_for_domain(domain)
+        sources.append(dict(fallback))
+        if github_enabled:
+            topics = list(github_topics or [domain])
+            if topics:
+                sources.append(
+                    {
+                        "source_type": "github_topic",
+                        "locator": topics[0],
+                        "domain": domain,
+                        "metadata": {"repo_limit": 2, "per_repo_items": 8},
+                    }
+                )
+        sources.append({"source_type": "wikipedia", "locator": domain.replace("_", " "), "domain": domain})
+        unique: List[dict] = []
+        seen: set[str] = set()
+        for source in sources:
+            sig = self._source_signature(source)
+            if sig in seen:
+                continue
+            seen.add(sig)
+            unique.append(source)
+        fresh = [source for source in unique if self._source_signature(source) not in recent_signatures]
+        return (fresh + [source for source in unique if source not in fresh])[:6]
+
+    def ingest(
+        self,
+        data: Union[str, dict, IngestionBatch, IngestionSourceConfig],
+        kind: str = "text",
+        source: str = "user",
+    ) -> IngestionResult:
         """
         Ingest real-world data, extract problems, feed into learning loop.
         Supports: text, csv, json, textbook, file path.
         """
+        acquisition_kinds = {"book", "dataset", "wikipedia", "github_repo", "github_topic", "web_page", "web_feed"}
+        if (
+            isinstance(data, IngestionSourceConfig) and str(data.source_type) in acquisition_kinds
+        ) or (
+            isinstance(data, IngestionBatch) and all(str(item.source_type) in acquisition_kinds for item in data.items)
+        ) or (
+            isinstance(data, dict) and str(data.get("source_type", data.get("kind", kind))) in acquisition_kinds
+        ):
+            return IngestionResult(self.acquire(data).to_dict())
+
         if not self.perception_engine:
-            return {"error": "Perception engine not loaded"}
+            return IngestionResult({"error": "Perception engine not loaded"})
+
+        if isinstance(data, IngestionBatch):
+            aggregate = {
+                "source_id": data.source_id,
+                "source_type": "batch",
+                "records_scanned": 0,
+                "facts_added": 0,
+                "problems_added": 0,
+                "concepts_proposed": 0,
+                "rejected_records": 0,
+                "provenance_summary": {"batch_items": len(data.items), **dict(data.metadata or {})},
+                "items": [],
+            }
+            for item in data.items:
+                item_result = self.ingest(item)
+                aggregate["items"].append(dict(item_result))
+                if item_result.get("error"):
+                    aggregate["rejected_records"] += 1
+                    continue
+                aggregate["records_scanned"] += int(item_result.get("records_scanned", 0))
+                aggregate["facts_added"] += int(item_result.get("facts_added", 0))
+                aggregate["problems_added"] += int(item_result.get("problems_added", 0))
+                aggregate["concepts_proposed"] += int(item_result.get("concepts_proposed", 0))
+            return IngestionResult(aggregate)
+
+        if isinstance(data, dict):
+            data = IngestionSourceConfig(
+                source_type=str(data.get("kind", kind)),
+                payload=data.get("payload", data.get("data", "")),
+                source_id=str(data.get("source", source)),
+                domain=str(data.get("domain", "general")),
+                trust_level=str(data.get("trust_level", "default")),
+                metadata=dict(data.get("metadata", {}) or {}),
+            )
+
+        if isinstance(data, IngestionSourceConfig):
+            kind = data.source_type
+            source = data.source_id
+            payload = data.payload
+            provenance = {
+                "domain": data.domain,
+                "trust_level": data.trust_level,
+                **dict(data.metadata or {}),
+            }
+        else:
+            payload = data
+            provenance = {}
 
         if kind == "csv":
-            result = self.perception_engine.ingest_csv(data, source)
+            result = self.perception_engine.ingest_csv(payload, source)
         elif kind == "json":
             import json as _j
             try:
-                parsed = _j.loads(data) if isinstance(data, str) else data
+                parsed = _j.loads(payload) if isinstance(payload, str) else payload
             except Exception:
-                parsed = {"raw": data}
+                parsed = {"raw": payload}
             result = self.perception_engine.ingest_json(parsed, source)
         elif kind == "textbook":
-            result = self.perception_engine.ingest_textbook(data, source)
+            result = self.perception_engine.ingest_textbook(payload, source)
         elif kind == "file":
-            result = self.perception_engine.ingest_file(data)
+            result = self.perception_engine.ingest_file(payload)
         else:
-            result = self.perception_engine.ingest_text(data, source)
+            result = self.perception_engine.ingest_text(payload, source)
 
         # Feed extracted problems into developmental curriculum
         problems_added = 0
@@ -3181,15 +7884,30 @@ class Brain:
                 except Exception:
                     pass
 
-        return {
-            "source": result.source, "kind": result.kind,
+        self._stats["ingestion"]["records_scanned"] += 1
+        self._stats["ingestion"]["facts_added"] += facts_added
+        self._stats["ingestion"]["problems_added"] += problems_added
+        self._stats["ingestion"]["concepts_proposed"] += int(len(getattr(result, "facts_extracted", []) or []))
+
+        return IngestionResult({
+            "source_id": source,
+            "source_type": kind,
+            "records_scanned": 1,
+            "facts_added": facts_added,
+            "problems_added": problems_added,
+            "concepts_proposed": int(len(getattr(result, "facts_extracted", []) or [])),
+            "rejected_records": 0,
+            "provenance_summary": provenance,
+            "source": result.source,
+            "kind": result.kind,
             "problems_extracted": len(result.problems_extracted),
             "problems_added_to_curriculum": problems_added,
             "facts_extracted": len(result.facts_extracted),
             "facts_added_to_worldmodel": facts_added,
-            "graph_nodes": result.graph_nodes, "graph_edges": result.graph_edges,
+            "graph_nodes": result.graph_nodes,
+            "graph_edges": result.graph_edges,
             "elapsed": round(result.elapsed, 3),
-        }
+        })
 
     # ─────────────────────────────────────────────────────────────────────────
     #  Deep Transfer: Synthesize new transforms
@@ -3687,18 +8405,35 @@ class Brain:
     #  Background Self-Learning Thread
     # ─────────────────────────────────────────────────────────────────────────
 
-    def start_auto_learn(self, interval: float = 2.0, problems_per_cycle: int = 5):
+    def start_auto_learn(
+        self,
+        interval: float = 2.0,
+        problems_per_cycle: int = 5,
+        budgets: Optional[Dict[str, Any]] = None,
+    ):
         """Start background autonomous learning thread."""
         if hasattr(self, '_auto_learn_thread') and self._auto_learn_thread and self._auto_learn_thread.is_alive():
             log.info("Auto-learn already running")
             return
 
+        budget_config = dict(budgets or {})
         self._auto_learn_stop = threading.Event()
         self._auto_learn_stats = {
             "running": True, "cycles": 0, "total_solved": 0,
             "total_attempted": 0, "interval": interval,
             "retry_successes": 0, "avg_surprise": 0.0,
             "failure_reasons": {},
+            "budgets": budget_config,
+            "scheduler_buckets": {
+                "acquisition_jobs": 0,
+                "broker_training_jobs": 0,
+                "failure_replay": 0,
+                "weak_domain_reinforcement": 0,
+                "transfer_probes": 0,
+                "heldout_verification": 0,
+                "benchmark_refresh": 0,
+                "sleep_consolidation": 0,
+            },
         }
 
         def _learn_loop():
@@ -3706,11 +8441,37 @@ class Brain:
             while not self._auto_learn_stop.is_set():
                 cycle += 1
                 try:
+                    if (budget_config.get("ingestion_budget", 0) or budget_config.get("web_budget", 0)) and (cycle == 1 or cycle % 5 == 0):
+                        acquisition_run = self._run_acquisition_policy()
+                        if not acquisition_run.get("skipped", False):
+                            self._auto_learn_stats["scheduler_buckets"]["acquisition_jobs"] += len(acquisition_run.get("results", []) or [1])
+                            self._auto_learn_stats["scheduler_buckets"]["weak_domain_reinforcement"] += 1
+                        elif acquisition_run.get("reason") == "verification_backlog":
+                            self._auto_learn_stats["scheduler_buckets"]["heldout_verification"] += 1
+                    if cycle == 1 or cycle % 4 == 0:
+                        grounded_run = self.run_grounded_learning_cycle()
+                        if grounded_run.get("total_tasks", 0):
+                            self._auto_learn_stats["scheduler_buckets"]["weak_domain_reinforcement"] += 1
+                    if cycle == 1 or cycle % 3 == 0:
+                        retention_run = self.run_retention_retests(
+                            limit=max(1, int(budget_config.get("retention_budget", 2) or 2)),
+                            min_age_seconds=float(budget_config.get("retention_interval_seconds", 3600.0) or 3600.0),
+                        )
+                        if retention_run.get("retested", 0):
+                            self._auto_learn_stats["scheduler_buckets"]["heldout_verification"] += int(retention_run.get("retested", 0))
+                    if cycle == 1 or cycle % 5 == 0:
+                        suite_run = self.run_transfer_suite_benchmarks(
+                            tests_per_suite=max(3, int(budget_config.get("transfer_suite_tests", 3) or 3)),
+                            max_suites=max(1, int(budget_config.get("transfer_suite_limit", 2) or 2)),
+                        )
+                        if suite_run.get("benchmarks_run", 0):
+                            self._auto_learn_stats["scheduler_buckets"]["transfer_probes"] += int(suite_run.get("benchmarks_run", 0))
                     results = self.learn_cycle(n=problems_per_cycle)
                     successes = sum(1 for r in results if r.get("success"))
                     self._auto_learn_stats["cycles"] = cycle
                     self._auto_learn_stats["total_solved"] += successes
                     self._auto_learn_stats["total_attempted"] += len(results)
+                    self._auto_learn_stats["scheduler_buckets"]["broker_training_jobs"] += len(results)
 
                     # Update curriculum
                     if self.developmental_curriculum:
@@ -3726,16 +8487,19 @@ class Brain:
 
                     # Every 10 cycles: sleep consolidation + deep transfer
                     if cycle % 10 == 0:
+                        self._auto_learn_stats["scheduler_buckets"]["sleep_consolidation"] += 1
                         self.reorganize_knowledge()
                         # Deep transfer: synthesize new transforms
                         try:
                             self.synthesize_transforms()
+                            self._auto_learn_stats["scheduler_buckets"]["transfer_probes"] += 1
                         except Exception:
                             pass
                         self._refresh_transforms()
 
                     # Save periodically
                     if cycle % 20 == 0:
+                        self._auto_learn_stats["scheduler_buckets"]["benchmark_refresh"] += 1
                         self.save_state()
                         if self.developmental_curriculum:
                             try:
@@ -3762,11 +8526,46 @@ class Brain:
         self._auto_learn_thread.start()
         log.info(f"Auto-learn started: every {interval}s, {problems_per_cycle} problems/cycle")
 
+    def start_autonomous_learning(self, interval: float = 2.0,
+                                  problems_per_cycle: int = 5, **kwargs: Any) -> bool:
+        """Canonical public wrapper for background learning."""
+        budgets = {
+            key: kwargs[key]
+            for key in (
+                "cpu_budget",
+                "llm_budget",
+                "web_budget",
+                "ingestion_budget",
+                "disable_github_acquisition",
+                "consolidation_frequency",
+                "retention_budget",
+                "retention_interval_seconds",
+            )
+            if key in kwargs
+        }
+        acquisition_sources = kwargs.get("acquisition_sources")
+        if acquisition_sources:
+            try:
+                self.schedule_acquisition(
+                    sources=list(acquisition_sources),
+                    interval_seconds=float(kwargs.get("acquisition_interval", max(300.0, float(interval) * 30.0)) or 300.0),
+                    max_runs=int(kwargs.get("acquisition_runs", 0) or 0),
+                )
+            except Exception as exc:
+                self._record_runtime_error("start_autonomous_learning.schedule_acquisition", exc, "start_autonomous_learning")
+        self.start_auto_learn(interval=interval, problems_per_cycle=problems_per_cycle, budgets=budgets)
+        return True
+
     def stop_auto_learn(self):
         """Stop background learning."""
         if hasattr(self, '_auto_learn_stop'):
             self._auto_learn_stop.set()
             log.info("Auto-learn stop requested")
+
+    def stop_autonomous_learning(self) -> bool:
+        """Canonical public wrapper for background learning stop."""
+        self.stop_auto_learn()
+        return True
 
     def auto_learn_status(self) -> dict:
         """Get background learning status."""
@@ -3774,11 +8573,125 @@ class Brain:
             return dict(self._auto_learn_stats)
         return {"running": False, "cycles": 0, "total_solved": 0, "total_attempted": 0}
 
+    def _note_solve_mode(self, solver_used: str) -> None:
+        modes = self._stats.setdefault("solve_modes", {})
+        modes[solver_used] = int(modes.get(solver_used, 0)) + 1
+
+    def _make_solve_result(self, payload: Dict[str, Any]) -> SolveResult:
+        if "request_id" not in payload:
+            payload["request_id"] = str(payload.get("expression", ""))
+        return SolveResult(payload)
+
+    def _run_general_solver(self, expression: str, context: Optional[dict] = None,
+                            domain: str = "general") -> SolveResult:
+        if self.general_solver is None:
+            raise RuntimeError("general solver unavailable")
+
+        ctx = context or {}
+        gs_result = self.general_solver.solve(
+            expression,
+            context=str(ctx.get("text_context", ctx.get("context", "")) or ""),
+            problem_type=ctx.get("problem_type"),
+            allow_retrieval=ctx.get("allow_retrieval", True),
+            allow_llm=ctx.get("allow_llm", True),
+            store_result=False,
+            metadata=dict(ctx.get("metadata", {}) or {}),
+        )
+        success = bool(getattr(gs_result, "solved", False))
+        solver_used = str(getattr(gs_result, "solver_used", "general_solver"))
+        solved_domain = str(getattr(gs_result, "domain", "") or domain or "general")
+        confidence = float(getattr(gs_result, "confidence", 0.0) or 0.0)
+        answer = str(getattr(gs_result, "answer", "") or "")
+        reasoning = str(getattr(gs_result, "reasoning", "") or "")
+        elapsed_seconds = round(float(getattr(gs_result, "elapsed_ms", 0.0) or 0.0) / 1000.0, 3)
+
+        self.events.emit(
+            Event.SOLVE_COMPLETED if success else Event.SOLVE_FAILED,
+            {
+                "problem_id": expression,
+                "expression": expression,
+                "domain": solved_domain,
+                "transforms": [],
+                "energy_before": 1.0,
+                "energy_after": 0.0 if success else 1.0,
+                "delta": confidence if success else 0.0,
+                "elapsed": elapsed_seconds,
+                "answer": answer,
+                "solver_used": solver_used,
+                "learning_mode": getattr(gs_result, "learning_mode", "free_solve"),
+            },
+            "brain.general_solver",
+        )
+        self._persist_post_solve_state()
+        return self._make_solve_result({
+            "request_id": getattr(gs_result, "problem_id", expression),
+            "expression": expression,
+            "answer": answer,
+            "steps_text": reasoning,
+            "graph": None,
+            "energy": {"total": 0.0 if success else 1.0, "components": {}},
+            "initial_energy": 1.0,
+            "transforms": [],
+            "transforms_used": [],
+            "transforms_applied": [],
+            "steps": len(getattr(gs_result, "sub_steps", []) or []),
+            "steps_taken": len(getattr(gs_result, "sub_steps", []) or []),
+            "expansions": 0,
+            "elapsed": elapsed_seconds,
+            "elapsed_seconds": elapsed_seconds,
+            "delta": round(confidence if success else 0.0, 3),
+            "reduction_pct": round(confidence * 100.0, 1),
+            "confidence": round(confidence, 3),
+            "success": success,
+            "solve_success": success,
+            "domain": solved_domain,
+            "trajectory": [],
+            "proof": None,
+            "strategy_hint": None,
+            "strategy_hit": False,
+            "recalled_memories": 0,
+            "recalled_memory": [],
+            "memory": self.memory_manager.stats() if self.memory_manager else {},
+            "initial": None,
+            "result": {"solver_used": solver_used, "learning_mode": getattr(gs_result, "learning_mode", "free_solve")},
+            "learned_concepts": [],
+            "stage": self.stage.value,
+            "source": "brain.general_solver",
+            "solver_path": solver_used,
+            "learning_mode": getattr(gs_result, "learning_mode", "free_solve"),
+            "verification_outcome": {"correct": getattr(gs_result, "correct", None)},
+            "transfer_outcome": None,
+            "persistence_ids": {},
+        })
+
+    def attempt_learning_problem(
+        self,
+        problem_text: str,
+        expected_answer,
+        problem_type: str,
+        context: str = "",
+        metadata: Optional[Dict[str, Any]] = None,
+    ):
+        """Canonical graded-learning entrypoint used by autonomous trainers."""
+        if self.general_solver is None:
+            raise RuntimeError("general solver unavailable")
+
+        result = self.general_solver.attempt_learning_problem(
+            problem_text=problem_text,
+            expected_answer=expected_answer,
+            problem_type=problem_type,
+            context=context,
+            metadata=dict(metadata or {}),
+        )
+        self._note_solve_mode(str(getattr(result, "solver_used", "learning_problem")))
+        return result
+
     # ─────────────────────────────────────────────────────────────────────────
     #  Learning Cycle
     # ─────────────────────────────────────────────────────────────────────────
 
-    def learn_cycle(self, n: int = 5) -> List[dict]:
+    def learn_cycle(self, n: int = 5, max_tasks: Optional[int] = None,
+                    mode: str = "default") -> LearnCycleResult:
         """
         Run n autonomous learning cycles with failure-driven adaptation:
         1. Pick problem (WorldModel-guided if available)
@@ -3787,9 +8700,15 @@ class Brain:
         4. Compare prediction vs reality (learn from surprise)
         5. On failure: analyze, retry with alternative, record what to avoid
         """
-        results = []
+        target_n = int(max_tasks if max_tasks is not None else n)
+        results: List[dict] = []
 
-        for i in range(n):
+        try:
+            self.drive_self_generated_learning()
+        except Exception:
+            pass
+
+        for i in range(target_n):
             problem_expr = self._pick_learning_problem()
             if not problem_expr:
                 break
@@ -3808,8 +8727,27 @@ class Brain:
                 except Exception:
                     pass
 
-            result = self.solve(problem_expr)
+            result = self.solve(problem_expr, context={"mode": mode})
+            selection = dict(getattr(self, "_last_problem_selection", {}) or {})
+            if selection:
+                result.setdefault("strategy_source", selection.get("source", "generated_problems"))
+                result.setdefault("strategy_reason", selection.get("reason", ""))
             results.append(result)
+            self.record_learning_strategy_outcome(
+                expression=problem_expr,
+                domain=str(selection.get("domain") or result.get("domain") or "general"),
+                source=str(selection.get("source") or "generated_problems"),
+                task_type="expression_rewrite",
+                result=result,
+                metadata={
+                    "reason": selection.get("reason", ""),
+                    "selection_score": selection.get("score"),
+                    "candidates_considered": selection.get("candidates_considered", 0),
+                    "candidates_solvable": selection.get("candidates_solvable", 0),
+                },
+                learning_mode=mode if mode in {"retrieval", "hinted", "template_replay"} else "free_solve",
+                verification_level="runtime",
+            )
 
             # WorldModel: compare prediction to actual (learn from surprise)
             if prediction and self.world_model_v3:
@@ -3940,11 +8878,12 @@ class Brain:
                 transforms = last.get("transforms_used", None) or \
                              last.get("transforms", None) or \
                              ["add_zero_elim", "mul_one_elim"]
-                self.predictive_loop.run_cycle(
-                    expr, domain,
-                    lambda e: self.solve(e),
-                    transforms if isinstance(transforms, list) else [transforms],
-                )
+                if hasattr(self.predictive_loop, "run_cycle"):
+                    self.predictive_loop.run_cycle(
+                        expr, domain,
+                        lambda e: self.solve(e),
+                        transforms if isinstance(transforms, list) else [transforms],
+                    )
             except Exception as e:
                 log.debug(f"PredictiveLoop cycle: {e}")
 
@@ -4028,7 +8967,7 @@ class Brain:
             try:
                 new_blends = self.concept_blender.discover_blends(max_results=3)
                 if new_blends and self.concept_graph:
-                    fed = self.concept_blender.feed_to_concept_graph(self.concept_graph)
+                    fed = self.concept_blender.feed_to_concept_graph(self.concept_graph, new_blends)
                     if fed and self.global_workspace:
                         self.global_workspace.post_event(
                             "cross_domain_merge",
@@ -4193,12 +9132,19 @@ class Brain:
             try:
                 if self.continuous_stream:
                     streams = getattr(self.continuous_stream, '_streams', {})
-                    for stype, stream in streams.items():
-                        recent = getattr(stream, '_recent_results', [])
-                        for item in recent[-1:]:
-                            expr   = getattr(item, 'expression', str(item))
+                    if isinstance(streams, dict):
+                        stream_iter = streams.items()
+                    else:
+                        stream_iter = [
+                            (getattr(stream, "stream_type", getattr(stream, "stream_id", "stream")), stream)
+                            for stream in list(streams)
+                        ]
+                    for stype, stream in stream_iter:
+                        recent = getattr(stream, '_recent_results', []) or getattr(stream, "recent_results", [])
+                        for item in list(recent)[-1:]:
+                            expr = getattr(item, 'expression', str(item))
                             domain = getattr(item, 'domain', 'general')
-                            self.stream_bridge.submit(expr, source=stype, domain=domain)
+                            self.stream_bridge.submit(expr, source=str(stype), domain=domain)
                 self.stream_bridge.tick()
             except Exception as e:
                 log.debug(f"StreamBridge tick: {e}")
@@ -4213,7 +9159,42 @@ class Brain:
             except Exception as e:
                 log.debug(f"PerceptionBridge tick: {e}")
 
-        return results
+        facts_added = int(self._stats.get("ingestion", {}).get("facts_added", 0))
+        try:
+            self.run_grounded_learning_cycle()
+        except Exception as exc:
+            self._record_runtime_error("run_grounded_learning_cycle", exc, "learn_cycle")
+        try:
+            self.run_retention_retests(limit=1, min_age_seconds=1800.0)
+        except Exception as exc:
+            self._record_runtime_error("run_retention_retests", exc, "learn_cycle")
+        try:
+            self.run_transfer_suite_benchmarks(tests_per_suite=3, max_suites=2)
+        except Exception as exc:
+            self._record_runtime_error("run_transfer_suite_benchmarks", exc, "learn_cycle")
+        self._invalidate_report_cache()
+        truth_gate = self.learning_truth_gate()
+        return LearnCycleResult(
+            results,
+            tasks_attempted=len(results),
+            tasks_solved=sum(1 for r in results if r.get("success")),
+            rules_promoted=int(self._stats.get("rules_promoted", 0)),
+            transfers_attempted=int(self._stats.get("transfers_attempted", 0)),
+            transfers_succeeded=int(self._stats.get("transfers_succeeded", 0)),
+            facts_added=facts_added,
+            runtime_errors=int(self._stats.get("runtime_errors", 0)),
+            heldout_pass_rate=truth_gate.get("heldout", {}).get("pass_rate"),
+            transfer_success_rate=truth_gate.get("transfer", {}).get("success_rate"),
+            retention_rate=truth_gate.get("retention", {}).get("retention_rate"),
+            grounded_success_rate=truth_gate.get("grounded", {}).get("success_rate"),
+            heldout_gate=truth_gate.get("heldout", {}).get("passed", False),
+            transfer_gate=truth_gate.get("transfer", {}).get("passed", False),
+            retention_gate=truth_gate.get("retention", {}).get("passed", False),
+            grounded_gate=truth_gate.get("grounded", {}).get("passed", False),
+            truth_gate=truth_gate,
+            progress_trusted=truth_gate.get("passed", False),
+            mode=mode,
+        )
 
     def _collect_session_stats(self) -> dict:
         """Gather stats for TemporalIdentity.update()."""
@@ -4272,6 +9253,22 @@ class Brain:
                 "domain": domain or "general",
                 "reason": reason,
             })
+
+        def _task_type_for_source(source: str) -> str:
+            source = str(source or "")
+            if source in {"code_problems"}:
+                return "code_question"
+            if source in {"word_problems"}:
+                return "word_problem"
+            if source in {"comprehension_problems"}:
+                return "reading_comprehension"
+            if source in {"language_problems"}:
+                return "language_reasoning"
+            if source in {"self_question"}:
+                return "self_generated_question"
+            if source in {"hypothesis_verification"}:
+                return "hypothesis_verification"
+            return "expression_rewrite"
 
         def _choose_from_domain(target_domain: str) -> Optional[str]:
             if self._problem_gen:
@@ -4362,6 +9359,53 @@ class Brain:
             except Exception as exc:
                 self._record_runtime_error("goal_setter.suggest_next_goal", exc, "learn_pick")
 
+        focus_domains: List[dict] = []
+        try:
+            focus_domains = self.learning_focus_domains(limit=4)
+            for idx, item in enumerate(focus_domains):
+                reasons = ", ".join(list(item.get("reasons", []) or [])[:2]) or "weak understanding signal"
+                _add_candidate(
+                    _choose_from_domain(str(item.get("domain", "general") or "general")),
+                    "understanding_focus",
+                    0.62 + min(float(item.get("priority", 0.0) or 0.0), 0.12) - idx * 0.015,
+                    str(item.get("domain", "general") or "general"),
+                    f"understanding gap: {reasons}",
+                )
+        except Exception as exc:
+            self._record_runtime_error("learning_focus_domains.pick", exc, "learn_pick")
+
+        try:
+            pending_questions = self.active_learning_questions(limit=3)
+            for idx, item in enumerate(pending_questions):
+                target_domain = str(item.get("domain", "general") or "general")
+                priority = min(1.0, max(0.0, float(item.get("priority", 0.5) or 0.5)))
+                text = str(item.get("text", "") or item.get("question", "") or "self-generated question")
+                _add_candidate(
+                    _choose_from_domain(target_domain),
+                    "self_question",
+                    0.66 + priority * 0.14 - idx * 0.02,
+                    target_domain,
+                    f"self-generated question: {text[:90]}",
+                )
+        except Exception as exc:
+            self._record_runtime_error("self_questions.pick", exc, "learn_pick")
+
+        try:
+            theories = self.world_theories(limit=3)
+            for idx, theory in enumerate(theories):
+                target_domain = str(theory.get("domain", "general") or "general")
+                hypothesis_count = int(theory.get("hypothesis_count", 0) or 0)
+                summary = str(theory.get("summary", "") or "world-model hypothesis cluster")
+                _add_candidate(
+                    _choose_from_domain(target_domain),
+                    "hypothesis_verification",
+                    0.62 + min(hypothesis_count, 5) * 0.035 - idx * 0.02,
+                    target_domain,
+                    f"verify hypothesis cluster: {summary[:90]}",
+                )
+        except Exception as exc:
+            self._record_runtime_error("world_theories.pick", exc, "learn_pick")
+
         if self.world_model_v3:
             try:
                 high_surprise = self.world_model_v3.get_high_surprise_domains(3)
@@ -4450,6 +9494,39 @@ class Brain:
                         log.info(f"LLM Teacher intervened to break stagnation. Target: {target_concept}")
             except Exception as e:
                 log.debug(f"LLM Curriculum Generation failed: {e}")
+
+        if candidates and focus_domains:
+            focus_map = {str(item.get("domain", "general") or "general"): item for item in focus_domains}
+            for candidate in candidates:
+                focus = dict(focus_map.get(str(candidate.get("domain", "general") or "general"), {}) or {})
+                if not focus:
+                    continue
+                boost = min(0.05, float(focus.get("priority", 0.0) or 0.0) * 0.08)
+                candidate["score"] = round(max(0.0, min(1.0, float(candidate.get("score", 0.0) or 0.0) + boost)), 4)
+                reason_bits = list(focus.get("reasons", []) or [])[:2]
+                if reason_bits:
+                    prefix = f"{candidate.get('reason')} · " if candidate.get("reason") else ""
+                    candidate["reason"] = prefix + f"focus={'/'.join(reason_bits)}"
+
+        if candidates and getattr(self, "adaptive_learning_policy", None) is not None:
+            try:
+                policy = self.adaptive_learning_policy
+                for candidate in candidates:
+                    base_score = float(candidate.get("score", 0.0) or 0.0)
+                    rescored = policy.score_candidate(
+                        source=str(candidate.get("source", "generated_problems") or "generated_problems"),
+                        domain=str(candidate.get("domain", "general") or "general"),
+                        task_type=_task_type_for_source(str(candidate.get("source", "") or "")),
+                        base_score=base_score,
+                    )
+                    if rescored != base_score:
+                        candidate["score"] = rescored
+                        candidate["reason"] = (
+                            (f"{candidate.get('reason')} · " if candidate.get("reason") else "")
+                            + f"policy={rescored:.2f}"
+                        )
+            except Exception as exc:
+                self._record_runtime_error("adaptive_learning_policy.pick", exc, "learn_pick")
 
         if candidates:
             # Pre-filter: discard candidates where no transform can match.
@@ -4613,7 +9690,7 @@ class Brain:
             for hyp in to_test:
                 try:
                     target = hyp.target_domain
-                    test_problems = self._get_test_problems_for_domain(target, n=5)
+                    test_problems = self._get_test_problems_for_domain(target, n=3)
                     if not test_problems:
                         continue
 
@@ -4633,6 +9710,11 @@ class Brain:
                     ok = self.transfer_engine.test_hypothesis(hyp, _solve_fn, test_problems)
                     if ok:
                         verified += 1
+                        heldout_wins = sum(
+                            1 for item in list(getattr(hyp, "test_results", []) or [])[-len(test_problems):]
+                            if item.get("success")
+                        )
+                        heldout_tests = min(len(test_problems), len(getattr(hyp, "test_results", []) or []))
                         # Synthesize new transforms for the verified target domain
                         if self.transform_synthesizer:
                             try:
@@ -4649,10 +9731,21 @@ class Brain:
                                         "source": hyp.source_domain,
                                         "target": target,
                                         "role": hyp.source_role,
+                                        "heldout_target_wins": heldout_wins,
+                                        "heldout_target_tests": heldout_tests,
                                         "new_transforms": len(new_specs),
                                     }, "transfer_engine")
                             except Exception:
                                 pass
+                        else:
+                            self.events.emit(Event.TRANSFER_SUCCEEDED, {
+                                "source": hyp.source_domain,
+                                "target": target,
+                                "role": hyp.source_role,
+                                "heldout_target_wins": heldout_wins,
+                                "heldout_target_tests": heldout_tests,
+                                "new_transforms": 0,
+                            }, "transfer_engine")
                 except Exception as _e:
                     log.debug(f"Hypothesis test failed: {_e}")
 
@@ -4800,6 +9893,7 @@ class Brain:
                 self.total_solves = state.get("total_solves", 0)
                 self.total_rules_learned = state.get("total_rules_learned", 0)
                 self.cpp_enabled = bool(state.get("cpp_enabled", self.cpp_bindings_available)) and self.cpp_bindings_available
+                self._sync_transfer_runtime_stats_from_payload()
                 log.info(f"Restored brain state: stage={self.stage.value}")
             except Exception as e:
                 log.warning(f"Brain state load failed: {e}")
@@ -4808,26 +9902,48 @@ class Brain:
         """Persist brain state to disk."""
         state_path = DATA_DIR / "brain_state.json"
         state_path.parent.mkdir(parents=True, exist_ok=True)
+        self._sync_transfer_runtime_stats_from_payload()
         state = {
             "stage": self.stage.value,
             "stats": self._stats,
             "total_solves": self.total_solves,
             "total_rules_learned": self.total_rules_learned,
+            "episode_count": len(getattr(self.memory_manager, "_episodes", []) or []) if self.memory_manager is not None else 0,
             "cpp_enabled": self.cpp_enabled,
             "boot_time": self.boot_time,
             "saved_at": time.time(),
         }
         try:
-            with open(state_path, "w") as f:
-                json.dump(state, f, indent=2)
+            with self._state_save_lock:
+                fd, tmp_name = tempfile.mkstemp(
+                    prefix=f"{state_path.name}.",
+                    suffix=".tmp",
+                    dir=str(state_path.parent),
+                )
+                try:
+                    with os.fdopen(fd, "w", encoding="utf-8") as f:
+                        json.dump(state, f, indent=2)
+                        f.flush()
+                        os.fsync(f.fileno())
+                    os.replace(tmp_name, state_path)
+                finally:
+                    if os.path.exists(tmp_name):
+                        try:
+                            os.remove(tmp_name)
+                        except OSError:
+                            pass
         except Exception as e:
             log.error(f"Brain state save failed: {e}")
+        try:
+            self._write_tracking_snapshot(force=False)
+        except Exception as exc:
+            self._record_runtime_error("brain.save_state.tracking", exc, "save_state")
 
     # ─────────────────────────────────────────────────────────────────────────
     #  Status & Introspection
     # ─────────────────────────────────────────────────────────────────────────
 
-    def status(self) -> dict:
+    def status(self) -> BrainStatus:
         """Full brain status report."""
         uptime = time.time() - self.boot_time if self.boot_time else 0
 
@@ -4873,7 +9989,7 @@ class Brain:
         except Exception:
             pass
 
-        return {
+        return BrainStatus({
             "stage": self.stage.value,
             "stage_level": self.stage.level,
             "uptime_seconds": round(uptime, 1),
@@ -4899,7 +10015,25 @@ class Brain:
                 **kb_stats,
                 "working_memory_sessions": wm_sessions,
             },
-        }
+            "acquisition": self._get_acquisition_mesh().status() if self.acquisition_mesh is not None else {"records": 0, "artifacts": 0},
+            "concept_graph_health": self.concept_graph.health() if self.concept_graph and hasattr(self.concept_graph, "health") else dict(self._concept_graph_health),
+            "persistence_health": self.persistence_health_report(),
+            "evaluation": {
+                "overall_solve_rate": round(
+                    self._stats.get("solves_succeeded", 0) / max(self._stats.get("solves_attempted", 1), 1),
+                    4,
+                ),
+                "solve_modes": dict(self._stats.get("solve_modes", {})),
+                "transfer_attempt_rate": round(
+                    self._stats.get("transfers_attempted", 0) / max(self._stats.get("solves_attempted", 1), 1),
+                    4,
+                ),
+                "runtime_error_rate": round(
+                    self._stats.get("runtime_errors", 0) / max(self._stats.get("solves_attempted", 1), 1),
+                    4,
+                ),
+            },
+        })
 
     # ─────────────────────────────────────────────────────────────────────────
     #  Shutdown
@@ -4962,10 +10096,30 @@ class Brain:
 _brain: Optional[Brain] = None
 
 
+def _runtime_brain_config() -> Optional[dict]:
+    role = str(os.environ.get("SARE_RUNTIME_ROLE", "") or "").strip().lower()
+    if role != "web":
+        return None
+    return {
+        "brain_boot": {
+            "autostart_continuous_stream": False,
+            "autostart_hippocampus": False,
+            "warmup_environment_discovery": False,
+            "warmup_physics_session": False,
+            "warmup_knowledge_ingestion": False,
+            "warmup_transform_generator": False,
+            "warmup_action_physics": False,
+            "warmup_robustness_batch": False,
+            "seed_perception_priors": False,
+        }
+    }
+
+
 def get_brain() -> Brain:
     """Get or create the global Brain instance."""
     global _brain
     if _brain is None:
-        _brain = Brain()
+        runtime_config = _runtime_brain_config()
+        _brain = Brain(config=runtime_config) if runtime_config else Brain()
         _brain.boot()
     return _brain

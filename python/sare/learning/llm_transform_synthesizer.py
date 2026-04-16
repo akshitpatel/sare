@@ -132,7 +132,10 @@ REQUIREMENTS:
 2. `match(self, graph)` returns a list of dicts (one per pattern match found), or []
 3. `apply(self, graph, context)` returns (new_graph, delta) where delta < 0 means simpler
 4. Import ONLY from: `from sare.engine import Transform, Graph`
-5. Return ONLY the raw Python code — no markdown fences, no explanation
+   You MAY also use `from typing import List, Tuple, Dict, Optional` and `import math`, `import re`
+   FORBIDDEN: `import os`, `import sys`, `import subprocess`, `import socket`, `import shutil`
+   FORBIDDEN: `eval(`, `exec(`, `open(`, `__import__(`, `compile(`
+5. Return ONLY the raw Python class code — NO markdown fences, NO explanation text, NO ```
 
 Write the Transform class now:"""
 
@@ -143,7 +146,38 @@ _BANNED_CALLS = {"eval", "exec", "open", "__import__", "compile", "breakpoint"}
 _BANNED_IMPORTS = {"os", "sys", "subprocess", "socket", "shutil", "importlib"}
 
 
+def _strip_boilerplate_imports(code: str) -> str:
+    """Remove banned imports that the LLM adds as boilerplate but never uses.
+
+    LLMs often prepend `import sys` or `import os` even when the code doesn't
+    reference them.  Strip those lines so the safety check doesn't false-positive.
+    Imports whose module IS used in the code body are left in place (the safety
+    check will then catch them).
+    """
+    lines = code.splitlines(keepends=True)
+    cleaned = []
+    for line in lines:
+        stripped = line.strip()
+        # Match "import <banned>" or "from <banned> import ..."
+        if stripped.startswith("import ") or stripped.startswith("from "):
+            mod = ""
+            if stripped.startswith("import "):
+                mod = stripped[7:].split()[0].split(".")[0]
+            elif stripped.startswith("from "):
+                mod = stripped[5:].split()[0].split(".")[0]
+            if mod in _BANNED_IMPORTS:
+                # Only strip if the module identifier doesn't appear elsewhere in code
+                rest = code.replace(line, "")
+                if mod not in rest:
+                    continue  # skip this import line
+        cleaned.append(line)
+    return "".join(cleaned)
+
+
 def _is_safe(code: str) -> bool:
+    # Strip boilerplate imports before checking — prevents false positives from
+    # LLM-generated `import sys` lines that are never used.
+    code = _strip_boilerplate_imports(code)
     try:
         tree = ast.parse(code)
         for node in ast.walk(tree):
@@ -348,8 +382,10 @@ class LLMTransformSynthesizer:
         for attempt in range(retries):
             try:
                 log.info("[Synth] LLM call attempt %d/%d for domain=%s", attempt + 1, retries, domain)
-                raw = _call_llm(prompt, use_synthesis_model=True, max_tokens_override=2048)
+                raw = _call_llm(prompt, use_synthesis_model=True, max_tokens_override=800)
                 code = _extract_code(raw)
+                # Strip boilerplate imports before safety check and execution
+                code = _strip_boilerplate_imports(code)
 
                 if not _is_safe(code):
                     log.warning("[Synth] Code failed safety check (attempt %d)", attempt + 1)

@@ -56,6 +56,7 @@ class ExperimentResult:
     proof_steps: List[str] = field(default_factory=list)
     proof_nl: str = ""
     domain: str = "general"
+    search_strategy: str = "beam_search"
     final_graph: Any = field(default=None, repr=False)  # graph after solving
 
 
@@ -633,10 +634,62 @@ class ExperimentRunner:
             _te_domain = getattr(result, "domain", None) or str(getattr(problem, "domain", "algebra") or "algebra")
             if _te_transforms:
                 try:
-                    from sare.transfer.engine import get_transfer_engine
-                    get_transfer_engine().observe(_te_transforms, _te_domain, success=True)
-                except Exception:
-                    pass
+                    from sare.transfer.engine import get_transfer_engine, RoleClassifier
+                    _te = get_transfer_engine()
+                    _te.observe(_te_transforms, _te_domain, success=True)
+
+                    # Passive hypothesis testing: verify pending transfers using live solve outcomes.
+                    # No separate solve_fn needed — we check if the roles used in THIS solve
+                    # match the source_role of any untested hypothesis targeting this domain.
+                    _used_roles = {RoleClassifier.classify(t) for t in _te_transforms} - {None}
+                    _pending = [
+                        h for h in _te._hypotheses.values()
+                        if h.status == "untested"
+                        and h.target_domain == _te_domain
+                        and h.source_role in _used_roles
+                    ]
+                    if _used_roles and not _pending:
+                        log.debug("[TransferPassive] domain=%s roles=%s → no pending hypotheses (total=%d)",
+                                  _te_domain, _used_roles, len(_te._hypotheses))
+                    elif _pending:
+                        log.info("[TransferPassive] domain=%s roles=%s → %d matches, appending test",
+                                 _te_domain, _used_roles, len(_pending))
+                    for _hyp in _pending[:2]:  # at most 2 per solve to keep overhead low
+                        _hyp.test_results.append({
+                            "problem": str(getattr(problem, "expression", problem))[:80],
+                            "success": result.solved,
+                            "delta": float(result.energy_before - result.energy_after),
+                        })
+                        _n = len(_hyp.test_results)
+                        if _n >= 3:
+                            _wins = sum(1 for r in _hyp.test_results if r.get("success"))
+                            if _wins / _n >= 0.5:
+                                _hyp.status = "verified"
+                                _hyp.confidence = min(0.95, _hyp.confidence + 0.2)
+                                _te._stats["hypotheses_verified"] += 1
+                                _te._stats["transfers_promoted"] = _te._stats.get("transfers_promoted", 0) + 1
+                                log.info("Transfer verified passively: %s → %s role=%s",
+                                         _hyp.source_domain, _hyp.target_domain, _hyp.source_role)
+                                _te.save()
+                                # Publish to core event bus so brain.py promotes to ConceptRegistry
+                                try:
+                                    from sare.core.event_bus import get_event_bus as _gceb
+                                    _gceb().publish("transfer_verified", {
+                                        "name": _hyp.proposed_transform,
+                                        "domain": _hyp.target_domain,
+                                        "source_domain": _hyp.source_domain,
+                                        "confidence": _hyp.confidence,
+                                        "pattern": _hyp.proposed_pattern,
+                                    })
+                                except Exception:
+                                    pass
+                            elif _wins == 0 and _n >= 5:
+                                _hyp.status = "rejected"
+                                _hyp.confidence *= 0.3
+                                _te._stats["hypotheses_rejected"] += 1
+                                _te.save()
+                except Exception as _te_exc:
+                    log.debug("[TransferPassive] exception in transfer passive testing: %s", _te_exc)
 
         # Per-domain credit assignment — update transform utilities with domain-specific baseline.
         if result.solved and result.proof_steps:
@@ -675,7 +728,39 @@ class ExperimentRunner:
                 _cl.observe_trace(result.proof_steps, _cl_domain)
                 self._solve_count += 1
                 if self._solve_count % 20 == 0:
-                    _cl.mine_composites()
+                    _new_composites = _cl.mine_composites()
+                    if _new_composites and self.concept_registry is not None:
+                        _existing_names = set()
+                        try:
+                            if hasattr(self.concept_registry, "get_rules"):
+                                for _rule in list(self.concept_registry.get_rules() or []):
+                                    _name = getattr(_rule, "name", None) or (_rule.get("name", "") if isinstance(_rule, dict) else "")
+                                    if _name:
+                                        _existing_names.add(str(_name))
+                        except Exception:
+                            pass
+                        _added = False
+                        for _comp in _new_composites:
+                            try:
+                                _name = str(_comp.get("name", "") or "")
+                                if not _name or _name in _existing_names:
+                                    continue
+                                self.concept_registry.add_rule({
+                                    "name": _name,
+                                    "pair": _comp["pair"],
+                                    "utility": _comp["utility"],
+                                    "source": "composite_mining",
+                                    "domain": _cl_domain,
+                                })
+                                _existing_names.add(_name)
+                                _added = True
+                            except Exception:
+                                pass
+                        if _added and hasattr(self.concept_registry, "save"):
+                            try:
+                                self.concept_registry.save()
+                            except Exception:
+                                pass
                 if self._solve_count % 100 == 0:
                     _cl.mine_cross_domain_pairs()
             except Exception:
@@ -907,6 +992,7 @@ class ExperimentRunner:
         budget_delta = emotional_bias.get("budget_delta", 0.0)
         _saved_beam = self.beam_width
         _saved_budget = self.budget_seconds
+        _search_strategy_used = "beam_search"
         self.beam_width = max(2, min(32, self.beam_width + beam_delta))
         # Adaptive budget: adjust by emotional state, clamp [0.3s, 10.0s]
         self.budget_seconds = max(0.3, min(10.0, self.budget_seconds + budget_delta))
@@ -1138,6 +1224,7 @@ class ExperimentRunner:
                                 _ao.steps_taken = len(_ao.transforms_applied)
                                 outcome = _ao
                                 solved, final_graph, proof_steps, proof_nl = self._parse_search_outcome(outcome, graph, energy_before)
+                                _search_strategy_used = "astar_fallback"
                                 log.debug("[ExperimentRunner] A* fallback succeeded for %s (delta=%.3f)", problem_id, _astar_result["delta"])
                         except Exception as _astar_exc:
                             log.debug("[ExperimentRunner] A* fallback error: %s", _astar_exc)
@@ -1294,10 +1381,14 @@ class ExperimentRunner:
             except Exception:
                 pass
 
-        # Feed solve outcome to AlgorithmSelector so strategy win rates improve over time
+        # Feed solve outcome to AlgorithmSelector so strategy win rates reflect the
+        # strategy that actually ran, not a post-hoc synthetic choice.
         try:
             from sare.meta.algorithm_selector import get_algorithm_selector as _get_as
-            _get_as().record_outcome(domain or "algebra", "beam_search", solved)
+            _as = _get_as()
+            _strategy_used = str(_search_strategy_used or "beam_search")
+            _as.record_selection(domain or "algebra", _strategy_used)
+            _as.record_outcome(domain or "algebra", _strategy_used, solved)
         except Exception:
             pass
 
@@ -1413,6 +1504,68 @@ class ExperimentRunner:
             except Exception:
                 pass
 
+        # Feed failures into LLM synthesizer: every 10 unique stuck expressions
+        # per domain, ask LLM to invent a new transform (no hardcoding)
+        if not solved and expr:
+            try:
+                if not hasattr(self, '_synth_fail_buf'):
+                    self._synth_fail_buf = {}
+                if not hasattr(self, '_synth_last_attempt'):
+                    self._synth_last_attempt = {}
+                _buf = self._synth_fail_buf.setdefault(domain or "general", [])
+                if expr not in _buf:
+                    _buf.append(expr)
+                _SYNTH_COOLDOWN_S = 300  # 5 minutes between synthesis attempts per domain
+                _now = time.time()
+                _last = self._synth_last_attempt.get(domain or "general", 0.0)
+                if len(_buf) >= 10 and len(_buf) % 10 == 0 and (_now - _last) >= _SYNTH_COOLDOWN_S:
+                    self._synth_last_attempt[domain or "general"] = _now
+                    # Use brain's synthesizer if available
+                    _brain_synth = None
+                    try:
+                        from sare.brain import get_brain as _gb
+                        _brain_synth = _gb().transform_synthesizer
+                    except Exception:
+                        pass
+                    if _brain_synth:
+                        _t_names = [t.name() for t in self.transforms if hasattr(t, "name")][:30]
+                        _val_graphs = []
+                        for _ex in _buf[-6:]:
+                            try:
+                                from sare.engine import load_problem as _lp
+                                _, _g = _lp(_ex)
+                                _val_graphs.append(_g)
+                            except Exception:
+                                pass
+                        if _val_graphs:
+                            import threading as _thr
+                            _domain_snap = domain or "general"
+                            _exprs_snap = list(_buf[-6:])
+                            def _synth_bg(_bs=_brain_synth, _d=_domain_snap,
+                                          _e=_exprs_snap, _tn=_t_names, _vg=_val_graphs):
+                                try:
+                                    res = _bs.synthesize(
+                                        domain=_d, stuck_exprs=_e,
+                                        validation_graphs=_vg,
+                                        existing_transform_names=_tn,
+                                    )
+                                    if res.get("promoted"):
+                                        log.info("[SynthFromFailure] domain=%s new transform: %s",
+                                                 _d, res.get("class_name", "?"))
+                                        try:
+                                            from sare.brain import get_brain as _gb2
+                                            _gb2()._refresh_transforms()
+                                        except Exception:
+                                            pass
+                                    else:
+                                        log.debug("[SynthFromFailure] domain=%s score=%.2f %s",
+                                                  _d, res.get("score", 0), res.get("message", ""))
+                                except Exception as _se:
+                                    log.debug("[SynthFromFailure] error: %s", _se)
+                            _thr.Thread(target=_synth_bg, daemon=True).start()
+            except Exception as _sfb_exc:
+                log.debug("[SynthFromFailure] buffer error: %s", _sfb_exc)
+
         result = ExperimentResult(
             problem_id=problem_id,
             solved=solved,
@@ -1423,6 +1576,7 @@ class ExperimentRunner:
             proof_nl=proof_nl,
             final_graph=final_graph,
             domain=domain,
+            search_strategy=_search_strategy_used,
         )
 
         return self._reflect_and_learn(problem, result)
@@ -1445,6 +1599,16 @@ class ExperimentRunner:
         avg_elapsed_ms = (sum(r.elapsed_ms for r in results) / attempted) if attempted else 0.0
         load = self._current_system_load()
 
+        # Track schema cache hit rate for genuine learning measurement
+        _schema_hit_rate = 0.0
+        try:
+            from sare.cognition.schema_matcher import get_schema_matcher
+            _sm = get_schema_matcher()
+            _total = _sm._hits + _sm._misses
+            _schema_hit_rate = round(_sm._hits / max(1, _total), 3)
+        except Exception:
+            pass
+
         self._recent_batch_stats.append(
             {
                 "requested_n": requested_n,
@@ -1453,6 +1617,7 @@ class ExperimentRunner:
                 "solve_rate": solve_rate,
                 "avg_elapsed_ms": avg_elapsed_ms,
                 "elapsed_s": elapsed_s,
+                "schema_hit_rate": _schema_hit_rate,
                 "load": load,
                 "timestamp": time.time(),
             }
@@ -1587,16 +1752,31 @@ class ExperimentRunner:
             problem_id=problem_id, solved=solved,
             energy_before=energy_before, energy_after=energy_after,
             elapsed_ms=elapsed_ms, proof_steps=proof_steps, domain=domain,
+            search_strategy="beam_search",
+            final_graph=final_graph if solved else None,
         )
-        # Still run reflect-and-learn on a fraction of fast solves (rule promotion)
-        # In turbo mode (_fast_path_ratio >= 200), skip reflection entirely to avoid
-        # blocking LLM calls that cause thread exhaustion and daemon stalls.
-        # Learning comes from the GeneralSolver batch (un-gated) instead.
-        if solved and not _turbo:
+        # Run reflect-and-learn on a fraction of solves for rule promotion
+        if solved:
             import random as _rnd_reflect
-            _reflect_prob = 1.0
+            _reflect_prob = 1.0 if not _turbo else 0.03  # 3% sampling in turbo mode
             if _rnd_reflect.random() < _reflect_prob:
-                result = self._reflect_and_learn(problem, result)
+                if not _turbo:
+                    result = self._reflect_and_learn(problem, result)
+                else:
+                    # Turbo mode: non-blocking reflection via background thread (semaphore-gated)
+                    # Prevents thread exhaustion while still discovering new rules
+                    if not hasattr(self, '_reflect_semaphore'):
+                        import threading as _th_reflect
+                        self._reflect_semaphore = _th_reflect.Semaphore(1)
+                    def _bg_reflect(p, r):
+                        with self._reflect_semaphore:
+                            try:
+                                self._reflect_and_learn(p, r)
+                            except Exception:
+                                pass
+                    import threading as _th_reflect
+                    _th_reflect.Thread(target=_bg_reflect, args=(problem, result),
+                                     daemon=True).start()
         return result
 
     def run_batch(self, n: int = 10) -> List[ExperimentResult]:
@@ -1835,6 +2015,11 @@ class ExperimentRunner:
             self._domain_consec_fails[d] = 0
             log.info("[ExperimentRunner] Domain '%s' cooldown expired — re-enabling", d)
 
+        if not hasattr(self, '_synth_last_attempt'):
+            self._synth_last_attempt = {}
+        _SYNTH_COOLDOWN_S = 300  # 5 minutes between synthesis attempts per domain
+        _now = time.time()
+
         for domain, consec in list(self._domain_consec_fails.items()):
             if consec < self._SYNTH_FAIL_THRESHOLD:
                 continue
@@ -1842,7 +2027,11 @@ class ExperimentRunner:
             trigger_key = f"{domain}:{consec // self._SYNTH_FAIL_THRESHOLD}"
             if trigger_key in self._synth_triggered_domains:
                 continue
+            # Time-based cooldown: don't re-synthesize within 5 minutes
+            if (_now - self._synth_last_attempt.get(domain, 0.0)) < _SYNTH_COOLDOWN_S:
+                continue
             self._synth_triggered_domains.add(trigger_key)
+            self._synth_last_attempt[domain] = _now
             log.warning(
                 "[ExperimentRunner] Domain '%s' has %d consecutive failures — triggering TransformSynthesizer",
                 domain, consec,
@@ -1994,10 +2183,23 @@ class ExperimentRunner:
         h = self._history
         total = len(h)
         solved = sum(1 for r in h if r.solved)
+
+        # Compute real-time schema hit rate
+        _schema_hit_rate = 0.0
+        try:
+            from sare.cognition.schema_matcher import get_schema_matcher
+            _sm = get_schema_matcher()
+            _total = _sm._hits + _sm._misses
+            _schema_hit_rate = round(_sm._hits / max(1, _total), 3)
+        except Exception:
+            pass
+
         return {
             "total_experiments": total,
             "solved": solved,
             "solve_rate": round(solved / total, 3) if total else 0.0,
+            "schema_hit_rate": _schema_hit_rate,
+            "genuine_solve_rate": round(solved / total * (1 - _schema_hit_rate), 3) if total else 0.0,
             "recent_batches": self._recent_batch_stats[-4:],
             "transforms_available": len(self.transforms),
         }

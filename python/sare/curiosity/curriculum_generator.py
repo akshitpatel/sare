@@ -129,6 +129,11 @@ class CurriculumGenerator:
         self._persist_path = Path(__file__).resolve().parents[3] / "data" / "memory" / "curriculum.json"
         self._knowledge_graph = knowledge_graph  # Fix 5: KG hierarchy for domain bridging
 
+        # Schema-aware generation: track cache hit rate to escalate complexity
+        self._schema_hits_recent = 0   # consecutive schema hits during generation
+        self._schema_total_gen = 0     # total problems generated this session
+        self._schema_total_hits = 0    # total schema hits this session
+
         # Autobiographical replay: inject hard/failed episodes back into curriculum
         self._autobio = None
         self._batch_count = 0
@@ -488,6 +493,24 @@ class CurriculumGenerator:
         except Exception:
             pass
 
+        # Complexity escalation: when schema cache hit rate is high, use harder mutations.
+        # This forces the system to generate genuinely novel structural patterns.
+        _schema_matcher = None
+        try:
+            from sare.cognition.schema_matcher import get_schema_matcher
+            _schema_matcher = get_schema_matcher()
+        except Exception:
+            pass
+
+        # Determine mutation complexity based on recent schema hit rate.
+        # 0 = simple (≤50% hits), 1 = medium (50–75% hits), 2 = complex (>75% hits)
+        _hit_rate = (self._schema_total_hits / max(1, self._schema_total_gen))
+        _complexity = 0
+        if _hit_rate > 0.75 and self._schema_total_gen >= 20:
+            _complexity = 2
+        elif _hit_rate > 0.50 and self._schema_total_gen >= 10:
+            _complexity = 1
+
         for _ in range(remaining):
             # If scheduler provided domain weights, bias seed selection
             if _domain_weights:
@@ -510,11 +533,44 @@ class CurriculumGenerator:
                         else self._select_seed(priority_domains))
             else:
                 seed = self._select_seed(priority_domains)
-            new_problem = self._mutate(seed)
+
+            # Schema-aware generation: try up to 3 mutations, prefer novel structural patterns.
+            # A "novel" problem has a structural hash not already in the schema cache.
+            new_problem = None
+            _is_novel = False
+            for _attempt in range(3):
+                # Use higher complexity on retry attempts
+                _attempt_complexity = min(2, _complexity + _attempt)
+                _candidate = self._mutate(seed, complexity=_attempt_complexity)
+                if _candidate is None:
+                    continue
+                if _schema_matcher is not None:
+                    try:
+                        _cached = _schema_matcher.match(_candidate)
+                        if _cached is None:
+                            # Novel structure — not in cache yet
+                            new_problem = _candidate
+                            _is_novel = True
+                            break
+                    except Exception:
+                        pass
+                # If no schema check possible, use first candidate
+                new_problem = _candidate
+                break
+
+            # Track schema hit rate for this session
+            if new_problem is not None:
+                self._schema_total_gen += 1
+                if not _is_novel:
+                    self._schema_total_hits += 1
+                    self._schema_hits_recent += 1
+                else:
+                    self._schema_hits_recent = 0  # reset consecutive hit streak
+
             if new_problem:
                 pid = f"gen_{self._next_id}"
                 self._next_id += 1
-                origin = "mutated_seed"
+                origin = "mutated_seed" if _is_novel else "mutated_seed_cached"
                 self.problem_history[pid] = origin
                 gp = GeneratedProblem(id=pid, graph=new_problem, origin=origin)
                 batch.append(gp)
@@ -791,12 +847,14 @@ class CurriculumGenerator:
         # No seeds match any priority domain — fall back to uniform random.
         return random.choice(self.seed_problems)
 
-    def _mutate(self, graph: Graph) -> Optional[Graph]:
+    def _mutate(self, graph: Graph, complexity: int = 0) -> Optional[Graph]:
         """Apply random mutations to a graph clone.
 
+        complexity=0: simple wrappers (add_zero, mul_one, double_neg)
+        complexity=1: extended wrappers including sub_zero, add_then_sub
+        complexity=2: multi-step wrappers (mul_self_div, nested_identity, add_then_sub)
+
         Works with both C++ sare_bindings.Graph and the pure-Python sare.engine.Graph.
-        The C++ guard was removed — all helper methods (_node_ids, _find_root,
-        _get_node_attr, _set_node_attr) already duck-type both graph flavours.
         """
         if graph is None:
             return None
@@ -807,18 +865,39 @@ class CurriculumGenerator:
             new_graph = graph.clone()
         except Exception:
             return None
-        
-        # Developmental curriculum heuristic:
-        # 1. Optionally perturb (make it slightly different).
-        # 2. Always inject a *solvable* redundancy pattern so the engine has
-        #    a clear learning signal (energy reduction + trace).
-        if random.random() < 0.5:
+
+        # Always apply structural mutation (operator/constant change)
+        # to increase variety of tree shapes seen.
+        if random.random() < 0.6:
             new_graph = random.choice([self._mutate_constant, self._mutate_operator])(new_graph)
 
-        wrappers = [self._wrap_add_zero, self._wrap_mul_one, self._wrap_double_neg]
-        new_graph = random.choice(wrappers)(new_graph)
-        if random.random() < 0.35:
+        # Select wrapper pool based on complexity level.
+        # Higher complexity → more steps required → less likely to be cached.
+        if complexity == 0:
+            wrappers = [self._wrap_add_zero, self._wrap_mul_one, self._wrap_double_neg]
+            # 35% chance of a second simple wrapper
             new_graph = random.choice(wrappers)(new_graph)
+            if random.random() < 0.35:
+                new_graph = random.choice(wrappers)(new_graph)
+        elif complexity == 1:
+            # Extended set: includes sub_zero, add_then_sub
+            wrappers = [
+                self._wrap_add_zero, self._wrap_mul_one, self._wrap_double_neg,
+                self._wrap_sub_zero, self._wrap_add_then_sub,
+            ]
+            new_graph = random.choice(wrappers)(new_graph)
+            if random.random() < 0.5:
+                new_graph = random.choice(wrappers)(new_graph)
+        else:
+            # Complexity ≥2: multi-step wrappers that require 2+ transforms to solve
+            wrappers = [
+                self._wrap_mul_self_div, self._wrap_nested_identity, self._wrap_add_then_sub,
+            ]
+            new_graph = random.choice(wrappers)(new_graph)
+            # Always apply a second step at high complexity
+            outer = random.choice([self._wrap_add_zero, self._wrap_mul_one, self._wrap_double_neg])
+            if random.random() < 0.6:
+                new_graph = outer(new_graph)
 
         return new_graph
 
@@ -906,6 +985,98 @@ class CurriculumGenerator:
 
         graph.add_edge(inner_id, root, "operand")
         graph.add_edge(outer_id, inner_id, "operand")
+        return graph
+
+    def _wrap_sub_zero(self, graph: Graph) -> Graph:
+        """Wrap root: root - 0 (solvable by sub_zero / additive_identity)."""
+        root = self._find_root(graph)
+        if not root:
+            return graph
+        op_id = graph.add_node("operator")
+        op = graph.get_node(op_id)
+        if op:
+            self._set_node_attr(op, "label", "-")
+            self._set_node_attr(op, "op", "sub")
+        zero_id = graph.add_node("constant")
+        z = graph.get_node(zero_id)
+        if z:
+            self._set_node_attr(z, "label", "0")
+            self._set_node_attr(z, "value", "0")
+        graph.add_edge(op_id, root, "left_operand")
+        graph.add_edge(op_id, zero_id, "right_operand")
+        return graph
+
+    def _wrap_mul_self_div(self, graph: Graph) -> Graph:
+        """Wrap root: (root * 2) / 2 — requires two steps to solve, creates nested structure."""
+        root = self._find_root(graph)
+        if not root:
+            return graph
+        # Inner: root * 2
+        mul_id = graph.add_node("operator")
+        mul_node = graph.get_node(mul_id)
+        if mul_node:
+            self._set_node_attr(mul_node, "label", "*")
+            self._set_node_attr(mul_node, "op", "mul")
+        two_id = graph.add_node("constant")
+        two_node = graph.get_node(two_id)
+        if two_node:
+            self._set_node_attr(two_node, "label", "2")
+            self._set_node_attr(two_node, "value", "2")
+        graph.add_edge(mul_id, root, "left_operand")
+        graph.add_edge(mul_id, two_id, "right_operand")
+        # Outer: (root * 2) / 2
+        div_id = graph.add_node("operator")
+        div_node = graph.get_node(div_id)
+        if div_node:
+            self._set_node_attr(div_node, "label", "/")
+            self._set_node_attr(div_node, "op", "div")
+        two2_id = graph.add_node("constant")
+        two2_node = graph.get_node(two2_id)
+        if two2_node:
+            self._set_node_attr(two2_node, "label", "2")
+            self._set_node_attr(two2_node, "value", "2")
+        graph.add_edge(div_id, mul_id, "left_operand")
+        graph.add_edge(div_id, two2_id, "right_operand")
+        return graph
+
+    def _wrap_add_then_sub(self, graph: Graph) -> Graph:
+        """Wrap root: (root + C) - C — additive cancellation with a random constant."""
+        root = self._find_root(graph)
+        if not root:
+            return graph
+        c = random.choice([1, 2, 3, 5, 7])
+        # Inner: root + C
+        add_id = graph.add_node("operator")
+        add_node = graph.get_node(add_id)
+        if add_node:
+            self._set_node_attr(add_node, "label", "+")
+            self._set_node_attr(add_node, "op", "add")
+        c1_id = graph.add_node("constant")
+        c1_node = graph.get_node(c1_id)
+        if c1_node:
+            self._set_node_attr(c1_node, "label", str(c))
+            self._set_node_attr(c1_node, "value", str(c))
+        graph.add_edge(add_id, root, "left_operand")
+        graph.add_edge(add_id, c1_id, "right_operand")
+        # Outer: (root + C) - C
+        sub_id = graph.add_node("operator")
+        sub_node = graph.get_node(sub_id)
+        if sub_node:
+            self._set_node_attr(sub_node, "label", "-")
+            self._set_node_attr(sub_node, "op", "sub")
+        c2_id = graph.add_node("constant")
+        c2_node = graph.get_node(c2_id)
+        if c2_node:
+            self._set_node_attr(c2_node, "label", str(c))
+            self._set_node_attr(c2_node, "value", str(c))
+        graph.add_edge(sub_id, add_id, "left_operand")
+        graph.add_edge(sub_id, c2_id, "right_operand")
+        return graph
+
+    def _wrap_nested_identity(self, graph: Graph) -> Graph:
+        """Apply two identity wrappers: (root + 0) * 1 — requires two simplification steps."""
+        graph = self._wrap_add_zero(graph)
+        graph = self._wrap_mul_one(graph)
         return graph
 
     def _mutate_constant(self, graph: Graph) -> Graph:
