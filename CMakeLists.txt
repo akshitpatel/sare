@@ -87,9 +87,11 @@ if(BUILD_PYTHON_BINDINGS)
     pybind11_add_module(sare_bindings core/bindings/pybind_module.cpp)
     target_link_libraries(sare_bindings PRIVATE sare_core)
     
-    # Force loading of all symbols from static library on macOS
+    # Force loading of only sare_core symbols (not all dependencies)
+    # Using -force_load instead of -all_load to avoid OOM with large static libs
     if(APPLE)
-        target_link_options(sare_bindings PRIVATE "LINKER:-all_load")
+        target_link_options(sare_bindings PRIVATE
+            "LINKER:-force_load,${CMAKE_BINARY_DIR}/libsare_core.a")
         target_include_directories(sare_bindings SYSTEM PRIVATE
             "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1"
         )

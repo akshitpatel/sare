@@ -1,11 +1,81 @@
 {
   "suite": "logic_smoke",
-  "description": "Logical simplification smoke tests.",
+  "description": "Logical simplification smoke tests covering all logic transforms.",
   "cases": [
     {
-      "id": "double_negation",
+      "id": "double_negation_basic",
       "expression": "-(-x) + 0",
       "min_reduction_pct": 10.0
+    },
+    {
+      "id": "bool_and_true",
+      "expression": "A AND True",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "bool_or_false",
+      "expression": "A OR False",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "bool_and_false",
+      "expression": "A AND False",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "bool_or_true",
+      "expression": "A OR True",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "double_negation_not",
+      "expression": "NOT NOT A",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "bool_idempotent_and",
+      "expression": "A AND A",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "bool_idempotent_or",
+      "expression": "A OR A",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "double_neg_algebra",
+      "expression": "neg neg x",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "and_true_commuted",
+      "expression": "True AND B",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "or_false_commuted",
+      "expression": "False OR B",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "double_neg_chain",
+      "expression": "NOT NOT NOT NOT A",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "and_false_commuted",
+      "expression": "False AND B",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "or_true_commuted",
+      "expression": "True OR B",
+      "min_reduction_pct": 20.0
+    },
+    {
+      "id": "double_neg_neg",
+      "expression": "neg neg n",
+      "min_reduction_pct": 20.0
     }
   ]
 }

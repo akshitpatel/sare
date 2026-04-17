@@ -1,0 +1,2489 @@
+{
+  "consolidated_add_zero_elim": {
+    "signature": "consolidated_add_zero_elim",
+    "transform_sequence": [
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 3.9,
+    "success_rate": 1.0,
+    "attempts": 7,
+    "source": "consolidation"
+  },
+  "constant:1_operator:1_variable:1": {
+    "signature": "constant:1_operator:1_variable:1",
+    "transform_sequence": [
+      "chemistry_stoich_coeff_one"
+    ],
+    "avg_energy_reduction": 2.727711576933381,
+    "success_rate": 1.0,
+    "attempts": 11497,
+    "usage_count": 11497
+  },
+  "constant:2_operator:1": {
+    "signature": "constant:2_operator:1",
+    "transform_sequence": [
+      "const_fold"
+    ],
+    "avg_energy_reduction": 1.6232621906032312,
+    "success_rate": 1.0,
+    "attempts": 13494,
+    "usage_count": 13494
+  },
+  "constant:2_operator:3_variable:2": {
+    "signature": "constant:2_operator:3_variable:2",
+    "transform_sequence": [
+      "synth_distribution_*_identity",
+      "synth_distribution_*_annihilation",
+      "synth_distribution_*_annihilation"
+    ],
+    "avg_energy_reduction": 8.577358735095679,
+    "success_rate": 1.0,
+    "attempts": 7716,
+    "usage_count": 7716
+  },
+  "constant:3_operator:8_variable:6": {
+    "signature": "constant:3_operator:8_variable:6",
+    "transform_sequence": [
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 28.310441767068408,
+    "success_rate": 1.0,
+    "attempts": 747
+  },
+  "constant:3_operator:7_variable:5": {
+    "signature": "constant:3_operator:7_variable:5",
+    "transform_sequence": [
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 22.436158940397693,
+    "success_rate": 1.0,
+    "attempts": 1510
+  },
+  "consolidated_concept_additive_identity": {
+    "signature": "consolidated_concept_additive_identity",
+    "transform_sequence": [
+      "concept_additive_identity"
+    ],
+    "avg_energy_reduction": 4.4,
+    "success_rate": 1.0,
+    "attempts": 4,
+    "source": "consolidation"
+  },
+  "consolidated_concept_multiplicative_identity": {
+    "signature": "consolidated_concept_multiplicative_identity",
+    "transform_sequence": [
+      "concept_multiplicative_identity"
+    ],
+    "avg_energy_reduction": 4.4,
+    "success_rate": 1.0,
+    "attempts": 4,
+    "source": "consolidation"
+  },
+  "consolidated_const_fold": {
+    "signature": "consolidated_const_fold",
+    "transform_sequence": [
+      "const_fold"
+    ],
+    "avg_energy_reduction": 1.5,
+    "success_rate": 1.0,
+    "attempts": 4,
+    "source": "consolidation"
+  },
+  "consolidated_macro_add_mul_8da76e79": {
+    "signature": "consolidated_macro_add_mul_8da76e79",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79"
+    ],
+    "avg_energy_reduction": 10.9,
+    "success_rate": 1.0,
+    "attempts": 4,
+    "source": "consolidation"
+  },
+  "constant:3_operator:6_variable:4": {
+    "signature": "constant:3_operator:6_variable:4",
+    "transform_sequence": [
+      "algebraic_factor",
+      "learned_discovered_+_1_identity",
+      "learned_discovered_^_0_annihilation",
+      "learned_discovered_+_0_annihilation",
+      "synth_distribution_*_annihilation"
+    ],
+    "avg_energy_reduction": 19.928238341968726,
+    "success_rate": 1.0,
+    "attempts": 772,
+    "usage_count": 772
+  },
+  "constant:3_operator:9_variable:7": {
+    "signature": "constant:3_operator:9_variable:7",
+    "transform_sequence": [
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 29.81666666666669,
+    "success_rate": 1.0,
+    "attempts": 54
+  },
+  "constant:5_operator:8_variable:4": {
+    "signature": "constant:5_operator:8_variable:4",
+    "transform_sequence": [
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 26.899999999999995,
+    "success_rate": 1.0,
+    "attempts": 6
+  },
+  "constant:4_operator:7_variable:4": {
+    "signature": "constant:4_operator:7_variable:4",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 25.763619744058495,
+    "success_rate": 1.0,
+    "attempts": 547
+  },
+  "constant:4_operator:8_variable:5": {
+    "signature": "constant:4_operator:8_variable:5",
+    "transform_sequence": [
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 25.940972222222232,
+    "success_rate": 1.0,
+    "attempts": 72
+  },
+  "constant:3_operator:5_variable:3": {
+    "signature": "constant:3_operator:5_variable:3",
+    "transform_sequence": [
+      "synth_distribution_*_identity",
+      "synth_distribution_*_identity",
+      "synth_distribution_*_identity"
+    ],
+    "avg_energy_reduction": 15.344755244755229,
+    "success_rate": 1.0,
+    "attempts": 429,
+    "usage_count": 429
+  },
+  "constant:5_operator:7_variable:3": {
+    "signature": "constant:5_operator:7_variable:3",
+    "transform_sequence": [
+      "macro_add_const_f9f3d713",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 18.991486810551613,
+    "success_rate": 1.0,
+    "attempts": 417,
+    "usage_count": 417
+  },
+  "constant:4_operator:6_variable:3": {
+    "signature": "constant:4_operator:6_variable:3",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79"
+    ],
+    "avg_energy_reduction": 7.819635036496371,
+    "success_rate": 1.0,
+    "attempts": 1370,
+    "usage_count": 1370
+  },
+  "constant:4_operator:5_variable:2": {
+    "signature": "constant:4_operator:5_variable:2",
+    "transform_sequence": [
+      "synth_distribution_^_identity",
+      "algebraic_factor",
+      "const_fold",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 6.210031522343185,
+    "success_rate": 1.0,
+    "attempts": 5393,
+    "usage_count": 5393
+  },
+  "constant:6_operator:7_variable:4": {
+    "signature": "constant:6_operator:7_variable:4",
+    "transform_sequence": [
+      "mul_zero_elim",
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 22.9,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "constant:2_function_def:1_identifier:2_meta:1_operator:2_return_stmt:1": {
+    "signature": "constant:2_function_def:1_identifier:2_meta:1_operator:2_return_stmt:1",
+    "transform_sequence": [
+      "mul_one_elim"
+    ],
+    "avg_energy_reduction": 5.765517241379313,
+    "success_rate": 1.0,
+    "attempts": 29
+  },
+  "constant:3_operator:3_variable:1": {
+    "signature": "constant:3_operator:3_variable:1",
+    "transform_sequence": [
+      "synth_logic_basics_and_identity",
+      "synth_distribution_*_identity",
+      "synth_logic_basics_and_identity"
+    ],
+    "avg_energy_reduction": 6.822393949358642,
+    "success_rate": 1.0,
+    "attempts": 3041,
+    "usage_count": 3041
+  },
+  "constant:2_function_def:1_identifier:4_meta:1_operator:4_return_stmt:1_variable:1": {
+    "signature": "constant:2_function_def:1_identifier:4_meta:1_operator:4_return_stmt:1_variable:1",
+    "transform_sequence": [
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 6.999999999999998,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:5_function_def:1_identifier:2_meta:1_operator:7_return_stmt:1_variable:2": {
+    "signature": "constant:5_function_def:1_identifier:2_meta:1_operator:7_return_stmt:1_variable:2",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79",
+      "add_zero_elim",
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 31.850000000000005,
+    "success_rate": 1.0,
+    "attempts": 18
+  },
+  "constant:4_function_def:1_identifier:2_meta:1_operator:6_return_stmt:1_variable:2": {
+    "signature": "constant:4_function_def:1_identifier:2_meta:1_operator:6_return_stmt:1_variable:2",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79",
+      "macro_add_mul_8da76e79",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 25.04166666666667,
+    "success_rate": 1.0,
+    "attempts": 12
+  },
+  "constant:4_function_def:1_identifier:4_meta:1_operator:8_return_stmt:1_variable:3": {
+    "signature": "constant:4_function_def:1_identifier:4_meta:1_operator:8_return_stmt:1_variable:3",
+    "transform_sequence": [
+      "mul_zero_elim"
+    ],
+    "avg_energy_reduction": 20.65,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "constant:4_function_def:1_identifier:2_meta:1_operator:8_return_stmt:1_variable:2": {
+    "signature": "constant:4_function_def:1_identifier:2_meta:1_operator:8_return_stmt:1_variable:2",
+    "transform_sequence": [
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 31.850000000000005,
+    "success_rate": 1.0,
+    "attempts": 3
+  },
+  "constant:5_meta:1_operator:8_variable:3": {
+    "signature": "constant:5_meta:1_operator:8_variable:3",
+    "transform_sequence": [
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 27.75,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "constant:5_function_def:1_meta:1_operator:6_return_stmt:1_variable:2": {
+    "signature": "constant:5_function_def:1_meta:1_operator:6_return_stmt:1_variable:2",
+    "transform_sequence": [
+      "macro_add_const_f9f3d713",
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 22.666666666666668,
+    "success_rate": 1.0,
+    "attempts": 3
+  },
+  "constant:5_operator:8_variable:3": {
+    "signature": "constant:5_operator:8_variable:3",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 25.1,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "constant:3_error:1_operator:5_variable:2": {
+    "signature": "constant:3_error:1_operator:5_variable:2",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 20.716666666666676,
+    "success_rate": 1.0,
+    "attempts": 18
+  },
+  "constant:5_meta:1_operator:9_variable:4": {
+    "signature": "constant:5_meta:1_operator:9_variable:4",
+    "transform_sequence": [
+      "mul_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 25.1,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:5_operator:9_variable:4": {
+    "signature": "constant:5_operator:9_variable:4",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 24.85,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "constant:3_error:1_operator:6_variable:3": {
+    "signature": "constant:3_error:1_operator:6_variable:3",
+    "transform_sequence": [
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 20.566666666666674,
+    "success_rate": 1.0,
+    "attempts": 12
+  },
+  "constant:3_function_def:1_identifier:2_meta:1_operator:6_return_stmt:1_variable:3": {
+    "signature": "constant:3_function_def:1_identifier:2_meta:1_operator:6_return_stmt:1_variable:3",
+    "transform_sequence": [
+      "mul_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 20.61666666666667,
+    "success_rate": 1.0,
+    "attempts": 6
+  },
+  "constant:3_operator:9_variable:3": {
+    "signature": "constant:3_operator:9_variable:3",
+    "transform_sequence": [
+      "mul_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 20.58125,
+    "success_rate": 1.0,
+    "attempts": 8
+  },
+  "constant:3_function_def:1_identifier:2_meta:1_operator:7_return_stmt:1_variable:4": {
+    "signature": "constant:3_function_def:1_identifier:2_meta:1_operator:7_return_stmt:1_variable:4",
+    "transform_sequence": [
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 17.133333333333333,
+    "success_rate": 1.0,
+    "attempts": 3
+  },
+  "constant:4_function_def:1_identifier:1_meta:1_operator:6_return_stmt:1_variable:3": {
+    "signature": "constant:4_function_def:1_identifier:1_meta:1_operator:6_return_stmt:1_variable:3",
+    "transform_sequence": [
+      "mul_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 21.900000000000002,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:4_function_def:1_identifier:2_meta:1_operator:7_return_stmt:1_variable:3": {
+    "signature": "constant:4_function_def:1_identifier:2_meta:1_operator:7_return_stmt:1_variable:3",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 22.699999999999996,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "constant:4_function_def:1_meta:1_operator:6_return_stmt:1_variable:3": {
+    "signature": "constant:4_function_def:1_meta:1_operator:6_return_stmt:1_variable:3",
+    "transform_sequence": [
+      "mul_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 20.3,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:5_function_def:1_identifier:1_meta:1_operator:6_return_stmt:1_variable:2": {
+    "signature": "constant:5_function_def:1_identifier:1_meta:1_operator:6_return_stmt:1_variable:2",
+    "transform_sequence": [
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 24.683333333333334,
+    "success_rate": 1.0,
+    "attempts": 3
+  },
+  "consolidated_add_zero_elim_mul_zero_elim_add_zero_elim": {
+    "signature": "consolidated_add_zero_elim_mul_zero_elim_add_zero_elim",
+    "transform_sequence": [
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 23.04,
+    "success_rate": 1.0,
+    "attempts": 15,
+    "source": "consolidation"
+  },
+  "consolidated_add_zero_elim_add_zero_elim_mul_zero_elim": {
+    "signature": "consolidated_add_zero_elim_add_zero_elim_mul_zero_elim",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 22.54,
+    "success_rate": 1.0,
+    "attempts": 5,
+    "source": "consolidation"
+  },
+  "consolidated_macro_add_const_f9f3d713_add_zero_elim_mul_zero_elim": {
+    "signature": "consolidated_macro_add_const_f9f3d713_add_zero_elim_mul_zero_elim",
+    "transform_sequence": [
+      "macro_add_const_f9f3d713",
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "mul_zero_elim",
+      "mul_zero_elim"
+    ],
+    "avg_energy_reduction": 33.267,
+    "success_rate": 1.0,
+    "attempts": 3,
+    "source": "consolidation"
+  },
+  "consolidated_macro_add_const_f9f3d713_macro_add_mul_8da76e79_mul_zero_elim": {
+    "signature": "consolidated_macro_add_const_f9f3d713_macro_add_mul_8da76e79_mul_zero_elim",
+    "transform_sequence": [
+      "macro_add_const_f9f3d713",
+      "macro_add_mul_8da76e79",
+      "mul_zero_elim",
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 33.1,
+    "success_rate": 1.0,
+    "attempts": 3,
+    "source": "consolidation"
+  },
+  "constant:4_function_def:1_identifier:4_meta:1_operator:7_return_stmt:1_variable:2": {
+    "signature": "constant:4_function_def:1_identifier:4_meta:1_operator:7_return_stmt:1_variable:2",
+    "transform_sequence": [
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 30.150000000000002,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "constant:5_identifier:1_meta:1_operator:7_variable:3": {
+    "signature": "constant:5_identifier:1_meta:1_operator:7_variable:3",
+    "transform_sequence": [
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 23.999999999999996,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:3_function_def:1_identifier:2_meta:1_operator:8_return_stmt:1_variable:5": {
+    "signature": "constant:3_function_def:1_identifier:2_meta:1_operator:8_return_stmt:1_variable:5",
+    "transform_sequence": [
+      "mul_zero_elim",
+      "mul_zero_elim"
+    ],
+    "avg_energy_reduction": 39.45,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "constant:4_operator:9_variable:6": {
+    "signature": "constant:4_operator:9_variable:6",
+    "transform_sequence": [
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 31.6,
+    "success_rate": 1.0,
+    "attempts": 5
+  },
+  "constant:4_operator:9_variable:5": {
+    "signature": "constant:4_operator:9_variable:5",
+    "transform_sequence": [
+      "distributive_expand",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "algebraic_factor",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 16.8,
+    "success_rate": 1.0,
+    "attempts": 3
+  },
+  "constant:4_operator:8_variable:3": {
+    "signature": "constant:4_operator:8_variable:3",
+    "transform_sequence": [
+      "mul_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize",
+      "mul_zero_elim",
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 20.613636363636367,
+    "success_rate": 1.0,
+    "attempts": 11
+  },
+  "constant:3_error:2_operator:7_variable:3": {
+    "signature": "constant:3_error:2_operator:7_variable:3",
+    "transform_sequence": [
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 20.8,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:3_operator:10_variable:5": {
+    "signature": "constant:3_operator:10_variable:5",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 23.5,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:3_function_def:1_identifier:2_meta:1_operator:7_return_stmt:1_variable:2": {
+    "signature": "constant:3_function_def:1_identifier:2_meta:1_operator:7_return_stmt:1_variable:2",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 22.4,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:3_error:1_operator:8_variable:5": {
+    "signature": "constant:3_error:1_operator:8_variable:5",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 20.299999999999997,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:3_operator:10_variable:9": {
+    "signature": "constant:3_operator:10_variable:9",
+    "transform_sequence": [
+      "distributive_expand",
+      "distributive_expand",
+      "macro_add_mul_8da76e79",
+      "add_zero_elim",
+      "algebraic_factor",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 11.574999999999998,
+    "success_rate": 1.0,
+    "attempts": 4
+  },
+  "constant:3_function_def:1_identifier:4_meta:1_operator:7_return_stmt:1_variable:3": {
+    "signature": "constant:3_function_def:1_identifier:4_meta:1_operator:7_return_stmt:1_variable:3",
+    "transform_sequence": [
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 22.500000000000007,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:4_operator:10_variable:7": {
+    "signature": "constant:4_operator:10_variable:7",
+    "transform_sequence": [
+      "add_zero_elim",
+      "distributive_expand",
+      "add_zero_elim",
+      "algebraic_factor",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 13.100000000000001,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:3_function_def:1_identifier:2_meta:1_operator:3_return_stmt:1": {
+    "signature": "constant:3_function_def:1_identifier:2_meta:1_operator:3_return_stmt:1",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 10.860000000000001,
+    "success_rate": 1.0,
+    "attempts": 5
+  },
+  "constant:2_function_def:1_identifier:2_meta:1_operator:4_return_stmt:1": {
+    "signature": "constant:2_function_def:1_identifier:2_meta:1_operator:4_return_stmt:1",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 9.65,
+    "success_rate": 1.0,
+    "attempts": 6
+  },
+  "constant:3_operator:4_variable:2": {
+    "signature": "constant:3_operator:4_variable:2",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79",
+      "synth_distribution_*_annihilation",
+      "learned_discovered_+_0_identity"
+    ],
+    "avg_energy_reduction": 10.304359999999985,
+    "success_rate": 1.0,
+    "attempts": 1250,
+    "usage_count": 1250
+  },
+  "constant:2_function_def:1_identifier:2_meta:1_operator:5_return_stmt:1_variable:1": {
+    "signature": "constant:2_function_def:1_identifier:2_meta:1_operator:5_return_stmt:1_variable:1",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 11.857142857142861,
+    "success_rate": 1.0,
+    "attempts": 7
+  },
+  "constant:1_function_def:1_identifier:2_meta:1_operator:6_return_stmt:1_variable:1": {
+    "signature": "constant:1_function_def:1_identifier:2_meta:1_operator:6_return_stmt:1_variable:1",
+    "transform_sequence": [
+      "add_zero_elim",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 8.383333333333335,
+    "success_rate": 1.0,
+    "attempts": 6
+  },
+  "constant:3_function_def:1_identifier:2_meta:1_operator:5_return_stmt:1": {
+    "signature": "constant:3_function_def:1_identifier:2_meta:1_operator:5_return_stmt:1",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79",
+      "mul_one_elim",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 14.933333333333337,
+    "success_rate": 1.0,
+    "attempts": 6
+  },
+  "constant:2_operator:5_variable:4": {
+    "signature": "constant:2_operator:5_variable:4",
+    "transform_sequence": [
+      "algebraic_factor",
+      "distributive_expand",
+      "algebraic_factor",
+      "distributive_expand",
+      "algebraic_factor"
+    ],
+    "avg_energy_reduction": 10.567950496104102,
+    "success_rate": 1.0,
+    "attempts": 9373,
+    "usage_count": 9373
+  },
+  "constant:3_operator:5_variable:1": {
+    "signature": "constant:3_operator:5_variable:1",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79",
+      "mul_one_elim",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 9.205820105820056,
+    "success_rate": 1.0,
+    "attempts": 189
+  },
+  "constant:3_function_def:1_identifier:2_meta:1_operator:4_return_stmt:1_variable:1": {
+    "signature": "constant:3_function_def:1_identifier:2_meta:1_operator:4_return_stmt:1_variable:1",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "mul_zero_elim"
+    ],
+    "avg_energy_reduction": 15.350000000000001,
+    "success_rate": 1.0,
+    "attempts": 4
+  },
+  "constant:4_function_def:1_identifier:2_meta:1_operator:4_return_stmt:1": {
+    "signature": "constant:4_function_def:1_identifier:2_meta:1_operator:4_return_stmt:1",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79",
+      "macro_add_mul_8da76e79"
+    ],
+    "avg_energy_reduction": 19.58888888888889,
+    "success_rate": 1.0,
+    "attempts": 9
+  },
+  "operator:3_variable:2": {
+    "signature": "operator:3_variable:2",
+    "transform_sequence": [
+      "concept_contradiction"
+    ],
+    "avg_energy_reduction": 3.1484244116475253,
+    "success_rate": 1.0,
+    "attempts": 2507,
+    "usage_count": 2507
+  },
+  "constant:2_operator:5_variable:2": {
+    "signature": "constant:2_operator:5_variable:2",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 5.799793174767416,
+    "success_rate": 1.0,
+    "attempts": 967,
+    "usage_count": 967
+  },
+  "operator:5_variable:2": {
+    "signature": "operator:5_variable:2",
+    "transform_sequence": [
+      "synth_logic_not_involution",
+      "synth_logic_not_involution"
+    ],
+    "avg_energy_reduction": 5.55,
+    "success_rate": 1.0,
+    "attempts": 10,
+    "usage_count": 10
+  },
+  "constant:2_operator:4_variable:3": {
+    "signature": "constant:2_operator:4_variable:3",
+    "transform_sequence": [
+      "chemistry_stoich_coeff_one",
+      "synth_distribution_*_identity"
+    ],
+    "avg_energy_reduction": 8.628730964466989,
+    "success_rate": 1.0,
+    "attempts": 1970,
+    "usage_count": 1970
+  },
+  "constant:2_operator:6_variable:3": {
+    "signature": "constant:2_operator:6_variable:3",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "double_neg",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 13.429292929292922,
+    "success_rate": 1.0,
+    "attempts": 99
+  },
+  "constant:1_operator:2_variable:2": {
+    "signature": "constant:1_operator:2_variable:2",
+    "transform_sequence": [
+      "synth_distribution_*_identity",
+      "bool_idempotent"
+    ],
+    "avg_energy_reduction": 4.537948282370848,
+    "success_rate": 1.0,
+    "attempts": 5298,
+    "usage_count": 5298
+  },
+  "constant:3_function_def:1_identifier:4_meta:1_operator:5_return_stmt:1_variable:1": {
+    "signature": "constant:3_function_def:1_identifier:4_meta:1_operator:5_return_stmt:1_variable:1",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "mul_zero_elim",
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 18.75,
+    "success_rate": 1.0,
+    "attempts": 4
+  },
+  "constant:1_operator:5_variable:3": {
+    "signature": "constant:1_operator:5_variable:3",
+    "transform_sequence": [
+      "add_zero_elim",
+      "double_neg",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 6.698644986449813,
+    "success_rate": 1.0,
+    "attempts": 369
+  },
+  "constant:4_operator:3_variable:2": {
+    "signature": "constant:4_operator:3_variable:2",
+    "transform_sequence": [
+      "mul_one_elim"
+    ],
+    "avg_energy_reduction": 4.58,
+    "success_rate": 1.0,
+    "attempts": 20
+  },
+  "constant:1_operator:4_variable:2": {
+    "signature": "constant:1_operator:4_variable:2",
+    "transform_sequence": [
+      "concept_contradiction",
+      "synth_distribution_*_identity"
+    ],
+    "avg_energy_reduction": 5.531309904153488,
+    "success_rate": 1.0,
+    "attempts": 1565,
+    "usage_count": 1565
+  },
+  "constant:1_operator:6_variable:4": {
+    "signature": "constant:1_operator:6_variable:4",
+    "transform_sequence": [
+      "mul_zero_elim",
+      "mul_zero_elim",
+      "mul_zero_elim",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 7.611398963730543,
+    "success_rate": 1.0,
+    "attempts": 193
+  },
+  "constant:1_operator:6_variable:2": {
+    "signature": "constant:1_operator:6_variable:2",
+    "transform_sequence": [
+      "add_zero_elim",
+      "double_neg",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 11.518644067796611,
+    "success_rate": 1.0,
+    "attempts": 59
+  },
+  "constant:2_operator:6_variable:5": {
+    "signature": "constant:2_operator:6_variable:5",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 10.390055248618786,
+    "success_rate": 1.0,
+    "attempts": 181
+  },
+  "constant:4_operator:4_variable:1": {
+    "signature": "constant:4_operator:4_variable:1",
+    "transform_sequence": [
+      "mul_one_elim",
+      "mul_one_elim"
+    ],
+    "avg_energy_reduction": 9.57992700729929,
+    "success_rate": 1.0,
+    "attempts": 274
+  },
+  "operator:2_variable:1": {
+    "signature": "operator:2_variable:1",
+    "transform_sequence": [
+      "deriv_sin"
+    ],
+    "avg_energy_reduction": 3.1063928981987154,
+    "success_rate": 1.0,
+    "attempts": 7829,
+    "usage_count": 7829
+  },
+  "constant:2_function_def:1_identifier:2_meta:1_operator:3_return_stmt:1_variable:1": {
+    "signature": "constant:2_function_def:1_identifier:2_meta:1_operator:3_return_stmt:1_variable:1",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79"
+    ],
+    "avg_energy_reduction": 6.436666666666669,
+    "success_rate": 1.0,
+    "attempts": 30
+  },
+  "constant:1_operator:3_variable:3": {
+    "signature": "constant:1_operator:3_variable:3",
+    "transform_sequence": [
+      "synth_distribution_*_identity"
+    ],
+    "avg_energy_reduction": 4.597391648004525,
+    "success_rate": 1.0,
+    "attempts": 7591,
+    "usage_count": 7591
+  },
+  "constant:3_operator:6_variable:2": {
+    "signature": "constant:3_operator:6_variable:2",
+    "transform_sequence": [
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 4.456005586592239,
+    "success_rate": 1.0,
+    "attempts": 2148
+  },
+  "constant:1_operator:3_variable:1": {
+    "signature": "constant:1_operator:3_variable:1",
+    "transform_sequence": [
+      "synth_distribution_*_identity",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 4.702054100968946,
+    "success_rate": 1.0,
+    "attempts": 6913,
+    "usage_count": 6913
+  },
+  "constant:2_operator:2_variable:1": {
+    "signature": "constant:2_operator:2_variable:1",
+    "transform_sequence": [
+      "synth_distribution_*_identity",
+      "synth_logic_and_annihilation"
+    ],
+    "avg_energy_reduction": 4.395453774384744,
+    "success_rate": 1.0,
+    "attempts": 23580,
+    "usage_count": 23580
+  },
+  "operator:6_variable:3": {
+    "signature": "operator:6_variable:3",
+    "transform_sequence": [
+      "double_neg",
+      "double_neg",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 8.137500000000005,
+    "success_rate": 1.0,
+    "attempts": 40
+  },
+  "constant:1_operator:4_variable:4": {
+    "signature": "constant:1_operator:4_variable:4",
+    "transform_sequence": [
+      "synth_distribution_+_identity",
+      "bool_idempotent"
+    ],
+    "avg_energy_reduction": 5.546986128625541,
+    "success_rate": 1.0,
+    "attempts": 3965,
+    "usage_count": 3965
+  },
+  "constant:4_function_def:1_identifier:1_meta:1_operator:3_return_stmt:1": {
+    "signature": "constant:4_function_def:1_identifier:1_meta:1_operator:3_return_stmt:1",
+    "transform_sequence": [
+      "mul_one_elim",
+      "mul_one_elim",
+      "code_const_fold"
+    ],
+    "avg_energy_reduction": 13.0,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:2_operator:6_variable:1": {
+    "signature": "constant:2_operator:6_variable:1",
+    "transform_sequence": [
+      "double_neg",
+      "const_fold",
+      "double_neg",
+      "mul_zero_elim"
+    ],
+    "avg_energy_reduction": 13.2,
+    "success_rate": 1.0,
+    "attempts": 27
+  },
+  "operator:4_variable:3": {
+    "signature": "operator:4_variable:3",
+    "transform_sequence": [
+      "deriv_sum_rule",
+      "deriv_ln",
+      "synth_distribution_/_identity"
+    ],
+    "avg_energy_reduction": 3.31899176954748,
+    "success_rate": 1.0,
+    "attempts": 2430,
+    "usage_count": 2430
+  },
+  "constant:4_function_def:1_identifier:2_meta:1_operator:5_return_stmt:1_variable:1": {
+    "signature": "constant:4_function_def:1_identifier:2_meta:1_operator:5_return_stmt:1_variable:1",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79",
+      "macro_add_mul_8da76e79"
+    ],
+    "avg_energy_reduction": 24.1,
+    "success_rate": 1.0,
+    "attempts": 5
+  },
+  "constant:1_function_def:1_identifier:2_meta:1_operator:3_return_stmt:1": {
+    "signature": "constant:1_function_def:1_identifier:2_meta:1_operator:3_return_stmt:1",
+    "transform_sequence": [
+      "add_zero_elim",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 6.400000000000001,
+    "success_rate": 1.0,
+    "attempts": 12
+  },
+  "constant:1_function_def:1_identifier:1_meta:1_operator:2_return_stmt:1": {
+    "signature": "constant:1_function_def:1_identifier:1_meta:1_operator:2_return_stmt:1",
+    "transform_sequence": [
+      "double_neg"
+    ],
+    "avg_energy_reduction": 3.0999999999999996,
+    "success_rate": 1.0,
+    "attempts": 3
+  },
+  "constant:4_operator:2_variable:1": {
+    "signature": "constant:4_operator:2_variable:1",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 5.279999999999999,
+    "success_rate": 1.0,
+    "attempts": 10
+  },
+  "constant:1_function_def:1_identifier:2_meta:1_operator:2_return_stmt:1_variable:1": {
+    "signature": "constant:1_function_def:1_identifier:2_meta:1_operator:2_return_stmt:1_variable:1",
+    "transform_sequence": [
+      "mul_one_elim"
+    ],
+    "avg_energy_reduction": 4.22,
+    "success_rate": 1.0,
+    "attempts": 10
+  },
+  "constant:2_operator:7_variable:6": {
+    "signature": "constant:2_operator:7_variable:6",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 11.310344827586206,
+    "success_rate": 1.0,
+    "attempts": 29
+  },
+  "function_def:1_identifier:2_meta:1_operator:4_return_stmt:1": {
+    "signature": "function_def:1_identifier:2_meta:1_operator:4_return_stmt:1",
+    "transform_sequence": [
+      "double_neg",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 7.800000000000001,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:2_operator:8_variable:7": {
+    "signature": "constant:2_operator:8_variable:7",
+    "transform_sequence": [
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 15.233333333333334,
+    "success_rate": 1.0,
+    "attempts": 6
+  },
+  "constant:1_operator:6_variable:6": {
+    "signature": "constant:1_operator:6_variable:6",
+    "transform_sequence": [
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 5.412987012987021,
+    "success_rate": 1.0,
+    "attempts": 231
+  },
+  "constant:2_function_def:1_identifier:1_meta:1_operator:1_return_stmt:1": {
+    "signature": "constant:2_function_def:1_identifier:1_meta:1_operator:1_return_stmt:1",
+    "transform_sequence": [
+      "mul_one_elim"
+    ],
+    "avg_energy_reduction": 4.4,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:1_operator:5_variable:5": {
+    "signature": "constant:1_operator:5_variable:5",
+    "transform_sequence": [
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 5.4642458100558455,
+    "success_rate": 1.0,
+    "attempts": 1074
+  },
+  "operator:5_variable:4": {
+    "signature": "operator:5_variable:4",
+    "transform_sequence": [
+      "double_neg",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 3.1499243570347564,
+    "success_rate": 1.0,
+    "attempts": 661
+  },
+  "constant:1_operator:7_variable:3": {
+    "signature": "constant:1_operator:7_variable:3",
+    "transform_sequence": [
+      "add_zero_elim",
+      "double_neg",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 8.25,
+    "success_rate": 1.0,
+    "attempts": 4
+  },
+  "constant:1_function_def:1_identifier:2_meta:1_operator:5_return_stmt:1": {
+    "signature": "constant:1_function_def:1_identifier:2_meta:1_operator:5_return_stmt:1",
+    "transform_sequence": [
+      "double_neg",
+      "add_zero_elim",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 8.65,
+    "success_rate": 1.0,
+    "attempts": 6
+  },
+  "constant:3_function_def:1_identifier:2_meta:1_operator:5_return_stmt:1_variable:2": {
+    "signature": "constant:3_function_def:1_identifier:2_meta:1_operator:5_return_stmt:1_variable:2",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 14.099999999999998,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:2_function_def:1_identifier:1_meta:1_operator:3_return_stmt:1": {
+    "signature": "constant:2_function_def:1_identifier:1_meta:1_operator:3_return_stmt:1",
+    "transform_sequence": [
+      "add_zero_elim",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 7.9,
+    "success_rate": 1.0,
+    "attempts": 4
+  },
+  "operator:7_variable:4": {
+    "signature": "operator:7_variable:4",
+    "transform_sequence": [
+      "double_neg",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 7.799999999999999,
+    "success_rate": 1.0,
+    "attempts": 9
+  },
+  "constant:4_identifier:2_meta:1_operator:6_variable:1": {
+    "signature": "constant:4_identifier:2_meta:1_operator:6_variable:1",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 13.849999999999998,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:4_identifier:2_meta:1_operator:5": {
+    "signature": "constant:4_identifier:2_meta:1_operator:5",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79"
+    ],
+    "avg_energy_reduction": 13.350000000000003,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:1_function_def:1_identifier:2_meta:1_operator:4_return_stmt:1_variable:1": {
+    "signature": "constant:1_function_def:1_identifier:2_meta:1_operator:4_return_stmt:1_variable:1",
+    "transform_sequence": [
+      "add_zero_elim",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 4.3909090909090915,
+    "success_rate": 1.0,
+    "attempts": 11
+  },
+  "function_def:1_identifier:2_meta:1_operator:3_return_stmt:1_variable:1": {
+    "signature": "function_def:1_identifier:2_meta:1_operator:3_return_stmt:1_variable:1",
+    "transform_sequence": [
+      "double_neg"
+    ],
+    "avg_energy_reduction": 3.0999999999999996,
+    "success_rate": 1.0,
+    "attempts": 5
+  },
+  "constant:1_operator:7_variable:5": {
+    "signature": "constant:1_operator:7_variable:5",
+    "transform_sequence": [
+      "add_zero_elim",
+      "double_neg",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 8.253571428571423,
+    "success_rate": 1.0,
+    "attempts": 28
+  },
+  "constant:2_operator:4_variable:1": {
+    "signature": "constant:2_operator:4_variable:1",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 6.018629550321309,
+    "success_rate": 1.0,
+    "attempts": 934
+  },
+  "constant:2_function_def:1_identifier:2_meta:1_operator:4_return_stmt:1_variable:2": {
+    "signature": "constant:2_function_def:1_identifier:2_meta:1_operator:4_return_stmt:1_variable:2",
+    "transform_sequence": [
+      "add_zero_elim",
+      "mul_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 6.125,
+    "success_rate": 1.0,
+    "attempts": 8
+  },
+  "constant:1_operator:8_variable:6": {
+    "signature": "constant:1_operator:8_variable:6",
+    "transform_sequence": [
+      "add_zero_elim",
+      "double_neg",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 8.549999999999997,
+    "success_rate": 1.0,
+    "attempts": 10
+  },
+  "constant:3_operator:1": {
+    "signature": "constant:3_operator:1",
+    "transform_sequence": [
+      "mul_one_elim"
+    ],
+    "avg_energy_reduction": 3.9,
+    "success_rate": 1.0,
+    "attempts": 3
+  },
+  "constant:3_identifier:2_meta:1_operator:7_variable:1": {
+    "signature": "constant:3_identifier:2_meta:1_operator:7_variable:1",
+    "transform_sequence": [
+      "mul_one_elim",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 9.099999999999998,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:3_function_def:1_identifier:2_meta:1_operator:6_return_stmt:1_variable:1": {
+    "signature": "constant:3_function_def:1_identifier:2_meta:1_operator:6_return_stmt:1_variable:1",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79",
+      "add_zero_elim",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 17.76666666666667,
+    "success_rate": 1.0,
+    "attempts": 3
+  },
+  "constant:1_operator:7_variable:7": {
+    "signature": "constant:1_operator:7_variable:7",
+    "transform_sequence": [
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 5.8313725490196076,
+    "success_rate": 1.0,
+    "attempts": 51
+  },
+  "constant:2_identifier:2_meta:1_operator:8_variable:1": {
+    "signature": "constant:2_identifier:2_meta:1_operator:8_variable:1",
+    "transform_sequence": [
+      "double_neg",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 7.800000000000001,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:1_operator:2": {
+    "signature": "constant:1_operator:2",
+    "transform_sequence": [
+      "double_neg"
+    ],
+    "avg_energy_reduction": 3.1000000000000103,
+    "success_rate": 1.0,
+    "attempts": 173
+  },
+  "function_def:1_identifier:3_meta:1_operator:3_return_stmt:1_variable:1": {
+    "signature": "function_def:1_identifier:3_meta:1_operator:3_return_stmt:1_variable:1",
+    "transform_sequence": [
+      "double_neg"
+    ],
+    "avg_energy_reduction": 3.1000000000000014,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "constant:2_operator:9_variable:8": {
+    "signature": "constant:2_operator:9_variable:8",
+    "transform_sequence": [
+      "distributive_expand",
+      "add_zero_elim",
+      "algebraic_factor",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 4.1000000000000005,
+    "success_rate": 1.0,
+    "attempts": 3
+  },
+  "constant:4_identifier:2_meta:1_operator:7_variable:2": {
+    "signature": "constant:4_identifier:2_meta:1_operator:7_variable:2",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 13.100000000000001,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:2_operator:7_variable:4": {
+    "signature": "constant:2_operator:7_variable:4",
+    "transform_sequence": [
+      "add_zero_elim",
+      "double_neg",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 8.799999999999997,
+    "success_rate": 1.0,
+    "attempts": 7
+  },
+  "constant:1_function_def:1_identifier:2_meta:1_operator:3_return_stmt:1_variable:2": {
+    "signature": "constant:1_function_def:1_identifier:2_meta:1_operator:3_return_stmt:1_variable:2",
+    "transform_sequence": [
+      "mul_one_elim"
+    ],
+    "avg_energy_reduction": 4.522222222222222,
+    "success_rate": 1.0,
+    "attempts": 9
+  },
+  "operator:8_variable:5": {
+    "signature": "operator:8_variable:5",
+    "transform_sequence": [
+      "double_neg",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 7.8000000000000025,
+    "success_rate": 1.0,
+    "attempts": 4
+  },
+  "constant:1_function_def:1_identifier:2_meta:1_operator:4_return_stmt:1_variable:3": {
+    "signature": "constant:1_function_def:1_identifier:2_meta:1_operator:4_return_stmt:1_variable:3",
+    "transform_sequence": [
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 5.999999999999998,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:3_function_def:1_identifier:1_meta:1_operator:3_return_stmt:1_variable:1": {
+    "signature": "constant:3_function_def:1_identifier:1_meta:1_operator:3_return_stmt:1_variable:1",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79"
+    ],
+    "avg_energy_reduction": 10.4,
+    "success_rate": 1.0,
+    "attempts": 3
+  },
+  "constant:3_function_def:1_identifier:4_meta:1_operator:4_return_stmt:1": {
+    "signature": "constant:3_function_def:1_identifier:4_meta:1_operator:4_return_stmt:1",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79",
+      "mul_zero_elim"
+    ],
+    "avg_energy_reduction": 14.533333333333337,
+    "success_rate": 1.0,
+    "attempts": 3
+  },
+  "constant:1_function_def:1_identifier:3_meta:1_operator:2_return_stmt:1_variable:1": {
+    "signature": "constant:1_function_def:1_identifier:3_meta:1_operator:2_return_stmt:1_variable:1",
+    "transform_sequence": [
+      "mul_one_elim"
+    ],
+    "avg_energy_reduction": 4.4333333333333345,
+    "success_rate": 1.0,
+    "attempts": 3
+  },
+  "constant:1_operator:8_variable:4": {
+    "signature": "constant:1_operator:8_variable:4",
+    "transform_sequence": [
+      "double_neg",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 7.800000000000001,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:3_identifier:2_meta:1_operator:9_variable:3": {
+    "signature": "constant:3_identifier:2_meta:1_operator:9_variable:3",
+    "transform_sequence": [
+      "add_zero_elim",
+      "double_neg",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 10.7,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:1_operator:9_variable:7": {
+    "signature": "constant:1_operator:9_variable:7",
+    "transform_sequence": [
+      "distributive_expand",
+      "double_neg",
+      "add_zero_elim",
+      "algebraic_factor",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 7.5000000000000036,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "operator:6_variable:5": {
+    "signature": "operator:6_variable:5",
+    "transform_sequence": [
+      "double_neg",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 3.17500000000001,
+    "success_rate": 1.0,
+    "attempts": 180
+  },
+  "constant:3_function_def:1_identifier:1_meta:1_operator:4_return_stmt:1_variable:2": {
+    "signature": "constant:3_function_def:1_identifier:1_meta:1_operator:4_return_stmt:1_variable:2",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 12.500000000000004,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:3_identifier:2_meta:1_operator:4": {
+    "signature": "constant:3_identifier:2_meta:1_operator:4",
+    "transform_sequence": [
+      "mul_one_elim"
+    ],
+    "avg_energy_reduction": 3.9000000000000004,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:2_function_def:1_identifier:4_meta:1_operator:2_return_stmt:1_variable:1": {
+    "signature": "constant:2_function_def:1_identifier:4_meta:1_operator:2_return_stmt:1_variable:1",
+    "transform_sequence": [
+      "mul_one_elim"
+    ],
+    "avg_energy_reduction": 4.700000000000001,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "operator:7_variable:6": {
+    "signature": "operator:7_variable:6",
+    "transform_sequence": [
+      "double_neg",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 3.2097560975609736,
+    "success_rate": 1.0,
+    "attempts": 41
+  },
+  "constant:2_function_def:1_identifier:2_meta:1_operator:6_return_stmt:1": {
+    "signature": "constant:2_function_def:1_identifier:2_meta:1_operator:6_return_stmt:1",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79",
+      "double_neg",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 14.250000000000002,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "constant:2_identifier:2_meta:1_operator:6_variable:1": {
+    "signature": "constant:2_identifier:2_meta:1_operator:6_variable:1",
+    "transform_sequence": [
+      "double_neg"
+    ],
+    "avg_energy_reduction": 3.1000000000000014,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:1_function_def:1_identifier:2_meta:1_operator:5_return_stmt:1_variable:2": {
+    "signature": "constant:1_function_def:1_identifier:2_meta:1_operator:5_return_stmt:1_variable:2",
+    "transform_sequence": [
+      "double_neg"
+    ],
+    "avg_energy_reduction": 3.1000000000000005,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "constant:3_identifier:2_meta:1_operator:5_variable:1": {
+    "signature": "constant:3_identifier:2_meta:1_operator:5_variable:1",
+    "transform_sequence": [
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 6.55,
+    "success_rate": 1.0,
+    "attempts": 6
+  },
+  "constant:2_operator:9_variable:9": {
+    "signature": "constant:2_operator:9_variable:9",
+    "transform_sequence": [
+      "distributive_expand",
+      "distributive_expand",
+      "macro_add_mul_8da76e79",
+      "algebraic_factor",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 4.700000000000003,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:4_operator:4_variable:3": {
+    "signature": "constant:4_operator:4_variable:3",
+    "transform_sequence": [
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 5.140000000000001,
+    "success_rate": 1.0,
+    "attempts": 5
+  },
+  "constant:4_operator:5_variable:4": {
+    "signature": "constant:4_operator:5_variable:4",
+    "transform_sequence": [
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 4.4,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:3_identifier:2_meta:1_operator:6_variable:2": {
+    "signature": "constant:3_identifier:2_meta:1_operator:6_variable:2",
+    "transform_sequence": [
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 7.225000000000001,
+    "success_rate": 1.0,
+    "attempts": 4
+  },
+  "constant:1_function_def:1_identifier:4_meta:1_operator:3_return_stmt:1_variable:1": {
+    "signature": "constant:1_function_def:1_identifier:4_meta:1_operator:3_return_stmt:1_variable:1",
+    "transform_sequence": [
+      "double_neg"
+    ],
+    "avg_energy_reduction": 3.1000000000000014,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:1_function_def:1_identifier:2_meta:1_operator:6_return_stmt:1_variable:3": {
+    "signature": "constant:1_function_def:1_identifier:2_meta:1_operator:6_return_stmt:1_variable:3",
+    "transform_sequence": [
+      "double_neg"
+    ],
+    "avg_energy_reduction": 3.0999999999999996,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "function_def:1_identifier:2_meta:1_operator:6_return_stmt:1": {
+    "signature": "function_def:1_identifier:2_meta:1_operator:6_return_stmt:1",
+    "transform_sequence": [
+      "double_neg",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 7.8,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "function_def:1_identifier:2_meta:1_operator:4_return_stmt:1_variable:2": {
+    "signature": "function_def:1_identifier:2_meta:1_operator:4_return_stmt:1_variable:2",
+    "transform_sequence": [
+      "double_neg"
+    ],
+    "avg_energy_reduction": 3.1000000000000014,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:2_function_def:1_identifier:4_meta:1_operator:5_return_stmt:1": {
+    "signature": "constant:2_function_def:1_identifier:4_meta:1_operator:5_return_stmt:1",
+    "transform_sequence": [
+      "mul_zero_elim",
+      "macro_add_mul_8da76e79",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 13.166666666666666,
+    "success_rate": 1.0,
+    "attempts": 3
+  },
+  "constant:2_function_def:1_identifier:2_meta:1_operator:5_return_stmt:1_variable:3": {
+    "signature": "constant:2_function_def:1_identifier:2_meta:1_operator:5_return_stmt:1_variable:3",
+    "transform_sequence": [
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 7.599999999999998,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:2_function_def:1_identifier:2_meta:1_operator:7_return_stmt:1_variable:3": {
+    "signature": "constant:2_function_def:1_identifier:2_meta:1_operator:7_return_stmt:1_variable:3",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 12.0,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:4_function_def:1_identifier:1_meta:1_operator:4_return_stmt:1_variable:1": {
+    "signature": "constant:4_function_def:1_identifier:1_meta:1_operator:4_return_stmt:1_variable:1",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79",
+      "code_const_fold"
+    ],
+    "avg_energy_reduction": 13.5,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:2_function_def:1_identifier:3_meta:1_operator:2_return_stmt:1": {
+    "signature": "constant:2_function_def:1_identifier:3_meta:1_operator:2_return_stmt:1",
+    "transform_sequence": [
+      "mul_one_elim"
+    ],
+    "avg_energy_reduction": 4.4,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:3_function_def:1_identifier:1_meta:1_operator:2_return_stmt:1": {
+    "signature": "constant:3_function_def:1_identifier:1_meta:1_operator:2_return_stmt:1",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79"
+    ],
+    "avg_energy_reduction": 9.9,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:2_function_def:1_identifier:1_meta:1_operator:2_return_stmt:1_variable:1": {
+    "signature": "constant:2_function_def:1_identifier:1_meta:1_operator:2_return_stmt:1_variable:1",
+    "transform_sequence": [
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 5.5,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:1_operator:3_variable:2": {
+    "signature": "constant:1_operator:3_variable:2",
+    "transform_sequence": [
+      "synth_distribution_*_identity",
+      "concept_contradiction"
+    ],
+    "avg_energy_reduction": 4.986186770428067,
+    "success_rate": 1.0,
+    "attempts": 771,
+    "usage_count": 771
+  },
+  "constant:1_operator:8_variable:8": {
+    "signature": "constant:1_operator:8_variable:8",
+    "transform_sequence": [
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 13.65,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "operator:4_variable:2": {
+    "signature": "operator:4_variable:2",
+    "transform_sequence": [
+      "deriv_sum_rule",
+      "deriv_sin",
+      "deriv_cos"
+    ],
+    "avg_energy_reduction": 5.785555555555552,
+    "success_rate": 1.0,
+    "attempts": 45,
+    "usage_count": 45
+  },
+  "constant:2_operator:6_variable:4": {
+    "signature": "constant:2_operator:6_variable:4",
+    "transform_sequence": [
+      "macro_add_mul_8da76e79",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 6.330303030303031,
+    "success_rate": 1.0,
+    "attempts": 33
+  },
+  "constant:1_operator:8_variable:9": {
+    "signature": "constant:1_operator:8_variable:9",
+    "transform_sequence": [
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 20.1,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:2_operator:5_variable:3": {
+    "signature": "constant:2_operator:5_variable:3",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 6.599056603773581,
+    "success_rate": 1.0,
+    "attempts": 106
+  },
+  "constant:1_operator:6_variable:3": {
+    "signature": "constant:1_operator:6_variable:3",
+    "transform_sequence": [
+      "add_zero_elim",
+      "double_neg",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 5.07037037037037,
+    "success_rate": 1.0,
+    "attempts": 27
+  },
+  "constant:2_operator:3_variable:1": {
+    "signature": "constant:2_operator:3_variable:1",
+    "transform_sequence": [
+      "synth_distribution_*_identity"
+    ],
+    "avg_energy_reduction": 2.7812793034159435,
+    "success_rate": 1.0,
+    "attempts": 1493,
+    "usage_count": 1493
+  },
+  "constant:2_operator:4_variable:2": {
+    "signature": "constant:2_operator:4_variable:2",
+    "transform_sequence": [
+      "synth_distribution_^_identity",
+      "deriv_sum_rule",
+      "deriv_linear",
+      "deriv_power_rule",
+      "synth_distribution_+_identity"
+    ],
+    "avg_energy_reduction": 7.544715447154467,
+    "success_rate": 1.0,
+    "attempts": 123,
+    "usage_count": 123
+  },
+  "constant:1_operator:5_variable:2": {
+    "signature": "constant:1_operator:5_variable:2",
+    "transform_sequence": [
+      "synth_distribution_*_identity",
+      "bool_idempotent",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 8.873870967741928,
+    "success_rate": 1.0,
+    "attempts": 155,
+    "usage_count": 155
+  },
+  "constant:1_operator:2_variable:1": {
+    "signature": "constant:1_operator:2_variable:1",
+    "transform_sequence": [
+      "deriv_power_rule",
+      "synth_distribution_^_identity"
+    ],
+    "avg_energy_reduction": 4.178832378223535,
+    "success_rate": 1.0,
+    "attempts": 1396,
+    "usage_count": 1396
+  },
+  "constant:2_operator:5_variable:1": {
+    "signature": "constant:2_operator:5_variable:1",
+    "transform_sequence": [
+      "add_zero_elim",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 7.333333333333333,
+    "success_rate": 1.0,
+    "attempts": 3
+  },
+  "constant:2_operator:7_variable:2": {
+    "signature": "constant:2_operator:7_variable:2",
+    "transform_sequence": [
+      "self_subtraction",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 3.255734767025059,
+    "success_rate": 1.0,
+    "attempts": 558
+  },
+  "constant:1_operator:7_variable:4": {
+    "signature": "constant:1_operator:7_variable:4",
+    "transform_sequence": [
+      "add_zero_elim",
+      "double_neg",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 5.5,
+    "success_rate": 1.0,
+    "attempts": 6
+  },
+  "constant:2_function_def:1_identifier:2_meta:1_operator:6_return_stmt:1_variable:2": {
+    "signature": "constant:2_function_def:1_identifier:2_meta:1_operator:6_return_stmt:1_variable:2",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 12.799999999999997,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "constant:1_error:1_operator:2_variable:1": {
+    "signature": "constant:1_error:1_operator:2_variable:1",
+    "transform_sequence": [
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 4.9,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:3_operator:7_variable:3": {
+    "signature": "constant:3_operator:7_variable:3",
+    "transform_sequence": [
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 5.881487341772154,
+    "success_rate": 1.0,
+    "attempts": 632
+  },
+  "constant:2_operator:8_variable:6": {
+    "signature": "constant:2_operator:8_variable:6",
+    "transform_sequence": [
+      "distributive_expand",
+      "add_zero_elim",
+      "algebraic_factor",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 3.9000000000000004,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "operator:3_variable:1": {
+    "signature": "operator:3_variable:1",
+    "transform_sequence": [
+      "synth_logic_not_involution"
+    ],
+    "avg_energy_reduction": 3.2084188911704214,
+    "success_rate": 1.0,
+    "attempts": 487,
+    "usage_count": 487
+  },
+  "operator:4_variable:1": {
+    "signature": "operator:4_variable:1",
+    "transform_sequence": [
+      "double_neg",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 7.8,
+    "success_rate": 1.0,
+    "attempts": 20,
+    "usage_count": 20
+  },
+  "constant:3_operator:2": {
+    "signature": "constant:3_operator:2",
+    "transform_sequence": [
+      "const_fold",
+      "const_fold"
+    ],
+    "avg_energy_reduction": 4.347294803302575,
+    "success_rate": 1.0,
+    "attempts": 10295,
+    "usage_count": 10295
+  },
+  "constant:1_operator:4_variable:3": {
+    "signature": "constant:1_operator:4_variable:3",
+    "transform_sequence": [
+      "mul_one_elim"
+    ],
+    "avg_energy_reduction": 4.70909090909091,
+    "success_rate": 1.0,
+    "attempts": 11
+  },
+  "constant:1_operator:8_variable:5": {
+    "signature": "constant:1_operator:8_variable:5",
+    "transform_sequence": [
+      "double_neg"
+    ],
+    "avg_energy_reduction": 4.700000000000001,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:2_operator:2": {
+    "signature": "constant:2_operator:2",
+    "transform_sequence": [
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 3.944117647058826,
+    "success_rate": 1.0,
+    "attempts": 34,
+    "usage_count": 34
+  },
+  "constant:2_operator:7_variable:5": {
+    "signature": "constant:2_operator:7_variable:5",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 6.1625,
+    "success_rate": 1.0,
+    "attempts": 8
+  },
+  "operator:5_variable:1": {
+    "signature": "operator:5_variable:1",
+    "transform_sequence": [
+      "double_neg",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 7.799999999999999,
+    "success_rate": 1.0,
+    "attempts": 8
+  },
+  "constant:1_operator:3": {
+    "signature": "constant:1_operator:3",
+    "transform_sequence": [
+      "double_neg"
+    ],
+    "avg_energy_reduction": 4.7,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "constant:1_operator:4_variable:1": {
+    "signature": "constant:1_operator:4_variable:1",
+    "transform_sequence": [
+      "double_neg",
+      "synth_distribution_*_identity"
+    ],
+    "avg_energy_reduction": 8.242460317460335,
+    "success_rate": 1.0,
+    "attempts": 126,
+    "usage_count": 126
+  },
+  "constant:3_operator:8_variable:4": {
+    "signature": "constant:3_operator:8_variable:4",
+    "transform_sequence": [
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 5.906666666666667,
+    "success_rate": 1.0,
+    "attempts": 15
+  },
+  "operator:8_variable:7": {
+    "signature": "operator:8_variable:7",
+    "transform_sequence": [
+      "double_neg",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 3.349999999999998,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "constant:2_operator:8_variable:3": {
+    "signature": "constant:2_operator:8_variable:3",
+    "transform_sequence": [
+      "self_subtraction",
+      "double_neg",
+      "mul_zero_elim"
+    ],
+    "avg_energy_reduction": 3.3346153846153843,
+    "success_rate": 1.0,
+    "attempts": 26
+  },
+  "constant:3_operator:4_variable:3": {
+    "signature": "constant:3_operator:4_variable:3",
+    "transform_sequence": [
+      "mul_one_elim"
+    ],
+    "avg_energy_reduction": 6.550000000000001,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "constant:2_operator:3": {
+    "signature": "constant:2_operator:3",
+    "transform_sequence": [
+      "const_fold",
+      "synth_logic_not_involution"
+    ],
+    "avg_energy_reduction": 4.939130434782607,
+    "success_rate": 1.0,
+    "attempts": 23,
+    "usage_count": 23
+  },
+  "constant:3_operator:5_variable:2": {
+    "signature": "constant:3_operator:5_variable:2",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 10.7,
+    "success_rate": 1.0,
+    "attempts": 2
+  },
+  "operator:6_variable:2": {
+    "signature": "operator:6_variable:2",
+    "transform_sequence": [
+      "double_neg",
+      "double_neg",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 7.9,
+    "success_rate": 1.0,
+    "attempts": 5
+  },
+  "constant:5_operator:6_variable:2": {
+    "signature": "constant:5_operator:6_variable:2",
+    "transform_sequence": [
+      "mul_one_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 6.446875000000004,
+    "success_rate": 1.0,
+    "attempts": 64
+  },
+  "constant:3_operator:5_variable:4": {
+    "signature": "constant:3_operator:5_variable:4",
+    "transform_sequence": [
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 5.874999999999998,
+    "success_rate": 1.0,
+    "attempts": 4
+  },
+  "constant:4_operator:7_variable:2": {
+    "signature": "constant:4_operator:7_variable:2",
+    "transform_sequence": [
+      "learned_additive_identity",
+      "learned_additive_identity"
+    ],
+    "avg_energy_reduction": 4.089444444444445,
+    "success_rate": 1.0,
+    "attempts": 90,
+    "usage_count": 90
+  },
+  "operator:7_variable:2": {
+    "signature": "operator:7_variable:2",
+    "transform_sequence": [
+      "double_neg",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 7.800000000000001,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:1_function_def:1_identifier:2_meta:1_operator:7_return_stmt:1_variable:2": {
+    "signature": "constant:1_function_def:1_identifier:2_meta:1_operator:7_return_stmt:1_variable:2",
+    "transform_sequence": [
+      "mul_one_elim",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 9.099999999999998,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:3_operator:6_variable:3": {
+    "signature": "constant:3_operator:6_variable:3",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 10.150000000000002,
+    "success_rate": 1.0,
+    "attempts": 2,
+    "usage_count": 2
+  },
+  "constant:1_operator:6_variable:1": {
+    "signature": "constant:1_operator:6_variable:1",
+    "transform_sequence": [
+      "double_neg",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 7.800000000000001,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:3_operator:3_variable:2": {
+    "signature": "constant:3_operator:3_variable:2",
+    "transform_sequence": [
+      "mul_one_elim"
+    ],
+    "avg_energy_reduction": 5.500000000000003,
+    "success_rate": 1.0,
+    "attempts": 3
+  },
+  "constant:3_operator:8_variable:5": {
+    "signature": "constant:3_operator:8_variable:5",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 12.0,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:1_error:1_operator:5_variable:1": {
+    "signature": "constant:1_error:1_operator:5_variable:1",
+    "transform_sequence": [
+      "add_zero_elim",
+      "double_neg"
+    ],
+    "avg_energy_reduction": 7.5,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:1_operator:9_variable:9": {
+    "signature": "constant:1_operator:9_variable:9",
+    "transform_sequence": [
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 29.500000000000004,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:1_operator:5_variable:1": {
+    "signature": "constant:1_operator:5_variable:1",
+    "transform_sequence": [
+      "synth_logic_not_involution",
+      "synth_distribution_+_identity",
+      "synth_logic_not_involution"
+    ],
+    "avg_energy_reduction": 11.466176470588227,
+    "success_rate": 1.0,
+    "attempts": 34,
+    "usage_count": 34
+  },
+  "constant:1_error:1_operator:1": {
+    "signature": "constant:1_error:1_operator:1",
+    "transform_sequence": [
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 4.4,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:2_operator:4_variable:4": {
+    "signature": "constant:2_operator:4_variable:4",
+    "transform_sequence": [
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 6.0,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:3_operator:4_variable:1": {
+    "signature": "constant:3_operator:4_variable:1",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim"
+    ],
+    "avg_energy_reduction": 11.5,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:4_operator:3_variable:4": {
+    "signature": "constant:4_operator:3_variable:4",
+    "transform_sequence": [
+      "add_zero_elim",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 4.399999999999999,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "constant:4_operator:6_variable:2": {
+    "signature": "constant:4_operator:6_variable:2",
+    "transform_sequence": [
+      "add_zero_elim",
+      "add_zero_elim",
+      "commutativity_canonicalize",
+      "commutativity_canonicalize"
+    ],
+    "avg_energy_reduction": 13.600000000000001,
+    "success_rate": 1.0,
+    "attempts": 1
+  },
+  "operator:1_variable:1": {
+    "signature": "operator:1_variable:1",
+    "transform_sequence": [
+      "integ_linear"
+    ],
+    "avg_energy_reduction": 4.14999999999994,
+    "success_rate": 1.0,
+    "attempts": 1397,
+    "usage_count": 1397
+  },
+  "constant:1_operator:1": {
+    "signature": "constant:1_operator:1",
+    "transform_sequence": [
+      "trig_zero"
+    ],
+    "avg_energy_reduction": 0.75,
+    "success_rate": 1.0,
+    "attempts": 8530,
+    "usage_count": 8530
+  },
+  "constant:2_operator:7_variable:3": {
+    "signature": "constant:2_operator:7_variable:3",
+    "transform_sequence": [
+      "synth_distribution_*_annihilation",
+      "trig_zero",
+      "learned_discovered_-_0_annihilation"
+    ],
+    "avg_energy_reduction": 7.149528301886789,
+    "success_rate": 1.0,
+    "attempts": 106,
+    "usage_count": 106
+  },
+  "operator:1_variable:2": {
+    "signature": "operator:1_variable:2",
+    "transform_sequence": [
+      "self_subtraction"
+    ],
+    "avg_energy_reduction": 2.7729323308270812,
+    "success_rate": 1.0,
+    "attempts": 266,
+    "usage_count": 266
+  },
+  "operator:4_variable:5": {
+    "signature": "operator:4_variable:5",
+    "transform_sequence": [
+      "distributive_expand"
+    ],
+    "avg_energy_reduction": 0.2999999999999999,
+    "success_rate": 1.0,
+    "attempts": 1925,
+    "usage_count": 1925
+  },
+  "error:1_operator:3_variable:1": {
+    "signature": "error:1_operator:3_variable:1",
+    "transform_sequence": [
+      "concept_double_negation"
+    ],
+    "avg_energy_reduction": 3.1,
+    "success_rate": 1.0,
+    "attempts": 10,
+    "usage_count": 10
+  },
+  "operator:3_variable:4": {
+    "signature": "operator:3_variable:4",
+    "transform_sequence": [
+      "bool_idempotent"
+    ],
+    "avg_energy_reduction": 3.2069767441860453,
+    "success_rate": 1.0,
+    "attempts": 86,
+    "usage_count": 86
+  },
+  "constant:1_operator:5_variable:4": {
+    "signature": "constant:1_operator:5_variable:4",
+    "transform_sequence": [
+      "learned_discovered_+_0_annihilation",
+      "learned_discovered_and_0_annihilation"
+    ],
+    "avg_energy_reduction": 7.521978021978021,
+    "success_rate": 1.0,
+    "attempts": 91,
+    "usage_count": 91
+  },
+  "constant:4_operator:3": {
+    "signature": "constant:4_operator:3",
+    "transform_sequence": [
+      "const_fold",
+      "chemistry_stoich_coeff_one",
+      "const_fold"
+    ],
+    "avg_energy_reduction": 7.245416666666629,
+    "success_rate": 1.0,
+    "attempts": 480,
+    "usage_count": 480
+  },
+  "constant:1_operator:11_variable:6": {
+    "signature": "constant:1_operator:11_variable:6",
+    "transform_sequence": [
+      "learned_discovered_+_0_annihilation"
+    ],
+    "avg_energy_reduction": 6.200000000000005,
+    "success_rate": 1.0,
+    "attempts": 87,
+    "usage_count": 87
+  },
+  "operator:2_variable:2": {
+    "signature": "operator:2_variable:2",
+    "transform_sequence": [
+      "concept_contradiction"
+    ],
+    "avg_energy_reduction": 3.3499999999999988,
+    "success_rate": 1.0,
+    "attempts": 28,
+    "usage_count": 28
+  },
+  "operator:4_variable:4": {
+    "signature": "operator:4_variable:4",
+    "transform_sequence": [
+      "bool_idempotent"
+    ],
+    "avg_energy_reduction": 3.599999999999998,
+    "success_rate": 1.0,
+    "attempts": 34,
+    "usage_count": 34
+  },
+  "constant:3_operator:8_variable:3": {
+    "signature": "constant:3_operator:8_variable:3",
+    "transform_sequence": [
+      "synth_distribution_*_annihilation",
+      "cos_zero",
+      "learned_discovered_-_1_identity"
+    ],
+    "avg_energy_reduction": 4.882142857142857,
+    "success_rate": 1.0,
+    "attempts": 14,
+    "usage_count": 14
+  },
+  "operator:6_variable:4": {
+    "signature": "operator:6_variable:4",
+    "transform_sequence": [
+      "bool_idempotent",
+      "chemistry_ideal_gas_pv_nrt"
+    ],
+    "avg_energy_reduction": 3.3500000000000116,
+    "success_rate": 1.0,
+    "attempts": 197,
+    "usage_count": 197
+  },
+  "constant:2_error:1_operator:2": {
+    "signature": "constant:2_error:1_operator:2",
+    "transform_sequence": [
+      "const_fold"
+    ],
+    "avg_energy_reduction": 3.0999999999999996,
+    "success_rate": 1.0,
+    "attempts": 3,
+    "usage_count": 3
+  },
+  "operator:2_variable:3": {
+    "signature": "operator:2_variable:3",
+    "transform_sequence": [
+      "bool_idempotent",
+      "bool_idempotent"
+    ],
+    "avg_energy_reduction": 7.800000000000001,
+    "success_rate": 1.0,
+    "attempts": 1,
+    "usage_count": 1
+  }
+}

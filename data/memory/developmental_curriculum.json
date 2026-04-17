@@ -1,0 +1,109 @@
+{
+  "current_stage": 3,
+  "stage_unlocked_at": {
+    "1": 1773024502.246281,
+    "2": 1773024802.2874932,
+    "3": 1773065383.576857
+  },
+  "current_batch": 7827,
+  "stage_batches": 6142,
+  "cumulative_solve_rate": 0.9999999999999998,
+  "rules_learned": 8,
+  "stage_history": [
+    {
+      "from": 0,
+      "to": 1,
+      "timestamp": 1773024502.246283,
+      "batch": 10,
+      "solve_rate": 0.6069938585600002
+    },
+    {
+      "from": 1,
+      "to": 2,
+      "timestamp": 1773024802.28752,
+      "batch": 25,
+      "solve_rate": 0.7164062509841455
+    },
+    {
+      "from": 2,
+      "to": 3,
+      "timestamp": 1773065383.576857,
+      "batch": 1685,
+      "solve_rate": 0.987607926876626
+    }
+  ],
+  "leitner_cards": {
+    "multiplicative_identity": {
+      "rule_name": "multiplicative_identity",
+      "domain": "arithmetic",
+      "box": 1,
+      "successes_in_box": 0,
+      "total_reviews": 0,
+      "last_reviewed": 1773024322.2617111,
+      "next_review_batch": 2
+    },
+    "additive_identity": {
+      "rule_name": "additive_identity",
+      "domain": "arithmetic",
+      "box": 1,
+      "successes_in_box": 0,
+      "total_reviews": 0,
+      "last_reviewed": 1773024322.2617579,
+      "next_review_batch": 2
+    },
+    "double_negation": {
+      "rule_name": "double_negation",
+      "domain": "arithmetic",
+      "box": 1,
+      "successes_in_box": 0,
+      "total_reviews": 0,
+      "last_reviewed": 1773024322.261775,
+      "next_review_batch": 2
+    },
+    "multiplicative_zero": {
+      "rule_name": "multiplicative_zero",
+      "domain": "arithmetic",
+      "box": 1,
+      "successes_in_box": 0,
+      "total_reviews": 0,
+      "last_reviewed": 1773024322.2617888,
+      "next_review_batch": 2
+    },
+    "distributive_mul_add": {
+      "rule_name": "distributive_mul_add",
+      "domain": "arithmetic",
+      "box": 1,
+      "successes_in_box": 0,
+      "total_reviews": 0,
+      "last_reviewed": 1773065323.26008,
+      "next_review_batch": 1682
+    },
+    "subtractive_self": {
+      "rule_name": "subtractive_self",
+      "domain": "arithmetic",
+      "box": 1,
+      "successes_in_box": 0,
+      "total_reviews": 0,
+      "last_reviewed": 1773065383.577017,
+      "next_review_batch": 1686
+    },
+    "equation_solve": {
+      "rule_name": "equation_solve",
+      "domain": "arithmetic",
+      "box": 1,
+      "successes_in_box": 0,
+      "total_reviews": 0,
+      "last_reviewed": 1773111815.832385,
+      "next_review_batch": 3481
+    },
+    "algebraic_factor": {
+      "rule_name": "algebraic_factor",
+      "domain": "arithmetic",
+      "box": 1,
+      "successes_in_box": 0,
+      "total_reviews": 0,
+      "last_reviewed": 1773124313.114657,
+      "next_review_batch": 4227
+    }
+  }
+}

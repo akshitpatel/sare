@@ -13,7 +13,16 @@ Architecture:
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple
+
+
+# Use best available device: CUDA > MPS (Apple Metal) > CPU
+if torch.cuda.is_available():
+    _DEVICE = torch.device("cuda")
+elif torch.backends.mps.is_available():
+    _DEVICE = torch.device("mps")
+else:
+    _DEVICE = torch.device("cpu")
 
 
 class NodeEncoder(nn.Module):
@@ -54,22 +63,41 @@ class MessagePassingLayer(nn.Module):
         Returns updated node_features: [N, D]
         """
         N, D = node_features.shape
-        # Aggregate messages
-        messages = torch.zeros_like(node_features)
-        counts = torch.zeros(N, 1, device=node_features.device)
+        device = node_features.device
 
-        for src, tgt in adjacency:
-            if src < N and tgt < N:
-                msg_input = torch.cat([node_features[src], node_features[tgt]])
-                msg = F.relu(self.message_fn(msg_input))
-                messages[tgt] += msg
-                counts[tgt] += 1
+        messages = torch.zeros_like(node_features)
+        counts = torch.zeros(N, 1, device=device)
+
+        # Vectorized edge processing for speed (avoid Python loops over edges).
+        # Filter invalid edges and build tensors.
+        if adjacency:
+            src_list = []
+            tgt_list = []
+            for src, tgt in adjacency:
+                if 0 <= src < N and 0 <= tgt < N:
+                    src_list.append(src)
+                    tgt_list.append(tgt)
+
+            if src_list:
+                src_idx = torch.tensor(src_list, device=device, dtype=torch.long)
+                tgt_idx = torch.tensor(tgt_list, device=device, dtype=torch.long)
+
+                # Build edge-wise messages: message_fn([x_src, x_tgt])
+                msg_input = torch.cat([node_features[src_idx], node_features[tgt_idx]], dim=-1)  # [E, 2D]
+                msg = F.relu(self.message_fn(msg_input))  # [E, D]
+
+                # Aggregate by target: sum messages into messages[tgt]
+                messages.index_add_(0, tgt_idx, msg)
+
+                # Degree counts per target
+                ones = torch.ones((tgt_idx.shape[0], 1), device=device, dtype=node_features.dtype)
+                counts.index_add_(0, tgt_idx, ones)
 
         # Normalize by degree
         counts = counts.clamp(min=1)
         messages = messages / counts
 
-        # Update
+        # Update with residual connection
         update_input = torch.cat([node_features, messages], dim=-1)
         updated = F.relu(self.update_fn(update_input))
         return self.norm(updated + node_features)  # residual
@@ -92,13 +120,17 @@ class GraphEmbedding(nn.Module):
         ])
         self.output_dim = hidden_dim * 2  # mean + max pooling
 
+        # Keep module on the target device; avoid per-forward .to() calls.
+        self.to(_DEVICE)
+
     def forward(self, type_indices: torch.Tensor,
                 adjacency: List[Tuple[int, int]]) -> torch.Tensor:
         """
         type_indices: [N] - node type indices
         adjacency: list of (src, tgt) edge pairs
-        Returns: [output_dim] - graph embedding vector
+        Returns: [output_dim] - graph embedding vector (always on CPU)
         """
+        type_indices = type_indices.to(_DEVICE)
         x = self.encoder(type_indices)  # [N, D]
 
         for layer in self.layers:
@@ -107,4 +139,6 @@ class GraphEmbedding(nn.Module):
         # Global readout: mean + max pooling
         mean_pool = x.mean(dim=0)   # [D]
         max_pool = x.max(dim=0)[0]  # [D]
-        return torch.cat([mean_pool, max_pool])  # [2D]
+        result = torch.cat([mean_pool, max_pool])  # [2D]
+        # Always return on CPU so downstream code (numpy, engine) doesn't need MPS
+        return result.cpu()

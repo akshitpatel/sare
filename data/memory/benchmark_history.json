@@ -1,0 +1,326 @@
+[
+  {
+    "timestamp": "2026-03-10T03:41:00.449338Z",
+    "pass_rate": 0.728,
+    "passed": 131,
+    "total": 180,
+    "by_category": {
+      "additive_identity": {
+        "passed": 20,
+        "total": 20
+      },
+      "multiplicative_identity": {
+        "passed": 20,
+        "total": 20
+      },
+      "multiplicative_zero": {
+        "passed": 20,
+        "total": 20
+      },
+      "double_negation": {
+        "passed": 0,
+        "total": 15
+      },
+      "const_fold": {
+        "passed": 20,
+        "total": 20
+      },
+      "linear_equation": {
+        "passed": 0,
+        "total": 25
+      },
+      "distributive": {
+        "passed": 20,
+        "total": 20
+      },
+      "combine_like_terms": {
+        "passed": 8,
+        "total": 15
+      },
+      "multi_step": {
+        "passed": 23,
+        "total": 25
+      }
+    }
+  },
+  {
+    "timestamp": "2026-03-10T03:46:07.662322Z",
+    "pass_rate": 0.828,
+    "passed": 149,
+    "total": 180,
+    "by_category": {
+      "additive_identity": {
+        "passed": 20,
+        "total": 20
+      },
+      "multiplicative_identity": {
+        "passed": 20,
+        "total": 20
+      },
+      "multiplicative_zero": {
+        "passed": 20,
+        "total": 20
+      },
+      "double_negation": {
+        "passed": 8,
+        "total": 15
+      },
+      "const_fold": {
+        "passed": 20,
+        "total": 20
+      },
+      "linear_equation": {
+        "passed": 9,
+        "total": 25
+      },
+      "distributive": {
+        "passed": 20,
+        "total": 20
+      },
+      "combine_like_terms": {
+        "passed": 8,
+        "total": 15
+      },
+      "multi_step": {
+        "passed": 24,
+        "total": 25
+      }
+    }
+  },
+  {
+    "timestamp": "2026-03-25T04:58:17.356819Z",
+    "version": "2.0",
+    "total_score": 0.858,
+    "total_passed": 133.0,
+    "total_problems": 155,
+    "by_category": {
+      "arithmetic": {
+        "passed": 20,
+        "total": 20,
+        "score": 1.0
+      },
+      "algebra": {
+        "passed": 19,
+        "total": 20,
+        "score": 0.95
+      },
+      "logic": {
+        "passed": 15,
+        "total": 15,
+        "score": 1.0
+      },
+      "nl_understanding": {
+        "passed": 8,
+        "total": 10,
+        "score": 0.8
+      },
+      "physics": {
+        "passed": 5,
+        "total": 10,
+        "score": 0.5
+      },
+      "chemistry": {
+        "passed": 4,
+        "total": 10,
+        "score": 0.4
+      },
+      "code": {
+        "passed": 5,
+        "total": 5,
+        "score": 1.0
+      },
+      "symbolic_math": {
+        "passed": 35,
+        "total": 40,
+        "score": 0.875
+      },
+      "arc": {
+        "passed": 20.0,
+        "total": 20,
+        "score": 1.0
+      },
+      "synthesis": {
+        "passed": 2,
+        "total": 5,
+        "score": 0.4
+      }
+    }
+  },
+  {
+    "timestamp": "2026-03-25T07:29:41.447645Z",
+    "version": "2.0",
+    "total_score": 0.858,
+    "total_passed": 133.0,
+    "total_problems": 155,
+    "by_category": {
+      "arithmetic": {
+        "passed": 20,
+        "total": 20,
+        "score": 1.0
+      },
+      "algebra": {
+        "passed": 19,
+        "total": 20,
+        "score": 0.95
+      },
+      "logic": {
+        "passed": 15,
+        "total": 15,
+        "score": 1.0
+      },
+      "nl_understanding": {
+        "passed": 8,
+        "total": 10,
+        "score": 0.8
+      },
+      "physics": {
+        "passed": 5,
+        "total": 10,
+        "score": 0.5
+      },
+      "chemistry": {
+        "passed": 4,
+        "total": 10,
+        "score": 0.4
+      },
+      "code": {
+        "passed": 5,
+        "total": 5,
+        "score": 1.0
+      },
+      "symbolic_math": {
+        "passed": 35,
+        "total": 40,
+        "score": 0.875
+      },
+      "arc": {
+        "passed": 20.0,
+        "total": 20,
+        "score": 1.0
+      },
+      "synthesis": {
+        "passed": 2,
+        "total": 5,
+        "score": 0.4
+      }
+    }
+  },
+  {
+    "timestamp": "2026-03-25T08:15:36.561712Z",
+    "version": "2.0",
+    "total_score": 0.858,
+    "total_passed": 133.0,
+    "total_problems": 155,
+    "by_category": {
+      "arithmetic": {
+        "passed": 20,
+        "total": 20,
+        "score": 1.0
+      },
+      "algebra": {
+        "passed": 19,
+        "total": 20,
+        "score": 0.95
+      },
+      "logic": {
+        "passed": 15,
+        "total": 15,
+        "score": 1.0
+      },
+      "nl_understanding": {
+        "passed": 8,
+        "total": 10,
+        "score": 0.8
+      },
+      "physics": {
+        "passed": 5,
+        "total": 10,
+        "score": 0.5
+      },
+      "chemistry": {
+        "passed": 4,
+        "total": 10,
+        "score": 0.4
+      },
+      "code": {
+        "passed": 5,
+        "total": 5,
+        "score": 1.0
+      },
+      "symbolic_math": {
+        "passed": 35,
+        "total": 40,
+        "score": 0.875
+      },
+      "arc": {
+        "passed": 20.0,
+        "total": 20,
+        "score": 1.0
+      },
+      "synthesis": {
+        "passed": 2,
+        "total": 5,
+        "score": 0.4
+      }
+    }
+  },
+  {
+    "timestamp": "2026-03-26T07:44:36.033807Z",
+    "version": "2.0",
+    "total_score": 0.858,
+    "total_passed": 133.0,
+    "total_problems": 155,
+    "by_category": {
+      "arithmetic": {
+        "passed": 20,
+        "total": 20,
+        "score": 1.0
+      },
+      "algebra": {
+        "passed": 19,
+        "total": 20,
+        "score": 0.95
+      },
+      "logic": {
+        "passed": 15,
+        "total": 15,
+        "score": 1.0
+      },
+      "nl_understanding": {
+        "passed": 8,
+        "total": 10,
+        "score": 0.8
+      },
+      "physics": {
+        "passed": 5,
+        "total": 10,
+        "score": 0.5
+      },
+      "chemistry": {
+        "passed": 4,
+        "total": 10,
+        "score": 0.4
+      },
+      "code": {
+        "passed": 5,
+        "total": 5,
+        "score": 1.0
+      },
+      "symbolic_math": {
+        "passed": 35,
+        "total": 40,
+        "score": 0.875
+      },
+      "arc": {
+        "passed": 20.0,
+        "total": 20,
+        "score": 1.0
+      },
+      "synthesis": {
+        "passed": 2,
+        "total": 5,
+        "score": 0.4
+      }
+    }
+  }
+]

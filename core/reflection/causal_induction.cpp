@@ -109,8 +109,8 @@ bool CausalInduction::ruleAppliesCorrectly(
     }
 
     // Check that energy actually decreased after applying the rule.
-    double e_before = energy.evaluate(test_graph).total;
-    double e_after  = energy.evaluate(*result_graph).total;
+    double e_before = energy.computeTotal(test_graph).total();
+    double e_after  = energy.computeTotal(*result_graph).total();
     return e_after < e_before;
 }
 
@@ -145,10 +145,10 @@ std::optional<Graph> CausalInduction::applyRule(
 
     // Reconnect replacement edges
     rule.replacement.forEachEdge([&](const Edge& e) {
-        auto src_it = rep_id_map.find(e.sourceId);
-        auto tgt_it = rep_id_map.find(e.targetId);
+        auto src_it = rep_id_map.find(e.source);
+        auto tgt_it = rep_id_map.find(e.target);
         if (src_it != rep_id_map.end() && tgt_it != rep_id_map.end()) {
-            result.addEdge(src_it->second, tgt_it->second, e.type);
+            result.addEdge(src_it->second, tgt_it->second, e.relationship_type, e.weight);
         }
     });
 

@@ -1,0 +1,764 @@
+[
+  {
+    "timestamp": 1773675538.824042,
+    "domain": "qa",
+    "class_name": "SynthQaPattern_75495",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/5 improved, 0 errors",
+    "code_len": 4199
+  },
+  {
+    "timestamp": 1773675889.233237,
+    "domain": "qa",
+    "class_name": "SynthQaPattern_75849",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/5 improved, 0 errors",
+    "code_len": 3687
+  },
+  {
+    "timestamp": 1773675933.682484,
+    "domain": "qa",
+    "class_name": "SynthQaPattern_75849",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/5 improved, 0 errors",
+    "code_len": 2990
+  },
+  {
+    "timestamp": 1773676277.600272,
+    "domain": "qa",
+    "class_name": "SynthQaPattern_76236",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 3167
+  },
+  {
+    "timestamp": 1773676557.5038269,
+    "domain": "planning",
+    "class_name": "SynthPlanningPattern_76520",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/5 improved, 0 errors",
+    "code_len": 3228
+  },
+  {
+    "timestamp": 1773676597.26664,
+    "domain": "planning",
+    "class_name": "SynthPlanningPattern_76520",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/5 improved, 0 errors",
+    "code_len": 7870
+  },
+  {
+    "timestamp": 1773677822.7809322,
+    "domain": "planning",
+    "class_name": "SynthPlanningPattern_77791",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/5 improved, 0 errors",
+    "code_len": 8017
+  },
+  {
+    "timestamp": 1773677881.937796,
+    "domain": "planning",
+    "class_name": "SynthPlanningPattern_77791",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/5 improved, 0 errors",
+    "code_len": 10189
+  },
+  {
+    "timestamp": 1773678116.4322612,
+    "domain": "planning",
+    "class_name": "SynthPlanningPattern_78091",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 3927
+  },
+  {
+    "timestamp": 1773678159.94046,
+    "domain": "planning",
+    "class_name": "SynthPlanningPattern_78091",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 5981
+  },
+  {
+    "timestamp": 1773678426.885932,
+    "domain": "planning",
+    "class_name": "SynthPlanningPattern_78392",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 5820
+  },
+  {
+    "timestamp": 1773678469.6208,
+    "domain": "planning",
+    "class_name": "SynthPlanningPattern_78392",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 6094
+  },
+  {
+    "timestamp": 1773678544.651065,
+    "domain": "code",
+    "class_name": "SynthCodePattern_78298",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:'NoneType' object has no attribute 'strip'",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773678575.130868,
+    "domain": "code",
+    "class_name": "SynthCodePattern_78298",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/5 improved, 0 errors",
+    "code_len": 2194
+  },
+  {
+    "timestamp": 1773678728.563107,
+    "domain": "planning",
+    "class_name": "SynthPlanningPattern_78694",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 2969
+  },
+  {
+    "timestamp": 1773678759.553748,
+    "domain": "planning",
+    "class_name": "SynthPlanningPattern_78694",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 5019
+  },
+  {
+    "timestamp": 1773679031.05828,
+    "domain": "planning",
+    "class_name": "SynthPlanningPattern_78994",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 4377
+  },
+  {
+    "timestamp": 1773679060.589422,
+    "domain": "planning",
+    "class_name": "SynthPlanningPattern_78994",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 2562
+  },
+  {
+    "timestamp": 1773679721.412391,
+    "domain": "qa",
+    "class_name": "SynthQaPattern_79688",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/5 improved, 0 errors",
+    "code_len": 7134
+  },
+  {
+    "timestamp": 1773679790.518185,
+    "domain": "qa",
+    "class_name": "SynthQaPattern_79688",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/5 improved, 0 errors",
+    "code_len": 5546
+  },
+  {
+    "timestamp": 1773680033.908563,
+    "domain": "qa",
+    "class_name": "SynthQaPattern_80000",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 2389
+  },
+  {
+    "timestamp": 1773680064.907166,
+    "domain": "qa",
+    "class_name": "SynthQaPattern_80000",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 3832
+  },
+  {
+    "timestamp": 1773680365.129479,
+    "domain": "qa",
+    "class_name": "SynthQaPattern_80315",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 3784
+  },
+  {
+    "timestamp": 1773680398.077833,
+    "domain": "qa",
+    "class_name": "SynthQaPattern_80315",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 8933
+  },
+  {
+    "timestamp": 1773680444.365115,
+    "domain": "code",
+    "class_name": "SynthCodePattern_80395",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/5 improved, 0 errors",
+    "code_len": 7910
+  },
+  {
+    "timestamp": 1773680477.803383,
+    "domain": "code",
+    "class_name": "SynthCodePattern_80395",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/5 improved, 0 errors",
+    "code_len": 2296
+  },
+  {
+    "timestamp": 1773680651.198032,
+    "domain": "qa",
+    "class_name": "SynthQaPattern_80627",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 2948
+  },
+  {
+    "timestamp": 1773680682.247204,
+    "domain": "qa",
+    "class_name": "SynthQaPattern_80627",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 2776
+  },
+  {
+    "timestamp": 1773681348.271727,
+    "domain": "code",
+    "class_name": "SynthCodePattern_81312",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/5 improved, 0 errors",
+    "code_len": 1455
+  },
+  {
+    "timestamp": 1773681381.236657,
+    "domain": "code",
+    "class_name": "SynthCodePattern_81312",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/5 improved, 0 errors",
+    "code_len": 1615
+  },
+  {
+    "timestamp": 1773689509.4959738,
+    "domain": "code",
+    "class_name": "SynthCodePattern_89475",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 2834
+  },
+  {
+    "timestamp": 1773690181.944843,
+    "domain": "code",
+    "class_name": "SynthCodePattern_90148",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 3405
+  },
+  {
+    "timestamp": 1773690800.398533,
+    "domain": "code",
+    "class_name": "SynthCodePattern_89475",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773691451.643585,
+    "domain": "code",
+    "class_name": "SynthCodePattern_90148",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773694052.726858,
+    "domain": "code",
+    "class_name": "SynthCodePattern_92758",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773694082.4830668,
+    "domain": "code",
+    "class_name": "SynthCodePattern_92758",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 7977
+  },
+  {
+    "timestamp": 1773694699.632246,
+    "domain": "code",
+    "class_name": "SynthCodePattern_93427",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773694722.34613,
+    "domain": "code",
+    "class_name": "SynthCodePattern_93427",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 4910
+  },
+  {
+    "timestamp": 1773696005.136299,
+    "domain": "code",
+    "class_name": "SynthCodePattern_94729",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773696655.5833259,
+    "domain": "code",
+    "class_name": "SynthCodePattern_95387",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773697306.255988,
+    "domain": "code",
+    "class_name": "SynthCodePattern_94729",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773697530.7771468,
+    "domain": "code",
+    "class_name": "SynthCodePattern_95387",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773698182.2437901,
+    "domain": "code",
+    "class_name": "SynthCodePattern_97317",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773699482.382568,
+    "domain": "code",
+    "class_name": "SynthCodePattern_97317",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773699482.740561,
+    "domain": "code",
+    "class_name": "SynthCodePattern_98209",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773699507.533696,
+    "domain": "code",
+    "class_name": "SynthCodePattern_98209",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 3030
+  },
+  {
+    "timestamp": 1773700231.84913,
+    "domain": "code",
+    "class_name": "SynthCodePattern_99497",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773701529.101779,
+    "domain": "code",
+    "class_name": "SynthCodePattern_00264",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773701530.106088,
+    "domain": "code",
+    "class_name": "SynthCodePattern_99497",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773701557.8829288,
+    "domain": "code",
+    "class_name": "SynthCodePattern_00264",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 1490
+  },
+  {
+    "timestamp": 1773701651.135704,
+    "domain": "code",
+    "class_name": "SynthCodePattern_01553",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:[Errno 54] Connection reset by peer",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773701681.5950348,
+    "domain": "code",
+    "class_name": "SynthCodePattern_01553",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 1458
+  },
+  {
+    "timestamp": 1773702337.998755,
+    "domain": "code",
+    "class_name": "SynthCodePattern_02315",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 1844
+  },
+  {
+    "timestamp": 1773703443.867202,
+    "domain": "code",
+    "class_name": "SynthCodePattern_02315",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773704095.93587,
+    "domain": "code",
+    "class_name": "SynthCodePattern_02819",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773704122.86796,
+    "domain": "code",
+    "class_name": "SynthCodePattern_02819",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 5158
+  },
+  {
+    "timestamp": 1773706056.095336,
+    "domain": "code",
+    "class_name": "SynthCodePattern_04764",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773707355.5749362,
+    "domain": "code",
+    "class_name": "SynthCodePattern_06065",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773707355.617949,
+    "domain": "code",
+    "class_name": "SynthCodePattern_04764",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773708006.346785,
+    "domain": "code",
+    "class_name": "SynthCodePattern_06729",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773708038.231393,
+    "domain": "code",
+    "class_name": "SynthCodePattern_06729",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 5935
+  },
+  {
+    "timestamp": 1773708659.833301,
+    "domain": "code",
+    "class_name": "SynthCodePattern_06065",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773709313.593189,
+    "domain": "code",
+    "class_name": "SynthCodePattern_08027",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773710614.4257212,
+    "domain": "code",
+    "class_name": "SynthCodePattern_09343",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773710614.4659252,
+    "domain": "code",
+    "class_name": "SynthCodePattern_08027",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773711125.7251542,
+    "domain": "code",
+    "class_name": "SynthCodePattern_09343",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773711125.728749,
+    "domain": "code",
+    "class_name": "SynthCodePattern_10633",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773711150.912622,
+    "domain": "code",
+    "class_name": "SynthCodePattern_10633",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 2367
+  },
+  {
+    "timestamp": 1773712428.3899462,
+    "domain": "code",
+    "class_name": "SynthCodePattern_11137",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773712462.141155,
+    "domain": "code",
+    "class_name": "SynthCodePattern_11137",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 1499
+  },
+  {
+    "timestamp": 1773714302.0424588,
+    "domain": "code",
+    "class_name": "SynthCodePattern_13087",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773714955.273521,
+    "domain": "code",
+    "class_name": "SynthCodePattern_13684",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773715604.598984,
+    "domain": "code",
+    "class_name": "SynthCodePattern_13087",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773716254.341471,
+    "domain": "code",
+    "class_name": "SynthCodePattern_13684",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773717312.475241,
+    "domain": "code",
+    "class_name": "SynthCodePattern_16286",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:The read operation timed out",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773717537.095812,
+    "domain": "code",
+    "class_name": "SynthCodePattern_16286",
+    "promoted": false,
+    "score": 0.0,
+    "message": "error:[Errno 54] Connection reset by peer",
+    "code_len": 0
+  },
+  {
+    "timestamp": 1773717583.8076658,
+    "domain": "code",
+    "class_name": "SynthCodePattern_17547",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 2353
+  },
+  {
+    "timestamp": 1773717620.9076831,
+    "domain": "code",
+    "class_name": "SynthCodePattern_17547",
+    "promoted": false,
+    "score": 0.0,
+    "message": "0/8 improved, 0 errors",
+    "code_len": 2656
+  },
+  {
+    "timestamp": 1774536984.793037,
+    "domain": "logic",
+    "class_name": "SynthLogicPattern_36883",
+    "promoted": false,
+    "score": 0.0,
+    "inventiveness": 0.0,
+    "message": "duplicate",
+    "code_len": 1229
+  },
+  {
+    "timestamp": 1774537068.890947,
+    "domain": "logic",
+    "class_name": "SynthLogicPattern_36883",
+    "promoted": false,
+    "score": 0.0,
+    "inventiveness": 0.0,
+    "message": "duplicate",
+    "code_len": 1229
+  },
+  {
+    "timestamp": 1774545570.660758,
+    "domain": "logic",
+    "class_name": "SynthLogicPattern_45524",
+    "promoted": false,
+    "score": 0.0,
+    "inventiveness": 0.0,
+    "message": "duplicate",
+    "code_len": 1229
+  },
+  {
+    "timestamp": 1774545604.08722,
+    "domain": "logic",
+    "class_name": "SynthLogicPattern_45524",
+    "promoted": false,
+    "score": 0.0,
+    "inventiveness": 0.0,
+    "message": "duplicate",
+    "code_len": 1229
+  },
+  {
+    "timestamp": 1774581384.254762,
+    "domain": "logic",
+    "class_name": "SynthLogicPattern_81353",
+    "promoted": false,
+    "score": 0.0,
+    "inventiveness": 0.0,
+    "message": "duplicate",
+    "code_len": 1229
+  },
+  {
+    "timestamp": 1774581406.565467,
+    "domain": "logic",
+    "class_name": "SynthLogicPattern_81353",
+    "promoted": false,
+    "score": 0.0,
+    "inventiveness": 0.0,
+    "message": "duplicate",
+    "code_len": 1229
+  }
+]

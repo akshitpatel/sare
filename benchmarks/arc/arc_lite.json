@@ -1,0 +1,27 @@
+{
+  "name": "ARC-Lite Abstract Reasoning Benchmark",
+  "version": "1.0",
+  "description": "20 abstract reasoning problems across 4 types testing novelty generalization",
+  "problems": [
+    {"id": "arc_001", "type": "pattern_completion", "question": "If circle→square and triangle→pentagon, what does hexagon→?", "answer": "heptagon", "hint": "each shape gains one side"},
+    {"id": "arc_002", "type": "pattern_completion", "question": "If A=1, B=2, C=3, what is Z?", "answer": "26", "hint": "alphabetical position"},
+    {"id": "arc_003", "type": "pattern_completion", "question": "2, 4, 8, 16, ?", "answer": "32", "hint": "double each term"},
+    {"id": "arc_004", "type": "pattern_completion", "question": "If hot→cold and fast→slow, what does noisy→?", "answer": "quiet", "hint": "antonym transformation"},
+    {"id": "arc_005", "type": "pattern_completion", "question": "1, 1, 2, 3, 5, 8, ?", "answer": "13", "hint": "fibonacci sequence"},
+    {"id": "arc_006", "type": "analogy", "question": "doctor : hospital :: teacher : ?", "answer": "school", "hint": "person works at place"},
+    {"id": "arc_007", "type": "analogy", "question": "fish : water :: bird : ?", "answer": "air", "hint": "creature lives in medium"},
+    {"id": "arc_008", "type": "analogy", "question": "pen : write :: knife : ?", "answer": "cut", "hint": "tool : its function"},
+    {"id": "arc_009", "type": "analogy", "question": "day : night :: summer : ?", "answer": "winter", "hint": "cyclic opposites"},
+    {"id": "arc_010", "type": "analogy", "question": "eye : see :: ear : ?", "answer": "hear", "hint": "sense organ : its sense"},
+    {"id": "arc_011", "type": "causal_chain", "question": "Rain causes puddles. Puddles cause wet feet. Does rain cause wet feet?", "answer": "yes", "hint": "causal transitivity"},
+    {"id": "arc_012", "type": "causal_chain", "question": "Fire causes smoke. Smoke causes coughing. Does coughing cause fire?", "answer": "no", "hint": "causation is not reversible"},
+    {"id": "arc_013", "type": "causal_chain", "question": "Studying causes knowledge. Knowledge causes good grades. Does studying cause good grades?", "answer": "yes", "hint": "causal chain"},
+    {"id": "arc_014", "type": "causal_chain", "question": "Cold causes ice. Ice causes slipping. Does slipping cause cold?", "answer": "no", "hint": "effects do not cause their causes"},
+    {"id": "arc_015", "type": "causal_chain", "question": "Exercise causes fitness. Fitness causes energy. Does exercise cause energy?", "answer": "yes", "hint": "transitive causation"},
+    {"id": "arc_016", "type": "counterfactual", "question": "If there were no gravity, would objects fall to the ground?", "answer": "no", "hint": "gravity causes falling"},
+    {"id": "arc_017", "type": "counterfactual", "question": "If the sun did not exist, would plants grow?", "answer": "no", "hint": "plants need sunlight for photosynthesis"},
+    {"id": "arc_018", "type": "counterfactual", "question": "If water were not wet, would swimming be possible?", "answer": "no", "hint": "wetness is essential to water interaction"},
+    {"id": "arc_019", "type": "counterfactual", "question": "If numbers did not exist, would mathematics be possible?", "answer": "no", "hint": "mathematics is built on numbers"},
+    {"id": "arc_020", "type": "counterfactual", "question": "If fire were cold, would it still burn things?", "answer": "no", "hint": "burning requires heat"}
+  ]
+}

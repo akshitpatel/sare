@@ -1,0 +1,738 @@
+{
+  "pair_counts": {
+    "synth_distribution_+_identity|synth_distribution_+_identity": 57,
+    "synth_distribution_+_identity|commutativity_canonicalize": 26,
+    "synth_distribution_neg_involution|synth_distribution_neg_involution": 44,
+    "synth_distribution_neg_involution|commutativity_canonicalize": 39,
+    "synth_distribution_*_identity|synth_distribution_*_identity": 22,
+    "synth_distribution_*_identity|commutativity_canonicalize": 18,
+    "synth_distribution_*_identity|synth_distribution_+_identity": 7,
+    "synth_distribution_+_identity|synth_factoring_neg_involution": 2,
+    "synth_factoring_+_identity|synth_distribution_neg_involution": 22,
+    "synth_arithmetic_*_self_inverse|synth_arithmetic_*_self_inverse": 33,
+    "synth_arithmetic_*_self_inverse|commutativity_canonicalize": 3,
+    "synth_factoring_*_identity|synth_distribution_neg_involution": 36,
+    "synth_algebra_*_identity|bool_idempotent": 7,
+    "synth_distribution_+_identity|distributive_expand": 2,
+    "distributive_expand|algebraic_factor": 25,
+    "synth_algebra_+_identity|bool_idempotent": 13,
+    "bool_idempotent|synth_distribution_neg_involution": 10,
+    "macro_add_mul_8da76e79|synth_propositional_and_identity": 2,
+    "synth_distribution_*_identity|synth_distribution_/_identity": 1,
+    "synth_distribution_/_identity|synth_distribution_/_identity": 4,
+    "concept_additive_identity|concept_additive_identity": 2,
+    "concept_additive_identity|synth_distribution_neg_involution": 8,
+    "synth_distribution_*_identity|synth_distribution_neg_involution": 21,
+    "synth_distribution_neg_involution|power_product": 2,
+    "macro_add_mul_8da76e79|self_subtraction": 2,
+    "concept_additive_identity|concept_idempotent_and": 3,
+    "concept_idempotent_and|synth_distribution_neg_involution": 6,
+    "synth_distribution_*_identity|linear_equation_solve": 2,
+    "macro_add_mul_8da76e79|synth_distribution_neg_involution": 19,
+    "synth_distribution_neg_involution|synth_distribution_*_annihilation": 7,
+    "synth_arithmetic_*_self_inverse|synth_distribution_-_identity": 1,
+    "synth_arithmetic_+_self_inverse|synth_propositional_not_involution": 5,
+    "synth_arithmetic_*_self_inverse|synth_distribution_neg_involution": 9,
+    "synth_distribution_neg_involution|const_fold": 31,
+    "const_fold|const_fold": 41,
+    "macro_add_const_f9f3d713|const_fold": 13,
+    "synth_arithmetic_+_self_inverse|synth_distribution_neg_involution": 15,
+    "add_zero_elim|synth_distribution_neg_involution": 23,
+    "perfect_square_trinomial|synth_distribution_neg_involution": 9,
+    "synth_arithmetic_+_self_inverse|synth_arithmetic_+_self_inverse": 2,
+    "macro_add_mul_8da76e79|synth_logic_basics_and_identity": 2,
+    "synth_arithmetic_*_self_inverse|synth_logic_or_annihilation": 3,
+    "synth_distribution_+_identity|synth_distribution_neg_involution": 25,
+    "synth_distribution_+_identity|synth_distribution_*_identity": 1,
+    "synth_distribution_*_identity|perfect_square_trinomial": 7,
+    "perfect_square_trinomial|commutativity_canonicalize": 9,
+    "synth_distribution_+_identity|synth_factoring_/_identity": 2,
+    "synth_distribution_+_identity|multiply_equation_solve": 7,
+    "synth_distribution_+_identity|synth_distribution_*_annihilation": 4,
+    "synth_distribution_+_identity|power_product": 3,
+    "synth_distribution_*_identity|algebraic_factor": 12,
+    "synth_distribution_neg_involution|synth_propositional_or_self_inverse": 3,
+    "synth_distribution_*_identity|macro_add_mul_8da76e79": 26,
+    "synth_distribution_neg_involution|chain_inference": 20,
+    "synth_algebra_*_identity|const_fold": 1,
+    "const_fold|synth_distribution_neg_involution": 8,
+    "synth_arithmetic_*_self_inverse|division_self_elim": 4,
+    "division_self_elim|synth_distribution_neg_involution": 3,
+    "double_neg|double_neg": 21,
+    "synth_distribution_+_identity|quadratic_solve": 1,
+    "synth_distribution_neg_involution|synth_logic_and_annihilation": 18,
+    "synth_distribution_+_identity|synth_logic_and_self_inverse": 1,
+    "synth_arithmetic_*_self_inverse|zero_div": 3,
+    "synth_distribution_neg_involution|synth_factoring_*_identity": 8,
+    "synth_algebra_*_identity|synth_distribution_neg_involution": 21,
+    "concept_additive_identity_commuted|concept_double_negation_logic": 3,
+    "synth_distribution_*_identity|distributive_expand": 5,
+    "concept_additive_identity_commuted|synth_distribution_neg_involution": 3,
+    "synth_distribution_neg_involution|concept_and_true": 2,
+    "self_subtraction|synth_distribution_neg_involution": 5,
+    "macro_add_mul_8da76e79|synth_factoring_*_annihilation": 2,
+    "synth_factoring_*_annihilation|synth_distribution_neg_involution": 2,
+    "synth_distribution_neg_involution|synth_factoring_*_annihilation": 3,
+    "double_neg|bool_idempotent": 2,
+    "bool_idempotent|double_neg": 2,
+    "synth_distribution_+_identity|combine_like_terms": 9,
+    "macro_add_mul_8da76e79|synth_algebra_+_identity": 6,
+    "synth_algebra_+_identity|synth_distribution_neg_involution": 18,
+    "synth_arithmetic_+_self_inverse|bool_or_false": 1,
+    "learned_additive_identity|learned_additive_identity": 3,
+    "concept_multiplicative_identity|concept_multiplicative_identity": 3,
+    "concept_multiplicative_identity|concept_and_true": 1,
+    "synth_algebra_+_identity|synth_logic_and_annihilation": 1,
+    "synth_distribution_neg_involution|multiply_equation_solve": 6,
+    "combine_like_terms|synth_distribution_*_identity": 1,
+    "synth_arithmetic_*_self_inverse|self_subtraction": 10,
+    "concept_idempotent_or|synth_distribution_neg_involution": 2,
+    "synth_distribution_+_identity|bool_idempotent": 3,
+    "mul_one_elim|algebraic_factor": 1,
+    "algebraic_factor|synth_distribution_neg_involution": 3,
+    "concept_multiplicative_identity|synth_distribution_neg_involution": 4,
+    "synth_distribution_neg_involution|zero_div": 3,
+    "synth_distribution_neg_involution|prob_complement_sum": 1,
+    "synth_distribution_neg_involution|synth_arithmetic_+_self_inverse": 6,
+    "synth_arithmetic_*_self_inverse|bool_or_false": 1,
+    "fill_unknown|synth_factoring_+_identity": 1,
+    "commutativity_canonicalize|distributive_expand": 20,
+    "macro_add_mul_8da76e79|concept_double_negation_logic": 1,
+    "commutativity_canonicalize|chain_inference": 5,
+    "chain_inference|chain_inference": 36,
+    "chain_inference|mul_one_elim": 6,
+    "synth_distribution_neg_involution|concept_contradiction": 3,
+    "concept_contradiction|double_neg": 2,
+    "concept_additive_identity|double_neg": 6,
+    "synth_arithmetic_*_self_inverse|synth_factoring_*_annihilation": 1,
+    "synth_distribution_neg_involution|synth_propositional_or_annihilation": 4,
+    "synth_arithmetic_*_self_inverse|const_fold": 13,
+    "synth_distribution_neg_involution|distributive_expand": 2,
+    "synth_distribution_+_identity|synth_logic_and_annihilation": 4,
+    "synth_arithmetic_*_self_inverse|deriv_product_rule": 2,
+    "deriv_product_rule|algebraic_factor": 3,
+    "algebraic_factor|deriv_linear": 3,
+    "deriv_linear|deriv_linear": 3,
+    "deriv_linear|const_fold": 3,
+    "concept_multiplicative_identity|synth_propositional_not_involution": 4,
+    "synth_arithmetic_*_self_inverse|synth_logic_and_annihilation": 4,
+    "synth_distribution_+_identity|chain_inference": 12,
+    "synth_factoring_*_identity|const_fold": 4,
+    "concept_multiplicative_identity|double_neg": 4,
+    "synth_distribution_*_identity|concept_subtractive_self": 2,
+    "concept_subtractive_self|synth_distribution_+_identity": 3,
+    "add_assoc_fold|perfect_square_trinomial": 4,
+    "synth_distribution_neg_involution|linear_equation_solve": 7,
+    "synth_algebra_+_identity|synth_algebra_+_identity": 5,
+    "distributive_expand|synth_distribution_*_identity": 4,
+    "macro_add_mul_8da76e79|trig_zero": 2,
+    "synth_distribution_+_identity|synth_distribution_/_identity": 3,
+    "mul_one_elim|mul_one_elim": 5,
+    "mul_one_elim|bool_and_true": 2,
+    "synth_arithmetic_*_self_inverse|synth_logic_and_self_inverse": 3,
+    "synth_distribution_neg_involution|combine_like_terms": 12,
+    "synth_distribution_+_identity|division_self_elim": 3,
+    "learned_additive_identity|concept_double_negation_logic": 2,
+    "double_neg|concept_multiplicative_identity": 2,
+    "synth_distribution_neg_involution|algebraic_factor": 2,
+    "synth_distribution_*_identity|const_fold": 7,
+    "synth_factoring_+_identity|and_self": 2,
+    "macro_add_mul_8da76e79|concept_idempotent_and": 2,
+    "concept_additive_identity_commuted|concept_contradiction": 1,
+    "mul_one_elim|synth_distribution_neg_involution": 14,
+    "synth_distribution_neg_involution|deriv_product_rule": 1,
+    "additive_cancellation|synth_distribution_+_identity": 3,
+    "synth_distribution_neg_involution|concept_multiplicative_identity": 1,
+    "synth_distribution_neg_involution|synth_logic_and_self_inverse": 2,
+    "synth_algebra_+_identity|bool_and_true": 4,
+    "synth_distribution_neg_involution|synth_logic_basics_or_identity": 2,
+    "synth_distribution_+_identity|learned_additive_identity": 2,
+    "macro_add_const_f9f3d713|synth_distribution_neg_involution": 4,
+    "synth_distribution_*_identity|prob_complement_sum": 2,
+    "prob_complement_sum|synth_distribution_neg_involution": 2,
+    "synth_distribution_*_identity|combine_like_terms": 4,
+    "synth_distribution_neg_involution|synth_logic_or_annihilation": 5,
+    "synth_factoring_+_identity|algebraic_factor": 1,
+    "synth_distribution_neg_involution|synth_factoring_+_identity": 2,
+    "macro_add_mul_8da76e79|macro_add_mul_8da76e79": 5,
+    "synth_logic_not_involution|synth_distribution_*_identity": 1,
+    "synth_distribution_*_identity|double_neg": 6,
+    "macro_add_mul_8da76e79|synth_logic_and_annihilation": 4,
+    "synth_distribution_neg_involution|division_self_elim": 1,
+    "learned_additive_identity|synth_propositional_or_annihilation": 1,
+    "macro_add_mul_8da76e79|synth_distribution_/_identity": 1,
+    "synth_distribution_/_identity|const_fold": 1,
+    "synth_arithmetic_+_self_inverse|bool_idempotent": 2,
+    "synth_distribution_neg_involution|quadratic_solve": 1,
+    "concept_subtractive_self|synth_distribution_neg_involution": 3,
+    "synth_arithmetic_+_self_inverse|double_neg": 1,
+    "bool_idempotent|synth_propositional_not_involution": 1,
+    "algebraic_factor|commutativity_canonicalize": 6,
+    "synth_distribution_*_identity|deriv_power_rule": 1,
+    "deriv_power_rule|synth_distribution_neg_involution": 1,
+    "synth_distribution_neg_involution|synth_distribution_^_identity": 1,
+    "synth_arithmetic_*_self_inverse|quadratic_solve": 3,
+    "learned_additive_identity|algebraic_factor": 1,
+    "macro_add_const_f9f3d713|macro_add_const_f9f3d713": 2,
+    "synth_factoring_+_identity|bool_idempotent": 1,
+    "macro_add_mul_8da76e79|synth_distribution_*_identity": 2,
+    "synth_arithmetic_*_self_inverse|concept_and_true": 4,
+    "concept_and_true|synth_arithmetic_*_self_inverse": 1,
+    "synth_distribution_+_identity|div_one_elim": 2,
+    "synth_distribution_neg_involution|double_neg": 4,
+    "add_zero_elim|add_zero_elim": 9,
+    "synth_distribution_neg_involution|bool_or_false": 4,
+    "synth_distribution_+_identity|macro_add_const_f9f3d713": 1,
+    "synth_factoring_*_identity|bool_or_true": 1,
+    "mul_one_elim|concept_idempotent_or": 1,
+    "synth_distribution_+_identity|self_subtraction": 1,
+    "synth_distribution_*_identity|chain_inference": 25,
+    "synth_arithmetic_*_self_inverse|linear_equation_solve": 2,
+    "mul_one_elim|bool_idempotent": 1,
+    "synth_distribution_neg_involution|bool_and_true": 4,
+    "add_assoc_fold|add_assoc_fold": 1,
+    "synth_factoring_*_identity|algebraic_factor": 1,
+    "macro_add_mul_8da76e79|const_fold": 3,
+    "synth_distribution_*_identity|additive_cancellation": 1,
+    "synth_distribution_+_identity|algebraic_factor": 3,
+    "synth_distribution_neg_involution|synth_distribution_/_identity": 1,
+    "mul_one_elim|and_self": 3,
+    "macro_add_mul_8da76e79|division_self_elim": 1,
+    "commutativity_canonicalize|commutativity_canonicalize": 2,
+    "synth_distribution_+_identity|synth_logic_or_annihilation": 1,
+    "synth_algebra_*_identity|prob_complement_sum": 1,
+    "mul_one_elim|synth_algebra_+_identity": 1,
+    "synth_distribution_+_identity|concept_subtractive_self": 2,
+    "synth_distribution_*_identity|deriv_sum_rule": 1,
+    "deriv_sum_rule|deriv_linear": 1,
+    "deriv_linear|deriv_const_zero": 1,
+    "deriv_const_zero|synth_distribution_+_identity": 1,
+    "concept_multiplicative_identity|concept_subtractive_self": 1,
+    "combine_like_terms|combine_like_terms": 1,
+    "macro_add_mul_8da76e79|bool_or_false": 1,
+    "macro_add_mul_8da76e79|commutativity_canonicalize": 1,
+    "mul_one_elim|double_neg": 2,
+    "synth_factoring_*_identity|concept_double_negation_logic": 1,
+    "synth_propositional_not_involution|synth_algebra_*_identity": 2,
+    "macro_add_mul_8da76e79|synth_distribution_+_identity": 4,
+    "macro_add_mul_8da76e79|bool_idempotent": 1,
+    "learned_additive_identity|self_subtraction": 1,
+    "self_subtraction|synth_factoring_-_identity": 1,
+    "synth_factoring_/_identity|division_self_elim": 1,
+    "fill_unknown|mul_one_elim": 1,
+    "double_neg|concept_additive_identity": 1,
+    "and_self|double_neg_remove": 1,
+    "macro_add_mul_8da76e79|concept_or_true": 1,
+    "synth_algebra_*_identity|perfect_square_trinomial": 2,
+    "integ_linear|synth_distribution_+_identity": 11,
+    "macro_add_mul_8da76e79|synth_logic_not_involution": 2,
+    "integ_linear|synth_distribution_*_identity": 7,
+    "synth_distribution_neg_involution|trig_zero": 3,
+    "double_neg|chain_inference": 2,
+    "synth_distribution_neg_involution|additive_cancellation": 1,
+    "macro_add_mul_8da76e79|chemistry_stoich_coeff_one": 1,
+    "chemistry_stoich_coeff_one|synth_distribution_neg_involution": 1,
+    "synth_distribution_*_identity|integ_constant": 2,
+    "integ_constant|synth_factoring_*_annihilation": 1,
+    "integ_linear|synth_distribution_neg_involution": 4,
+    "concept_additive_identity|synth_logic_and_annihilation": 1,
+    "synth_arithmetic_*_self_inverse|chain_inference": 2,
+    "synth_distribution_*_identity|trig_zero": 5,
+    "synth_distribution_+_identity|integ_linear": 2,
+    "mul_one_elim|synth_distribution_+_identity": 1,
+    "concept_multiplicative_identity|concept_additive_identity": 2,
+    "deriv_sin|synth_distribution_neg_involution": 4,
+    "integ_constant|synth_distribution_+_identity": 1,
+    "integ_constant|synth_distribution_*_annihilation": 2,
+    "synth_distribution_*_identity|cos_zero": 3,
+    "synth_distribution_+_identity|cos_zero": 2,
+    "macro_add_mul_8da76e79|synth_distribution_-_identity": 1,
+    "macro_add_mul_8da76e79|bool_and_true": 1,
+    "synth_arithmetic_*_self_inverse|bool_and_true": 1,
+    "synth_arithmetic_*_self_inverse|power_zero_elim": 1,
+    "synth_distribution_+_identity|trig_zero": 2,
+    "synth_distribution_+_identity|linear_equation_solve": 2,
+    "synth_distribution_*_identity|deriv_sin": 3,
+    "synth_factoring_+_identity|prob_complement_sum": 1,
+    "macro_add_mul_8da76e79|chain_inference": 2,
+    "synth_distribution_*_identity|bool_idempotent": 2,
+    "concept_subtractive_self|double_neg": 1,
+    "synth_factoring_*_identity|synth_logic_not_involution": 1,
+    "macro_add_mul_8da76e79|integ_constant": 1,
+    "synth_distribution_+_identity|synth_factoring_*_annihilation": 1,
+    "synth_arithmetic_*_self_inverse|multiply_equation_solve": 1,
+    "synth_distribution_+_identity|deriv_sin": 1,
+    "concept_additive_identity_commuted|synth_propositional_or_annihilation": 1,
+    "synth_distribution_*_identity|chemistry_stoich_coeff_one": 1,
+    "synth_distribution_neg_involution|synth_distribution_-_identity": 1,
+    "add_zero_elim|bool_idempotent": 1,
+    "macro_add_mul_8da76e79|synth_logic_or_annihilation": 1,
+    "synth_distribution_+_identity|macro_add_mul_8da76e79": 1,
+    "concept_additive_identity_commuted|concept_additive_identity_commuted": 1,
+    "concept_additive_identity_commuted|synth_logic_and_annihilation": 1,
+    "synth_algebra_+_identity|double_neg": 1,
+    "macro_add_mul_8da76e79|algebraic_factor": 1,
+    "algebraic_factor|const_fold": 1,
+    "synth_propositional_not_involution|synth_arithmetic_+_self_inverse": 2,
+    "synth_distribution_+_identity|or_self": 1,
+    "or_self|synth_distribution_neg_involution": 1,
+    "synth_arithmetic_*_self_inverse|bool_idempotent": 1,
+    "concept_and_true|synth_distribution_neg_involution": 1,
+    "concept_additive_identity|synth_logic_not_involution": 1,
+    "synth_logic_not_involution|concept_additive_identity": 1,
+    "double_neg|concept_subtractive_self": 1
+  },
+  "registered": {
+    "Composite_synth_factor_synth_distri": {
+      "name": "Composite_synth_factor_synth_distri",
+      "pair": [
+        "synth_factoring_*_identity",
+        "synth_distribution_neg_involution"
+      ],
+      "count": 22,
+      "utility": 0.4
+    },
+    "Composite_synth_distri_commutativit": {
+      "name": "Composite_synth_distri_commutativit",
+      "pair": [
+        "synth_distribution_+_identity",
+        "commutativity_canonicalize"
+      ],
+      "count": 18,
+      "utility": 0.25
+    },
+    "Composite_synth_arithm_synth_arithm": {
+      "name": "Composite_synth_arithm_synth_arithm",
+      "pair": [
+        "synth_arithmetic_*_self_inverse",
+        "synth_arithmetic_*_self_inverse"
+      ],
+      "count": 33,
+      "utility": 0.25
+    },
+    "Composite_synth_distri_synth_distri": {
+      "name": "Composite_synth_distri_synth_distri",
+      "pair": [
+        "synth_distribution_neg_involution",
+        "synth_distribution_neg_involution"
+      ],
+      "count": 7,
+      "utility": 0.25
+    },
+    "Composite_const_fold_const_fold": {
+      "name": "Composite_const_fold_const_fold",
+      "pair": [
+        "const_fold",
+        "const_fold"
+      ],
+      "count": 41,
+      "utility": 0.25
+    },
+    "Composite_synth_distri_const_fold": {
+      "name": "Composite_synth_distri_const_fold",
+      "pair": [
+        "synth_distribution_neg_involution",
+        "const_fold"
+      ],
+      "count": 7,
+      "utility": 0.35
+    },
+    "Composite_synth_arithm_synth_distri": {
+      "name": "Composite_synth_arithm_synth_distri",
+      "pair": [
+        "synth_arithmetic_+_self_inverse",
+        "synth_distribution_neg_involution"
+      ],
+      "count": 9,
+      "utility": 0.25
+    },
+    "Composite_synth_algebr_synth_distri": {
+      "name": "Composite_synth_algebr_synth_distri",
+      "pair": [
+        "synth_algebra_*_identity",
+        "synth_distribution_neg_involution"
+      ],
+      "count": 18,
+      "utility": 0.25
+    },
+    "Composite_chain_infere_chain_infere": {
+      "name": "Composite_chain_infere_chain_infere",
+      "pair": [
+        "chain_inference",
+        "chain_inference"
+      ],
+      "count": 36,
+      "utility": 0.25
+    },
+    "Composite_synth_distri_macro_add_mu": {
+      "name": "Composite_synth_distri_macro_add_mu",
+      "pair": [
+        "synth_distribution_*_identity",
+        "macro_add_mul_8da76e79"
+      ],
+      "count": 26,
+      "utility": 0.25
+    },
+    "Composite_synth_distri_synth_logic_": {
+      "name": "Composite_synth_distri_synth_logic_",
+      "pair": [
+        "synth_distribution_neg_involution",
+        "synth_logic_and_annihilation"
+      ],
+      "count": 5,
+      "utility": 0.25
+    },
+    "Composite_synth_distri_multiply_equ": {
+      "name": "Composite_synth_distri_multiply_equ",
+      "pair": [
+        "synth_distribution_+_identity",
+        "multiply_equation_solve"
+      ],
+      "count": 6,
+      "utility": 0.25
+    },
+    "Composite_add_zero_eli_synth_distri": {
+      "name": "Composite_add_zero_eli_synth_distri",
+      "pair": [
+        "add_zero_elim",
+        "synth_distribution_neg_involution"
+      ],
+      "count": 23,
+      "utility": 0.25
+    },
+    "Composite_synth_algebr_bool_idempot": {
+      "name": "Composite_synth_algebr_bool_idempot",
+      "pair": [
+        "synth_algebra_+_identity",
+        "bool_idempotent"
+      ],
+      "count": 7,
+      "utility": 0.35
+    },
+    "Composite_distributive_algebraic_fa": {
+      "name": "Composite_distributive_algebraic_fa",
+      "pair": [
+        "distributive_expand",
+        "algebraic_factor"
+      ],
+      "count": 25,
+      "utility": 0.25
+    },
+    "Composite_const_fold_synth_distri": {
+      "name": "Composite_const_fold_synth_distri",
+      "pair": [
+        "const_fold",
+        "synth_distribution_neg_involution"
+      ],
+      "count": 8,
+      "utility": 0.25
+    },
+    "Composite_macro_add_mu_synth_distri": {
+      "name": "Composite_macro_add_mu_synth_distri",
+      "pair": [
+        "macro_add_mul_8da76e79",
+        "synth_distribution_neg_involution"
+      ],
+      "count": 19,
+      "utility": 0.3
+    },
+    "Composite_macro_add_co_const_fold": {
+      "name": "Composite_macro_add_co_const_fold",
+      "pair": [
+        "macro_add_const_f9f3d713",
+        "const_fold"
+      ],
+      "count": 13,
+      "utility": 0.25
+    },
+    "Composite_double_neg_double_neg": {
+      "name": "Composite_double_neg_double_neg",
+      "pair": [
+        "double_neg",
+        "double_neg"
+      ],
+      "count": 21,
+      "utility": 0.25
+    },
+    "Composite_synth_arithm_const_fold": {
+      "name": "Composite_synth_arithm_const_fold",
+      "pair": [
+        "synth_arithmetic_*_self_inverse",
+        "const_fold"
+      ],
+      "count": 13,
+      "utility": 0.25
+    },
+    "Composite_bool_idempot_synth_distri": {
+      "name": "Composite_bool_idempot_synth_distri",
+      "pair": [
+        "bool_idempotent",
+        "synth_distribution_neg_involution"
+      ],
+      "count": 10,
+      "utility": 0.25
+    },
+    "Composite_commutativit_distributive": {
+      "name": "Composite_commutativit_distributive",
+      "pair": [
+        "commutativity_canonicalize",
+        "distributive_expand"
+      ],
+      "count": 20,
+      "utility": 0.25
+    },
+    "Composite_concept_addi_synth_distri": {
+      "name": "Composite_concept_addi_synth_distri",
+      "pair": [
+        "concept_additive_identity",
+        "synth_distribution_neg_involution"
+      ],
+      "count": 8,
+      "utility": 0.25
+    },
+    "Composite_synth_arithm_self_subtrac": {
+      "name": "Composite_synth_arithm_self_subtrac",
+      "pair": [
+        "synth_arithmetic_*_self_inverse",
+        "self_subtraction"
+      ],
+      "count": 10,
+      "utility": 0.25
+    },
+    "Composite_synth_distri_combine_like": {
+      "name": "Composite_synth_distri_combine_like",
+      "pair": [
+        "synth_distribution_neg_involution",
+        "combine_like_terms"
+      ],
+      "count": 9,
+      "utility": 0.25
+    },
+    "Composite_perfect_squa_commutativit": {
+      "name": "Composite_perfect_squa_commutativit",
+      "pair": [
+        "perfect_square_trinomial",
+        "commutativity_canonicalize"
+      ],
+      "count": 9,
+      "utility": 0.25
+    },
+    "Composite_synth_distri_algebraic_fa": {
+      "name": "Composite_synth_distri_algebraic_fa",
+      "pair": [
+        "synth_distribution_*_identity",
+        "algebraic_factor"
+      ],
+      "count": 12,
+      "utility": 0.25
+    },
+    "Composite_synth_distri_chain_infere": {
+      "name": "Composite_synth_distri_chain_infere",
+      "pair": [
+        "synth_distribution_neg_involution",
+        "chain_inference"
+      ],
+      "count": 12,
+      "utility": 0.25
+    },
+    "Composite_synth_distri_perfect_squa": {
+      "name": "Composite_synth_distri_perfect_squa",
+      "pair": [
+        "synth_distribution_*_identity",
+        "perfect_square_trinomial"
+      ],
+      "count": 7,
+      "utility": 0.25
+    },
+    "Composite_mul_one_elim_synth_distri": {
+      "name": "Composite_mul_one_elim_synth_distri",
+      "pair": [
+        "mul_one_elim",
+        "synth_distribution_neg_involution"
+      ],
+      "count": 14,
+      "utility": 0.35
+    },
+    "Composite_synth_distri_linear_equat": {
+      "name": "Composite_synth_distri_linear_equat",
+      "pair": [
+        "synth_distribution_neg_involution",
+        "linear_equation_solve"
+      ],
+      "count": 7,
+      "utility": 0.25
+    },
+    "Composite_perfect_squa_synth_distri": {
+      "name": "Composite_perfect_squa_synth_distri",
+      "pair": [
+        "perfect_square_trinomial",
+        "synth_distribution_neg_involution"
+      ],
+      "count": 9,
+      "utility": 0.25
+    },
+    "Composite_synth_distri_synth_factor": {
+      "name": "Composite_synth_distri_synth_factor",
+      "pair": [
+        "synth_distribution_neg_involution",
+        "synth_factoring_*_identity"
+      ],
+      "count": 8,
+      "utility": 0.25
+    },
+    "Composite_add_zero_eli_add_zero_eli": {
+      "name": "Composite_add_zero_eli_add_zero_eli",
+      "pair": [
+        "add_zero_elim",
+        "add_zero_elim"
+      ],
+      "count": 9,
+      "utility": 0.25
+    },
+    "Composite_integ_linear_synth_distri": {
+      "name": "Composite_integ_linear_synth_distri",
+      "pair": [
+        "integ_linear",
+        "synth_distribution_*_identity"
+      ],
+      "count": 7,
+      "utility": 0.3
+    },
+    "Composite_mul_one_elim_mul_one_elim": {
+      "name": "Composite_mul_one_elim_mul_one_elim",
+      "pair": [
+        "mul_one_elim",
+        "mul_one_elim"
+      ],
+      "count": 5,
+      "utility": 0.25
+    },
+    "Composite_synth_distri_distributive": {
+      "name": "Composite_synth_distri_distributive",
+      "pair": [
+        "synth_distribution_*_identity",
+        "distributive_expand"
+      ],
+      "count": 5,
+      "utility": 0.25
+    },
+    "Composite_macro_add_mu_synth_algebr": {
+      "name": "Composite_macro_add_mu_synth_algebr",
+      "pair": [
+        "macro_add_mul_8da76e79",
+        "synth_algebra_+_identity"
+      ],
+      "count": 6,
+      "utility": 0.25
+    },
+    "Composite_synth_distri_trig_zero": {
+      "name": "Composite_synth_distri_trig_zero",
+      "pair": [
+        "synth_distribution_*_identity",
+        "trig_zero"
+      ],
+      "count": 5,
+      "utility": 0.25
+    },
+    "Composite_synth_arithm_synth_propos": {
+      "name": "Composite_synth_arithm_synth_propos",
+      "pair": [
+        "synth_arithmetic_+_self_inverse",
+        "synth_propositional_not_involution"
+      ],
+      "count": 5,
+      "utility": 0.25
+    },
+    "Composite_synth_distri_synth_arithm": {
+      "name": "Composite_synth_distri_synth_arithm",
+      "pair": [
+        "synth_distribution_neg_involution",
+        "synth_arithmetic_+_self_inverse"
+      ],
+      "count": 6,
+      "utility": 0.25
+    },
+    "Composite_synth_distri_double_neg": {
+      "name": "Composite_synth_distri_double_neg",
+      "pair": [
+        "synth_distribution_*_identity",
+        "double_neg"
+      ],
+      "count": 6,
+      "utility": 0.25
+    },
+    "Composite_self_subtrac_synth_distri": {
+      "name": "Composite_self_subtrac_synth_distri",
+      "pair": [
+        "self_subtraction",
+        "synth_distribution_neg_involution"
+      ],
+      "count": 5,
+      "utility": 0.25
+    },
+    "Composite_algebraic_fa_commutativit": {
+      "name": "Composite_algebraic_fa_commutativit",
+      "pair": [
+        "algebraic_factor",
+        "commutativity_canonicalize"
+      ],
+      "count": 6,
+      "utility": 0.25
+    },
+    "Composite_chain_infere_mul_one_elim": {
+      "name": "Composite_chain_infere_mul_one_elim",
+      "pair": [
+        "chain_inference",
+        "mul_one_elim"
+      ],
+      "count": 6,
+      "utility": 0.3
+    },
+    "Composite_commutativit_chain_infere": {
+      "name": "Composite_commutativit_chain_infere",
+      "pair": [
+        "commutativity_canonicalize",
+        "chain_inference"
+      ],
+      "count": 5,
+      "utility": 0.25
+    },
+    "Composite_concept_addi_double_neg": {
+      "name": "Composite_concept_addi_double_neg",
+      "pair": [
+        "concept_additive_identity",
+        "double_neg"
+      ],
+      "count": 6,
+      "utility": 0.25
+    },
+    "Composite_macro_add_mu_macro_add_mu": {
+      "name": "Composite_macro_add_mu_macro_add_mu",
+      "pair": [
+        "macro_add_mul_8da76e79",
+        "macro_add_mul_8da76e79"
+      ],
+      "count": 5,
+      "utility": 0.25
+    },
+    "Composite_concept_idem_synth_distri": {
+      "name": "Composite_concept_idem_synth_distri",
+      "pair": [
+        "concept_idempotent_and",
+        "synth_distribution_neg_involution"
+      ],
+      "count": 6,
+      "utility": 0.3
+    },
+    "Composite_synth_algebr_synth_algebr": {
+      "name": "Composite_synth_algebr_synth_algebr",
+      "pair": [
+        "synth_algebra_+_identity",
+        "synth_algebra_+_identity"
+      ],
+      "count": 5,
+      "utility": 0.25
+    }
+  },
+  "total_traces": 1020
+}

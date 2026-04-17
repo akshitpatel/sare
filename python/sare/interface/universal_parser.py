@@ -29,6 +29,86 @@ _TRANSFER_VERBS_OUT = {"gives": "-", "loses": "-", "drops": "-", "spends": "-"}
 _TRANSFER_VERBS_IN  = {"receives": "+", "gets": "+", "finds": "+", "earns": "+"}
 _QUERY_MARKERS      = {"how many", "what is", "how much", "find"}
 
+# ── Math NL patterns ────────────────────────────────────────────
+_SIMPLIFY_KEYWORDS = {"simplify", "simplify:", "evaluate", "compute", "reduce", "calculate"}
+_DERIVATIVE_KEYWORDS = {"derivative", "differentiate", "d/dx", "diff"}
+_INTEGRAL_KEYWORDS = {"integral", "integrate", "antiderivative"}
+_TRIG_MAP = {
+    "sin": "sin", "sine": "sin",
+    "cos": "cos", "cosine": "cos",
+    "tan": "tan", "tangent": "tan",
+    "log": "log", "logarithm": "log",
+    "sqrt": "sqrt", "square root": "sqrt",
+}
+_FIND_KEYWORDS = {"find", "solve", "what is x", "what's x"}
+
+
+def _try_parse_math_nl(text: str) -> Optional[str]:
+    """
+    P4.1: Attempt to extract a symbolic expression from natural language math input.
+    Returns a parseable expression string or None.
+
+    Handles:
+      - "simplify x + 0"            → "x + 0"
+      - "what is sin(0)?"           → "sin(0)"
+      - "derivative of x^3"         → "derivative(x^3)"
+      - "find x if x + 5 = 12"      → "x + 5 = 12"
+      - "simplify (x + 0) * 1"      → "(x + 0) * 1"
+    """
+    import re
+    t = text.strip().rstrip("?. \t")
+
+    # Direct simplify/evaluate keyword at start
+    lower = t.lower()
+    for kw in _SIMPLIFY_KEYWORDS:
+        if lower.startswith(kw):
+            rest = t[len(kw):].strip().lstrip(":").strip()
+            if rest:
+                return rest
+
+    # "derivative of X" → "derivative(X)"  [check BEFORE generic "what is X?"]
+    for kw in _DERIVATIVE_KEYWORDS:
+        m = re.match(rf"(?i){re.escape(kw)}\s+(?:of\s+)?(.+)", t)
+        if m:
+            expr = m.group(1).strip()
+            return f"derivative({expr})"
+
+    # "integral of X" → "integral(X)"
+    for kw in _INTEGRAL_KEYWORDS:
+        m = re.match(rf"(?i){re.escape(kw)}\s+(?:of\s+)?(.+)", t)
+        if m:
+            expr = m.group(1).strip()
+            return f"integral({expr})"
+
+    # "sin of 0" → "sin(0)", "cosine of 0" → "cos(0)"
+    for nl, sym in _TRIG_MAP.items():
+        m = re.match(rf"(?i){re.escape(nl)}\s+(?:of\s+)?(.+)", t)
+        if m:
+            arg = m.group(1).strip()
+            return f"{sym}({arg})"
+
+    # "what is X?" or "what's X?" — after trig/deriv so "what is derivative of X" works
+    m = re.match(r"(?i)what(?:'s| is)\s+(.+)", t)
+    if m:
+        inner = m.group(1).strip()
+        # Recursively process the extracted expression
+        processed = _try_parse_math_nl(inner)
+        return processed if processed else inner
+
+    # "find x if X" or "solve X" → extract equation
+    for kw in _FIND_KEYWORDS:
+        m = re.match(rf"(?i){re.escape(kw)}\s+(?:x\s+)?(?:if|when|where|such that|:)?\s*(.+)", t)
+        if m:
+            expr = m.group(1).strip()
+            if any(op in expr for op in ("=", "+", "-", "*", "/")):
+                return expr
+
+    # Fallback: if text looks like an expression already (contains operators)
+    if re.search(r'[+\-*/^()=]', t) and not re.search(r'[A-Z]', t.split()[0] if t.split() else ""):
+        return t
+
+    return None
+
 @dataclass
 class EntityData:
     name: str
@@ -185,11 +265,60 @@ class UniversalParser:
         raw_expr = raw_expr.replace("+", " + ").replace("-", " - ")
         return raw_expr.strip()
 
+    def parse_multi(self, text: str) -> list:
+        """
+        Split text into sentences and parse each independently.
+
+        Splits on: '. ' (period+space), '; ' (semicolon+space),
+                   ' then ' / ' and then ', 'after that', 'next',
+                   newlines.
+        Returns a list of ParseResult objects.
+        """
+        parts = re.split(
+            r'(?:\.\s+|\;\s+|\s+then\s+|\s+and\s+then\s+|\s+after\s+that\s+|\s+next\s+|\n+)',
+            text,
+            flags=re.IGNORECASE
+        )
+        results = []
+        for part in parts:
+            part = part.strip().rstrip('.')
+            if len(part) > 2:  # skip empty/trivial fragments
+                try:
+                    result = self.parse(part)
+                    results.append(result)
+                except Exception:
+                    pass
+        return results if results else [self.parse(text)]  # fallback: parse whole
+
     def parse(self, text: str) -> ParseResult:
         """
         Main entry point for Epic 10 Universal Parsing.
         Translates a multi-sentence word problem into a canonical expression.
+        P4.1: First tries math NL patterns (simplify/derivative/trig/etc.)
         """
+        # P4.1: Try math NL first before word-problem parsing
+        math_expr = _try_parse_math_nl(text)
+        if math_expr:
+            domain = "arithmetic"
+            low = math_expr.lower()
+            if any(kw in low for kw in ("derivative", "integral", "diff")):
+                domain = "calculus"
+            elif any(kw in low for kw in ("sin", "cos", "tan", "log", "sqrt")):
+                domain = "trigonometry"
+            elif "and" in low or "or" in low or "not" in low:
+                domain = "logic"
+            elif "=" in low:
+                domain = "algebra"
+            return ParseResult(
+                raw_input=text,
+                expression=math_expr,
+                domain=domain,
+                confidence=0.85,
+                graph_ready=True,
+                entities={},
+                tokens=text.split(),
+            )
+
         self.entities = {}
         sentences = self._tokenize_sentences(text)
         

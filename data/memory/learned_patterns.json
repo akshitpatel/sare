@@ -1,0 +1,7 @@
+{
+  "equation_solve": {
+    "operators": ["=", "eq"],
+    "pattern": "equation_shift_term",
+    "delta": -2.0
+  }
+}

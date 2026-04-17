@@ -116,6 +116,27 @@ _RULE_EXPLANATIONS: Dict[str, Dict[str, str]] = {
         "desc": "Raising a value to the first power is redundant.",
         "template": "Drop the exponent: {before} → {after}",
     },
+    # Equation solving
+    "equation_subtract_const": {
+        "name": "Isolate Term (subtract constant)",
+        "desc": "Move a constant from one side of the equation to the other by subtracting.",
+        "template": "Subtract the constant from both sides: {before} → {after}",
+    },
+    "quadratic_solve": {
+        "name": "Solve Power Equation (x^n = c → x = c^(1/n))",
+        "desc": "Take the nth root of both sides to solve for the variable.",
+        "template": "Take the root: {before} → {after}",
+    },
+    "linear_equation_solver": {
+        "name": "Linear Equation Solver (ax = b → x = b/a)",
+        "desc": "Divide both sides by the coefficient to isolate the variable.",
+        "template": "Divide both sides by the coefficient: {before} → {after}",
+    },
+    "equation_divide": {
+        "name": "Isolate Variable (divide both sides)",
+        "desc": "Divide both sides of the equation to isolate the variable.",
+        "template": "Divide both sides: {before} → {after}",
+    },
     # Macros / learned concepts
     "concept_": {
         "name": "Learned Rule (ConceptRegistry)",

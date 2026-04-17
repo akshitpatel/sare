@@ -25,6 +25,8 @@
 #include "reflection/reflection_engine.hpp"
 #include "reflection/concept_registry.hpp"
 #include "reflection/causal_induction.hpp"
+#include "plasticity/module_generator.hpp"
+#include "memory/episodic_store.hpp"
 
 namespace py = pybind11;
 
@@ -216,11 +218,31 @@ PYBIND11_MODULE(sare_bindings, m) {
         .def_readwrite("tests_passed",   &sare::InductionResult::tests_passed)
         .def_readwrite("reasoning",      &sare::InductionResult::reasoning);
 
+    // ─── SolveEpisode ──
+    py::class_<sare::SolveEpisode>(m, "SolveEpisode")
+        .def(py::init<>())
+        .def_readwrite("problem_id",          &sare::SolveEpisode::problem_id)
+        .def_readwrite("transform_sequence",  &sare::SolveEpisode::transform_sequence)
+        .def_readwrite("energy_trajectory",   &sare::SolveEpisode::energy_trajectory)
+        .def_readwrite("initial_energy",      &sare::SolveEpisode::initial_energy)
+        .def_readwrite("final_energy",        &sare::SolveEpisode::final_energy)
+        .def_readwrite("compute_time_seconds",&sare::SolveEpisode::compute_time_seconds)
+        .def_readwrite("total_expansions",    &sare::SolveEpisode::total_expansions)
+        .def_readwrite("success",             &sare::SolveEpisode::success);
+
     // ─── CausalInduction ──
     py::class_<sare::CausalInduction>(m, "CausalInduction")
         .def(py::init<>())
-        .def("evaluate", &sare::CausalInduction::evaluate,
-             py::arg("rule"), py::arg("energy"),
+        .def("evaluate",
+             [](sare::CausalInduction& self,
+                sare::AbstractRule& rule,
+                py::object /* energy — ignored, default used */,
+                int num_tests) {
+                 auto energy = sare::makeDefaultEnergyAggregator();
+                 return self.evaluate(rule, energy, num_tests);
+             },
+             py::arg("rule"),
+             py::arg("energy") = py::none(),
              py::arg("num_tests") = sare::CausalInduction::DEFAULT_TESTS);
 
     // ─── ConceptRegistry ──
@@ -229,6 +251,36 @@ PYBIND11_MODULE(sare_bindings, m) {
         .def("add_rule",              &sare::ConceptRegistry::addRule)
         .def("get_rules",             &sare::ConceptRegistry::getRules)
         .def("get_consolidated_rules",&sare::ConceptRegistry::getConsolidatedRules);
+
+    // ─── ModuleGenerator ──
+    py::class_<sare::ModuleGenerator>(m, "ModuleGenerator")
+        .def(py::init<>())
+        .def("isPersistentFailure",   &sare::ModuleGenerator::isPersistentFailure,
+             py::arg("episodes"), py::arg("failure_rate_threshold") = 0.5)
+        .def("extractFailureFeatures",&sare::ModuleGenerator::extractFailureFeatures,
+             py::arg("failures"))
+        .def("generate_step_sequences",
+             [](sare::ModuleGenerator& self,
+                const std::vector<sare::SolveEpisode>& failures,
+                size_t max_candidates) -> std::vector<std::vector<std::string>> {
+                 auto candidates = self.generate(failures, max_candidates);
+                 std::vector<std::vector<std::string>> result;
+                 const std::string prefix = "generated_";
+                 for (auto& c : candidates) {
+                     if (!c) continue;
+                     std::string name = c->name();
+                     std::vector<std::string> steps;
+                     auto pos = name.find("_then_");
+                     if (name.rfind(prefix, 0) == 0 && pos != std::string::npos
+                         && pos > prefix.size()) {
+                         steps.push_back(name.substr(prefix.size(), pos - prefix.size()));
+                         steps.push_back(name.substr(pos + 6));
+                     }
+                     if (steps.size() >= 2) result.push_back(steps);
+                 }
+                 return result;
+             },
+             py::arg("failures"), py::arg("max_candidates") = 3);
 
     m.def("default_search_config", []() {
         return sare::SearchConfig{};

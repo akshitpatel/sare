@@ -1,0 +1,66 @@
+{
+  "{\"agent\":\"child\",\"close_after\":false,\"destination\":\"\",\"goal_text\":\"do the secret box routine\",\"goal_type\":\"\",\"prefer_teacher\":false,\"target\":\"\"}": {
+    "goal_signature": "{\"agent\":\"child\",\"close_after\":false,\"destination\":\"\",\"goal_text\":\"do the secret box routine\",\"goal_type\":\"\",\"prefer_teacher\":false,\"target\":\"\"}",
+    "goal_summary": "do the secret box routine",
+    "goal": {
+      "goal_type": "",
+      "agent": "child",
+      "target": "",
+      "destination": "",
+      "close_after": false,
+      "goal_text": "do the secret box routine",
+      "prefer_teacher": false,
+      "raw_goal": {
+        "goal_type": "",
+        "target": "",
+        "destination": "",
+        "close_after": false,
+        "prefer_teacher": false
+      }
+    },
+    "raw_answer": "pick up the ball. move child to the kitchen. open the box. put the ball in the box. close the box.",
+    "commands": [
+      "pick up the ball",
+      "move child to the kitchen",
+      "open the box",
+      "put the ball in the box",
+      "close the box"
+    ],
+    "source": "human_teacher",
+    "created_at": 1773141400.630142,
+    "usage_count": 1,
+    "last_used_at": 1773141400.637917
+  },
+  "{\"agent\":\"child\",\"close_after\":false,\"destination\":\"\",\"goal_text\":\"do the secret box routine\",\"goal_type\":\"\",\"target\":\"\"}": {
+    "goal_signature": "{\"agent\":\"child\",\"close_after\":false,\"destination\":\"\",\"goal_text\":\"do the secret box routine\",\"goal_type\":\"\",\"target\":\"\"}",
+    "goal_summary": "do the secret box routine",
+    "goal": {
+      "goal_type": "",
+      "agent": "child",
+      "target": "",
+      "destination": "",
+      "close_after": false,
+      "goal_text": "do the secret box routine",
+      "prefer_teacher": false,
+      "raw_goal": {
+        "goal_type": "",
+        "target": "",
+        "destination": "",
+        "close_after": false,
+        "prefer_teacher": false
+      }
+    },
+    "raw_answer": "pick up the ball. move child to the kitchen. open the box. put the ball in the box. close the box.",
+    "commands": [
+      "pick up the ball",
+      "move child to the kitchen",
+      "open the box",
+      "put the ball in the box",
+      "close the box"
+    ],
+    "source": "human_teacher",
+    "created_at": 1773141414.966576,
+    "usage_count": 3,
+    "last_used_at": 1773141432.067154
+  }
+}

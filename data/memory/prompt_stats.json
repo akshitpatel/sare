@@ -1,0 +1,37 @@
+{
+  "strict": {
+    "uses": 359,
+    "verified": 348,
+    "total_rules": 1791,
+    "last_used": 1773114535.252182,
+    "win_rate": 0.19430485762144054
+  },
+  "examples": {
+    "uses": 0,
+    "verified": 0,
+    "total_rules": 0,
+    "last_used": 0.0,
+    "win_rate": 0.0
+  },
+  "analogical": {
+    "uses": 0,
+    "verified": 0,
+    "total_rules": 0,
+    "last_used": 0.0,
+    "win_rate": 0.0
+  },
+  "minimal": {
+    "uses": 0,
+    "verified": 0,
+    "total_rules": 0,
+    "last_used": 0.0,
+    "win_rate": 0.0
+  },
+  "socratic": {
+    "uses": 0,
+    "verified": 0,
+    "total_rules": 0,
+    "last_used": 0.0,
+    "win_rate": 0.0
+  }
+}

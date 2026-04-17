@@ -14,12 +14,62 @@ import sys
 import os
 import argparse
 import logging
+import subprocess
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from socketserver import ThreadingMixIn
 from urllib.parse import urlparse, parse_qs
 from pathlib import Path
 
 log = logging.getLogger(__name__)
+os.environ.setdefault("SARE_RUNTIME_ROLE", "web")
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_DAEMON_SCRIPT = _REPO_ROOT / "learn_daemon.py"
+_DAEMON_PID_FILE = _REPO_ROOT / "data" / "memory" / "daemon.pid"
+_DAEMON_HEARTBEAT_FILE = _REPO_ROOT / "data" / "memory" / "daemon_heartbeat.json"
+_DAEMON_LOG_FILE = Path("/tmp/daemon_new.log")
+_VALUE_NET_STATS_FILE = _REPO_ROOT / "data" / "memory" / "mlx_value_net_stats.json"
+
+
+def _daemon_python_cmd(mode: str = "normal"):
+    python_bin = "/opt/homebrew/bin/python3" if Path("/opt/homebrew/bin/python3").exists() else (sys.executable or "python3")
+    cmd = [python_bin, str(_DAEMON_SCRIPT), "--verbose"]
+    if mode == "turbo":
+        cmd.append("--turbo")
+    return cmd
+
+
+def _read_live_daemon_pid():
+    try:
+        if not _DAEMON_PID_FILE.exists():
+            return None
+        pid = int(_DAEMON_PID_FILE.read_text(encoding="utf-8").strip())
+        os.kill(pid, 0)
+        return pid
+    except Exception:
+        return None
+
+
+def _read_value_net_stats() -> dict:
+    if not _VALUE_NET_STATS_FILE.exists():
+        return {"ready": False, "source": "missing"}
+    try:
+        stats = json.loads(_VALUE_NET_STATS_FILE.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return {"ready": False, "source": "file", "error": str(exc)}
+    updates = int(stats.get("updates", 0) or 0)
+    avg_loss = float(stats.get("avg_loss", 0.0) or 0.0)
+    predictions = int(stats.get("predictions", 0) or 0)
+    return {
+        "ready": updates > 0,
+        "device": "daemon-owned",
+        "total_updates": updates,
+        "avg_loss": round(avg_loss, 5),
+        "buffer_size": None,
+        "buffer_needed": 0 if updates > 0 else 32,
+        "predictions": predictions,
+        "source": "file",
+    }
 
 from sare.engine import (
     Graph, EnergyEvaluator, BeamSearch, MCTSSearch, EXAMPLE_PROBLEMS,
@@ -206,15 +256,8 @@ def _ensure_hippocampus_started():
 
 
 def _ensure_self_improver_started():
-    """Auto-start the 24/7 self-improvement daemon when the server boots."""
-    try:
-        from sare.meta.self_improver import get_self_improver
-        si = get_self_improver()
-        if not si._running:
-            si.start()
-            print("[sare] SelfImprover daemon started (24/7 mode, 5-min cycles)")
-    except Exception as _si_err:
-        print(f"[sare] SelfImprover auto-start failed: {_si_err}")
+    """Self-evolver disabled — focus on self-learning loop."""
+    print("[sare] SelfImprover auto-start DISABLED (self-learning mode)")
 
 
 def _restore_component(name, component):
@@ -233,6 +276,8 @@ def _save_component(name, component):
     if component is None:
         return
     saver = getattr(component, "save", None)
+    if not callable(saver):
+        saver = getattr(component, "_save", None)
     if not callable(saver):
         return
     try:
@@ -512,6 +557,10 @@ def _path_requires_legacy_runtime(path: str) -> bool:
         "/api/engineering-checklist",
         "/api/engineering_checklist",
         "/api/llm-status",
+        "/api/llm/rate-limits",
+        "/api/learning/live",
+        "/api/daemon/heartbeat",
+        "/api/daemon/livelog",
     }:
         return False
     return True
@@ -641,6 +690,23 @@ def load_engineering_checklist() -> dict:
             round((status_counts["done"] / len(tasks)) * 100, 1) if tasks else 0.0
         ),
     }
+    # Phase 1c: Wire LearningMonitor metrics to dashboard
+    try:
+        from sare.meta.learning_monitor import get_learning_monitor
+        _monitor = get_learning_monitor()
+        _monitor_stats = _monitor.summary()
+        data["learning_mastery"] = {
+            "total_mastered": _monitor_stats.get("mastered", 0),
+            "symbolic_mastered": _monitor_stats.get("symbolic_mastered", 0),
+            "general_mastered": _monitor_stats.get("verified_general_patterns", 0),
+            "patterns_tracked": _monitor_stats.get("patterns_tracked", 0),
+            "heldout_pass_rate": _monitor_stats.get("heldout_pass_rate"),
+            "generalization_rate": _monitor_stats.get("generalization_rate"),
+        }
+    except Exception as e:
+        log.debug(f"[web] Could not fetch LearningMonitor stats: {e}")
+        data["learning_mastery"] = None
+
     return data
 
 
@@ -731,6 +797,8 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             params = parse_qs(parsed.query)
             expr = params.get("expr", [""])[0]
             self._api_inspect(expr)
+        elif parsed.path == "/api/concepts/activity":
+            self._api_concepts_activity()
         elif parsed.path == "/api/concepts":
             self._api_concepts()
         elif parsed.path == "/api/analogies":
@@ -757,6 +825,12 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_mind_questions()
         elif parsed.path == "/api/agi/evolution":
             self._api_agi_evolution()
+        elif parsed.path == "/api/learning/monitor":
+            self._api_learning_monitor()
+        elif parsed.path == "/api/learning/mastery":
+            self._api_learning_mastery()
+        elif parsed.path == "/api/learning/understanding":
+            self._api_learning_understanding()
         elif parsed.path == "/api/agi/value-net":
             self._api_agi_value_net()
         # ── Evolver Chat endpoints ─────────────────────────────
@@ -803,10 +877,45 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_hippocampus_status()
         elif parsed.path == "/api/autolearn":
             self._api_autolearn_status()
+        elif parsed.path == "/api/daemon/status":
+            self._api_daemon_status()
+        elif parsed.path == "/api/daemon/activity":
+            self._api_daemon_activity()
+        elif parsed.path == "/api/daemon/heartbeat":
+            self._api_daemon_heartbeat()
+        elif parsed.path == "/api/daemon/livelog":
+            params = parse_qs(parsed.query)
+            lines = int(params.get("lines", ["60"])[0])
+            self._api_daemon_livelog(lines)
         elif parsed.path == "/api/llm-status":
             self._api_llm_status()
+        elif parsed.path == "/api/llm/rate-limits":
+            self._api_llm_rate_limits()
+        elif parsed.path == "/api/llm/broker":
+            self._api_llm_broker()
+        elif parsed.path == "/api/reasoning/orchestrator":
+            self._api_reasoning_orchestrator()
+        elif parsed.path == "/api/memory/unified":
+            self._api_memory_unified()
+        elif parsed.path == "/api/reasoning/hierarchical":
+            self._api_reasoning_hierarchical()
+        elif parsed.path == "/api/knowledge/graph":
+            self._api_knowledge_graph_viz()
+        elif parsed.path == "/api/compose":
+            params = parse_qs(parsed.query)
+            subject = params.get("subject", [""])[0]
+            target  = params.get("target",  [None])[0]
+            hops    = int(params.get("hops", ["3"])[0])
+            self._api_compose(subject, target, hops)
+        elif parsed.path == "/api/patterns":
+            params = parse_qs(parsed.query)
+            domain = params.get("domain", [None])[0]
+            n = int(params.get("n", ["20"])[0])
+            self._api_patterns(domain, n)
         elif parsed.path == "/api/world":
             self._api_world_summary()
+        elif parsed.path == "/api/world/readable-report":
+            self._api_world_readable_report()
         elif parsed.path == "/api/world/imagine":
             params = parse_qs(parsed.query)
             seed = params.get("seed", ["addition"])[0]
@@ -849,6 +958,8 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             expression = params.get("expression", ["x + 0"])[0]
             domain = params.get("domain", ["arithmetic"])[0]
             self._api_world_predict(expression, domain)
+        elif parsed.path == "/api/world/live":
+            self._api_world_live()
         elif parsed.path == "/api/synth/stats":
             self._api_synth_stats()
         elif parsed.path == "/api/synth/review":
@@ -881,6 +992,8 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_benchmark_all()
         elif parsed.path == "/api/benchmark/agi":
             self._api_benchmark_agi()
+        elif parsed.path == "/api/benchmark/novel":
+            self._api_benchmark_novel()
         elif parsed.path == "/api/search/predictor":
             self._api_search_predictor()
         # ── Human-mind modules ────────────────────────────────
@@ -937,6 +1050,16 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_brain_predictive()
         elif parsed.path == "/api/brain/trainer":
             self._api_brain_trainer()
+        elif parsed.path == "/api/brain/composite":
+            self._api_brain_composite()
+        elif parsed.path == "/api/brain/astar":
+            self._api_brain_astar_stats()
+        elif parsed.path == "/api/brain/hypothesis":
+            self._api_brain_hypothesis()
+        elif parsed.path == "/api/datasets":
+            self._api_datasets()
+        elif parsed.path == "/api/benchmark/hard":
+            self._api_benchmark_hard()
         elif parsed.path == "/api/brain/society":
             self._api_brain_society()
         elif parsed.path == "/api/brain/metacognition":
@@ -983,6 +1106,8 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_brain_percept()
         elif parsed.path == "/api/domains":
             self._api_domains_status()
+        elif parsed.path == "/api/books":
+            self._api_books_status()
         elif parsed.path == "/api/knowledge/commonsense":
             self._api_knowledge_commonsense()
         elif parsed.path == "/api/knowledge/lookup":
@@ -1030,6 +1155,10 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_solve_stream(expr, budget)
         elif parsed.path == "/api/world/graph":
             self._api_world_graph()
+        elif parsed.path == "/api/weakness":
+            self._api_weakness()
+        elif parsed.path == "/api/world/simulator":
+            self._api_world_simulator()
         elif parsed.path == "/api/transfer":
             self._api_transfer()
         elif parsed.path == "/api/grounding":
@@ -1050,6 +1179,10 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_consciousness()
         elif parsed.path == "/api/intelligence/domains":
             self._api_intelligence_domains()
+        elif parsed.path == "/api/intelligence/learning-progress":
+            self._api_intelligence_learning_progress()
+        elif parsed.path == "/api/intelligence/learning-dashboard":
+            self._api_intelligence_learning_dashboard()
         elif parsed.path == "/api/perception/neural":
             self._api_neural_perception_stats()
         elif parsed.path == "/api/novelty":
@@ -1060,8 +1193,44 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._api_physics()
         elif parsed.path == "/api/chemistry":
             self._api_chemistry()
+        elif parsed.path == "/api/science/hypothesis":
+            self._api_science_hypothesis()
+        elif parsed.path == "/api/science/theory":
+            self._api_science_theory()
+        elif parsed.path == "/api/benchmark/agi":
+            self._api_benchmark_agi()
+        elif parsed.path == "/api/learning/trend":
+            self._api_learning_trend()
+        elif parsed.path == "/api/learning/summary":
+            self._api_learning_summary()
+        elif parsed.path == "/api/learning/live":
+            self._api_learning_live()
+        elif parsed.path == "/api/acquisition":
+            self._api_acquisition_dashboard()
+        elif parsed.path == "/api/acquisition/artifacts":
+            self._api_acquisition_artifacts()
+        elif parsed.path == "/api/acquisition/artifact":
+            self._api_acquisition_artifact()
+        elif parsed.path == "/api/acquisition/history":
+            self._api_acquisition_history()
+        elif parsed.path == "/api/acquisition/plan":
+            self._api_acquisition_plan()
+        elif parsed.path == "/api/acquisition/verification":
+            self._api_acquisition_verification()
+        elif parsed.path == "/api/learning/audit":
+            self._api_learning_audit()
+        elif parsed.path == "/api/github/discover":
+            self._api_github_discover()
+        elif parsed.path == "/api/github/learning":
+            self._api_github_learning_status()
+        elif parsed.path == "/api/chrome/discover":
+            self._api_chrome_discover()
+        elif parsed.path == "/api/agi/time-to-agi":
+            self._api_agi_time_to_agi()
         elif parsed.path == "/dashboard":
             self._serve_file("dashboard.html", "text/html")
+        elif parsed.path in ("/learning-dashboard", "/learning-dashboard/"):
+            self._serve_file("learning_dashboard.html", "text/html")
         elif parsed.path in ("/evolve-chat", "/evolve-chat/"):
             self._serve_file("evolver_chat.html", "text/html")
         elif parsed.path in ("/todo.html", "/todo"):
@@ -1086,6 +1255,30 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
             self._api_learn(body)
+        elif parsed.path == "/api/acquire":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_acquire(body)
+        elif parsed.path == "/api/acquisition/artifact/action":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_acquisition_artifact_action(body)
+        elif parsed.path == "/api/acquire/schedule":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_acquire_schedule(body)
+        elif parsed.path == "/api/acquire/github":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_acquire_github(body)
+        elif parsed.path == "/api/acquire/github/topic":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_acquire_github_topic(body)
+        elif parsed.path == "/api/acquire/open-book":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_acquire_open_book(body)
         elif parsed.path == "/api/curiosity/generate":
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
@@ -1120,10 +1313,22 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
             self._api_autolearn_control(body)
+        elif parsed.path == "/api/daemon/control":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_daemon_control(body)
         elif parsed.path == "/api/solve-nl":
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
             self._api_solve_nl(body)
+        elif parsed.path == "/api/search/learn":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_search_learn(body)
+        elif parsed.path == "/api/learning/chat":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_learning_chat(body)
         elif parsed.path == "/api/ground":
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
@@ -1148,6 +1353,10 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
             self._api_world_ingest(body)
+        elif parsed.path == "/api/code/run":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_code_run(body)
         elif parsed.path == "/api/concepts/extract":
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
@@ -1263,6 +1472,12 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
             self._api_brain_trainer_control(body)
+        elif parsed.path in ("/api/config/beam_width", "/api/config/budget_seconds"):
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_config_update(parsed.path, body)
+        elif parsed.path == "/api/benchmark/hard":
+            self._api_benchmark_hard_run()
         elif parsed.path == "/api/brain/society":
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
@@ -1339,6 +1554,10 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
             self._api_brain_instruct(body)
+        elif parsed.path == "/api/books/ingest":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            self._api_books_ingest(body)
         elif parsed.path == "/api/knowledge/expand":
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
@@ -1371,10 +1590,6 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
             self._api_think(body)
-        elif parsed.path == "/api/science/hypothesis":
-            self._api_science_hypothesis()
-        elif parsed.path == "/api/science/theory":
-            self._api_science_theory()
         else:
             self.send_error(404)
 
@@ -1393,11 +1608,16 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self.send_error(404, f"File not found: {filename}")
 
     def _json_response(self, data, status=200):
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-        self.wfile.write(json.dumps(data).encode())
+        try:
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(json.dumps(data).encode())
+        except (BrokenPipeError, ConnectionResetError):
+            # The dashboard polls aggressively and browsers may cancel requests
+            # mid-response when a newer poll supersedes the old one.
+            return
 
     def _api_examples(self):
         energy = EnergyEvaluator()
@@ -1480,23 +1700,49 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._json_response({"error": str(e)}, 500)
             return
 
-        nl_explanation = None
-        if explain_solve_trace and result.get("solve_success"):
-            try:
-                nl_explanation = explain_solve_trace(
-                    problem=result.get("expression", expr),
-                    transforms_applied=result.get("transforms_applied", []),
-                    energy_before=result.get("initial", {}).get("energy", {}).get("total", 1.0),
-                    energy_after=result.get("result", {}).get("energy", {}).get("total", 0.0),
-                    final_expression=result.get("expression", expr),
-                    expression=result.get("expression", expr),
-                    domain=result.get("domain", "general"),
-                    goal="simplify",
-                )
-            except Exception as _nl_e:
-                print(f"[sare] LLM explanation failed: {_nl_e}")
+        # Build a reliable explanation: symbolic answer first, LLM enhancement if available
+        answer = result.get("answer", "")
+        steps_text = result.get("steps_text", "")
+        transforms = result.get("transforms_applied", [])
+        e_before = result.get("initial", {}).get("energy", {}).get("total", 0)
+        e_after  = result.get("result",  {}).get("energy", {}).get("total", 0)
+        delta    = result.get("delta", e_before - e_after)
+        reduction = result.get("reduction_pct", 0)
 
-        result["nl_explanation"] = nl_explanation
+        # Always-correct symbolic explanation (no LLM needed)
+        symbolic_explain = (
+            f"<b style='color:#4fc3f7;font-size:1.3em'>{answer}</b><br><br>"
+            f"<span style='color:#aaa'>Input:</span> <code>{expr}</code><br>"
+            f"<span style='color:#aaa'>Steps:</span> {len(transforms)}"
+            + (f" &nbsp;|&nbsp; <span style='color:#aaa'>Rules:</span> "
+               + ", ".join(f"<code>{t}</code>" for t in transforms) if transforms else "")
+            + f"<br><span style='color:#aaa'>Energy:</span> {e_before:.1f} → {e_after:.1f}"
+              f" &nbsp;<span style='color:#69f0ae'>▼ {delta:.1f} ({reduction:.0f}% reduction)</span>"
+        )
+
+        # LLM explanation: only for novel / long proof traces (≥4 steps), never for trivial solves
+        nl_explanation = None
+        _n_steps_web = len(transforms) if transforms else 0
+        if explain_solve_trace and result.get("solve_success") and _n_steps_web >= 4:
+            import threading as _thr_llm
+            def _call_llm():
+                try:
+                    explain_solve_trace(
+                        problem=expr, transforms_applied=transforms,
+                        energy_before=e_before, energy_after=e_after,
+                        final_expression=answer, expression=answer,
+                        domain=result.get("domain", "general"), goal="simplify",
+                    )
+                except Exception:
+                    pass
+            _thr_llm.Thread(target=_call_llm, daemon=True).start()
+            # nl_explanation stays None — symbolic_explain is already complete
+
+        result["nl_explanation"] = symbolic_explain + (
+            f"<br><br><span style='color:#aaa;font-size:0.9em'>💬 {nl_explanation}</span>"
+            if nl_explanation else ""
+        )
+        result["answer_display"] = answer  # clean field for easy frontend access
         self._json_response(result)
 
 
@@ -1578,6 +1824,56 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             "promoted": [s.__dict__ for s in promoted],
             "macro_count": len(upserted.get("macros", [])),
         })
+
+    def _api_concepts_activity(self):
+        """GET /api/concepts/activity — Concepts sorted by use_count with
+        domain coverage and well_grounded ratio. Shows which concepts are
+        actually being activated during reasoning vs. dormant."""
+        try:
+            from sare.concept.concept_graph import get_concept_graph
+            cg = get_concept_graph()
+            concepts = cg.all_concepts()
+            # Sort by use_count descending (living concepts first)
+            sorted_c = sorted(concepts, key=lambda c: -c.use_count)
+            # Domain coverage
+            domain_stats = {}
+            for c in concepts:
+                d = c.domain
+                ds = domain_stats.setdefault(d, {"total": 0, "used": 0, "grounded": 0})
+                ds["total"] += 1
+                if c.use_count > 0:
+                    ds["used"] += 1
+                try:
+                    if c.is_well_grounded():
+                        ds["grounded"] += 1
+                except Exception:
+                    pass
+            # Top concepts by use
+            top = []
+            for c in sorted_c[:30]:
+                top.append({
+                    "name": c.name,
+                    "domain": c.domain,
+                    "symbol": c.symbol,
+                    "use_count": c.use_count,
+                    "confidence": round(c.confidence, 2),
+                    "examples": len(c.examples),
+                    "related_count": len(c.related),
+                })
+            # Dormant concepts (use_count 0)
+            dormant = sum(1 for c in concepts if c.use_count == 0)
+            active = len(concepts) - dormant
+            self._json_response({
+                "total_concepts": len(concepts),
+                "active": active,
+                "dormant": dormant,
+                "activity_rate": round(active / max(1, len(concepts)), 3),
+                "domain_coverage": domain_stats,
+                "top_by_use": top,
+                "note": "Concepts with use_count > 0 are being activated during reasoning.",
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
 
     def _api_concepts(self):
         if not concept_registry:
@@ -2149,6 +2445,46 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
+    def _api_weakness(self):
+        """GET /api/weakness — WeaknessDetector failure pattern report."""
+        try:
+            from sare.meta.weakness_detector import get_weakness_detector
+            wd = get_weakness_detector()
+            report = wd.analyze()
+            self._json_response({
+                "stats": wd.get_stats(),
+                "report": report,
+                "synthesis_requests": wd.get_synthesis_requests(top_k=3),
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_world_simulator(self):
+        """GET /api/world/simulator — WorldSimulator causal transform ranking stats."""
+        try:
+            from sare.brain import get_brain
+            from sare.memory.world_simulator import get_world_simulator
+            brain = get_brain()
+            ws = get_world_simulator()
+            world_graph = brain.world_graph()
+            causal_count = int(world_graph.get("causal_links_total", 0))
+            domain_stats = {}
+            for link in world_graph.get("edges", []):
+                d = link.get("domain", "general")
+                domain_stats.setdefault(d, {"links": 0, "avg_conf": 0.0, "_sum": 0.0})
+                domain_stats[d]["links"] += 1
+                domain_stats[d]["_sum"] += float(link.get("confidence", 0.0))
+            for d, s in domain_stats.items():
+                s["avg_conf"] = round(s["_sum"] / max(s["links"], 1), 3)
+                del s["_sum"]
+            self._json_response({
+                "simulator_stats": ws.get_stats(),
+                "causal_links_total": causal_count,
+                "domain_breakdown": domain_stats,
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
     def _api_transfer(self):
         """GET /api/transfer — Cross-domain analogy transfer summary (alias for /api/analogy)."""
         self._api_analogy()
@@ -2348,6 +2684,176 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         else:
             self._json_response({"available": False, "error": "LLMBridge not loaded"})
 
+    def _api_llm_broker(self):
+        """GET /api/llm/broker — LLMBroker statistics (cache, rate limits, by-role)."""
+        try:
+            from sare.interface.llm_broker import get_llm_broker
+            self._json_response(get_llm_broker().stats())
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_reasoning_orchestrator(self):
+        """GET /api/reasoning/orchestrator — Retrieve/plan/execute stats."""
+        try:
+            from sare.cognition.reasoning_orchestrator import get_reasoning_orchestrator
+            self._json_response(get_reasoning_orchestrator().stats())
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_memory_unified(self):
+        """GET /api/memory/unified — UnifiedMemoryIndex stats + sample lookups."""
+        try:
+            from sare.memory.unified_index import get_unified_memory_index
+            idx = get_unified_memory_index()
+            out = idx.stats()
+            # Include a few sample lookups across domains
+            samples = {}
+            for name in ["addition", "force", "reaction", "subject", "cause"]:
+                refs = idx.lookup(name)
+                samples[name] = {k: len(v) for k, v in refs.items()}
+            out["samples"] = samples
+            self._json_response(out)
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_reasoning_hierarchical(self):
+        """GET /api/reasoning/hierarchical — HierarchicalSolver stats."""
+        try:
+            from sare.meta.hierarchical_solver import get_hierarchical_solver
+            self._json_response(get_hierarchical_solver().stats())
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_knowledge_graph_viz(self):
+        """GET /api/knowledge/graph — Nodes + edges for force-directed viz.
+        Returns top-N highest-confidence nodes grouped by domain, plus their edges.
+        Domain-general: shows structure across math, chemistry, physics, etc."""
+        try:
+            from urllib.parse import parse_qs as _pq
+            from urllib.parse import urlparse as _up
+            parsed = _up(self.path)
+            params = _pq(parsed.query)
+            limit = int(params.get("limit", ["200"])[0])
+            from sare.memory.knowledge_graph import get_kg
+            kg = get_kg()
+            # Sort nodes by confidence * observations for importance
+            def _score(node):
+                return (
+                    float(getattr(node, "confidence", 0.0) or 0.0)
+                    * max(1, int(getattr(node, "observations", 1) or 1))
+                )
+            nodes_sorted = sorted(kg._nodes.values(), key=_score, reverse=True)
+            top_nodes = nodes_sorted[:limit]
+            node_ids = {n.id for n in top_nodes}
+            # Ensure all domain nodes are included
+            for n in kg._nodes.values():
+                if n.type == "domain" and n.id not in node_ids:
+                    top_nodes.append(n)
+                    node_ids.add(n.id)
+            # Filter edges to those between included nodes
+            edges_out = []
+            for e in kg._edges:
+                if e.source in node_ids and e.target in node_ids:
+                    edges_out.append({
+                        "source": e.source,
+                        "target": e.target,
+                        "relation": e.relation,
+                        "weight": round(float(e.weight), 3),
+                    })
+            nodes_out = []
+            for n in top_nodes:
+                nodes_out.append({
+                    "id": n.id,
+                    "type": n.type,
+                    "name": (n.name or "")[:50],
+                    "domain": n.domain,
+                    "confidence": round(float(getattr(n, "confidence", 0.0) or 0.0), 3),
+                    "observations": int(getattr(n, "observations", 1) or 1),
+                })
+            # Domain summary
+            from collections import Counter
+            type_counts = Counter(n.type for n in kg._nodes.values())
+            domain_counts = Counter(n.domain for n in kg._nodes.values())
+            self._json_response({
+                "total_nodes": len(kg._nodes),
+                "total_edges": len(kg._edges),
+                "shown_nodes": len(nodes_out),
+                "shown_edges": len(edges_out),
+                "nodes": nodes_out,
+                "edges": edges_out,
+                "type_counts": dict(type_counts),
+                "domain_counts": dict(domain_counts.most_common(20)),
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_llm_rate_limits(self):
+        """GET /api/llm/rate-limits — Per-model rate limit tracker for planning."""
+        import time as _time
+        from sare.interface.llm_bridge import get_rate_limit_report, get_llm_stats
+        now = _time.time()
+        rl = get_rate_limit_report()
+        stats = get_llm_stats()
+        recent = stats.get("recent", [])
+
+        # Compute per-model hit/success rate from recent call log
+        model_counts: dict = {}
+        for c in recent:
+            m = c.get("model", "unknown")
+            entry = model_counts.setdefault(m, {"ok": 0, "fail": 0, "roles": {}})
+            if c.get("ok"):
+                entry["ok"] += 1
+            else:
+                entry["fail"] += 1
+            role = c.get("role", "?")
+            entry["roles"][role] = entry["roles"].get(role, 0) + 1
+
+        # Build summary per model
+        summary = {}
+        for model, counts in model_counts.items():
+            total = counts["ok"] + counts["fail"]
+            rl_info = rl.get(model, {})
+            summary[model] = {
+                "calls": total,
+                "success_rate": round(counts["ok"] / max(total, 1), 2),
+                "top_roles": sorted(counts["roles"].items(), key=lambda x: -x[1])[:5],
+                "rate_limit_hits": rl_info.get("total_hits", 0),
+                "available_now": rl_info.get("available", True),
+                "cooldown_remaining_s": rl_info.get("cooldown_remaining_s", 0),
+                "hits_per_hour_24h": rl_info.get("hits_per_hour_24h", 0),
+                "median_gap_s": rl_info.get("median_gap_s"),
+                "last_hit_ago_s": rl_info.get("last_hit_ago_s"),
+            }
+
+        # Planning advice
+        advice = []
+        for model, info in summary.items():
+            if "free" in model and info["success_rate"] < 0.5:
+                gap = info.get("median_gap_s")
+                advice.append({
+                    "model": model,
+                    "issue": "high fallback rate",
+                    "success_rate": info["success_rate"],
+                    "recommendation": f"Free tier rate-limiting heavily. Median gap between hits: {gap}s. "
+                                      f"Consider spacing calls or raising _MIN_CALL_GAP_S.",
+                })
+            elif "free" in model and info.get("hits_per_hour_24h", 0) > 5:
+                advice.append({
+                    "model": model,
+                    "issue": "frequent rate limits",
+                    "hits_per_hour": info["hits_per_hour_24h"],
+                    "recommendation": "Rate limited >5x/hour. Free quota may reset hourly — "
+                                      "consider batching calls in the first minute after reset.",
+                })
+
+        self._json_response({
+            "generated_at": now,
+            "models": summary,
+            "rate_limit_detail": rl,
+            "advice": advice,
+            "total_calls_recorded": len(recent),
+        })
+
     def _api_ask(self, body: dict):
         """POST /api/ask — Conversational math endpoint.
 
@@ -2495,6 +3001,127 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         result_data["parsed"] = parsed.to_dict()
         result_data["raw_input"] = nl_text
         self._json_response(result_data, status_code)
+
+    def _api_search_learn(self, body: dict):
+        """POST /api/search/learn — Search Wikipedia to learn about a topic.
+
+        Body: {"topic": "water molecule", "question": "...", "answer": "..."}
+        Returns: {facts_added, source, extract, answer_found}
+        """
+        topic = body.get("topic", "").strip()
+        question = body.get("question", "").strip()
+        answer = body.get("answer", "").strip() or None
+        if not topic and not question:
+            self._json_response({"error": "Provide 'topic' or 'question'"}, 400)
+            return
+        try:
+            from sare.learning.web_learner import get_web_learner
+            wl = get_web_learner()
+            if question:
+                result = wl.learn(question, expected_answer=answer, domain="general")
+            else:
+                result = wl.learn_topic(topic)
+            self._json_response({
+                "facts_added": result.get("facts_added", 0),
+                "source": result.get("source", ""),
+                "extract": result.get("extract", "")[:400],
+                "answer_found": result.get("answer_found", False),
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_learning_chat(self, body: dict):
+        """POST /api/learning/chat — Chat with the learning monitor about system progress."""
+        import time as _time
+
+        message = body.get("message", "").strip()
+        if not message:
+            self._json_response({"error": "empty message"}, 400)
+            return
+
+        # ── Build context snapshot ────────────────────────────────────────────
+        context_lines = []
+        brain = None
+        try:
+            from sare.brain import get_brain
+            brain = get_brain()
+        except Exception:
+            brain = None
+
+        # Domain accuracy
+        try:
+            domain_accuracy = brain.world_domain_accuracy() if brain else {}
+            acc_lines = []
+            for dom, score in sorted(domain_accuracy.items(), key=lambda item: item[1], reverse=True):
+                pct = round(float(score) * 100, 1)
+                acc_lines.append(f"  {dom}: {pct}%")
+            if acc_lines:
+                context_lines.append("Domain accuracy (rolling 50):\n" + "\n".join(sorted(acc_lines, reverse=True)))
+        except Exception:
+            pass
+
+        # KB stats
+        try:
+            ks = brain.knowledge_stats() if brain else {}
+            context_lines.append(
+                f"Knowledge base: {ks.get('answer_to_triples', 0)} AnswerTo triples, "
+                f"{ks.get('commonsense_facts', 0)} total triples"
+            )
+        except Exception:
+            pass
+
+        # Recent web searches
+        try:
+            from sare.learning.web_learner import get_web_learner
+            searches = get_web_learner().get_search_log(10)
+            if searches:
+                s_lines = [f"  [{s['domain']}] {s['title']} (+{s['facts_added']} facts)" for s in searches[:5]]
+                context_lines.append("Recent Wikipedia searches:\n" + "\n".join(s_lines))
+        except Exception:
+            pass
+
+        # LLM stats
+        try:
+            from sare.interface.llm_bridge import get_llm_stats
+            stats = get_llm_stats()
+            context_lines.append(f"LLM calls this session: {stats['total_calls']} total")
+            by_role = stats.get("by_role", {})
+            if by_role:
+                role_str = ", ".join(f"{k}:{v}" for k, v in sorted(by_role.items(), key=lambda x: -x[1])[:5])
+                context_lines.append(f"  By role: {role_str}")
+        except Exception:
+            pass
+
+        context = "\n\n".join(context_lines) if context_lines else "No data available yet."
+
+        # ── Ask LLM ───────────────────────────────────────────────────────────
+        system_prompt = (
+            "You are the SARE-HX AGI system's learning monitor assistant. "
+            "Answer questions about the system's current learning progress concisely and factually. "
+            "Use the data provided. Keep responses under 3 sentences unless detail is requested."
+        )
+        prompt = f"Current system state:\n{context}\n\nUser question: {message}"
+
+        try:
+            from sare.interface.llm_bridge import _call_model, llm_available
+            if llm_available and not llm_available():
+                raise RuntimeError("LLM offline")
+            response = _call_model(prompt, role="learning_monitor", system_prompt=system_prompt)
+            self._json_response({
+                "response": response.strip(),
+                "context": context,
+                "llm_used": True,
+                "ts": _time.time(),
+            })
+        except Exception as _llm_err:
+            # Fallback: answer directly from data without LLM
+            self._json_response({
+                "response": f"System state summary:\n{context}",
+                "context": context,
+                "llm_used": False,
+                "llm_error": str(_llm_err),
+                "ts": _time.time(),
+            })
 
     def _api_ground(self, body: dict):
         """
@@ -2866,12 +3493,63 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
 
     # ── WorldModel endpoints ──────────────────────────────────────
 
+    def _api_compose(self, subject: str, target, hops: int):
+        """GET /api/compose?subject=fire&target=ice&hops=3 — derive new facts via belief chaining."""
+        try:
+            from sare.cognition.fact_composer import get_fact_composer
+            if not subject:
+                self._json_response({"error": "subject parameter required"}, 400)
+                return
+            fce = get_fact_composer()
+            derived = fce.compose(subject, target=target or None, max_hops=min(hops, 4))
+            self._json_response({
+                "subject": subject,
+                "target": target,
+                "graph_nodes": len(fce._graph),
+                "graph_edges": fce._graph_size,
+                "derived": [
+                    {
+                        "predicate":   df.predicate,
+                        "object":      df.obj,
+                        "confidence":  df.confidence,
+                        "path_length": df.path_length,
+                        "explanation": df.explanation,
+                    }
+                    for df in derived
+                ],
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_patterns(self, domain, n: int):
+        """GET /api/patterns?domain=geography&n=20 — show learned structural templates."""
+        try:
+            from sare.learning.pattern_abstractor import get_pattern_abstractor
+            pa = get_pattern_abstractor()
+            stats = pa.get_stats()
+            templates = pa.get_top_templates(domain=domain, n=n)
+            self._json_response({
+                "stats": stats,
+                "templates": templates,
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
     def _api_world_summary(self):
         """GET /api/world — full world model summary."""
         try:
-            from sare.memory.world_model import get_world_model
-            wm = get_world_model()
-            self._json_response(wm.summary())
+            from sare.brain import get_brain
+            brain = get_brain()
+            self._json_response(brain.world_summary())
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_world_readable_report(self):
+        """GET /api/world/readable-report — readable world-model markdown and metadata."""
+        try:
+            from sare.brain import get_brain
+            brain = get_brain()
+            self._json_response(brain.world_model_readable_report(include_content=True))
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
@@ -2884,12 +3562,9 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
                     stats = experiment_runner.surprise_stats()
                 except Exception as _e:
                                         log.debug("[web] Suppressed: %s", _e)
-            from sare.memory.world_model import get_world_model
-            wm = get_world_model()
-            try:
-                stats.update(wm.prediction_stats())
-            except Exception as _e:
-                                log.debug("[web] Suppressed: %s", _e)
+            from sare.brain import get_brain
+            brain = get_brain()
+            stats.update(brain.world_prediction_stats())
             self._json_response(stats)
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
@@ -2900,9 +3575,9 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._json_response({"error": "Missing ?seed= parameter"}, 400)
             return
         try:
-            from sare.memory.world_model import get_world_model
-            wm = get_world_model()
-            hypotheses = wm.imagine(seed, depth=depth)
+            from sare.brain import get_brain
+            brain = get_brain()
+            hypotheses = brain.world_imagine(seed, depth=depth)
             self._json_response({
                 "seed": seed,
                 "depth": depth,
@@ -2918,9 +3593,9 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._json_response({"error": "Missing ?scenario= parameter"}, 400)
             return
         try:
-            from sare.memory.world_model import get_world_model
-            wm = get_world_model()
-            consequences = wm.simulate(scenario, steps=steps)
+            from sare.brain import get_brain
+            brain = get_brain()
+            consequences = brain.world_simulate(scenario, steps=steps)
             self._json_response({
                 "scenario": scenario,
                 "steps": steps,
@@ -2936,9 +3611,9 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._json_response({"error": "Missing ?source= or ?target= parameter"}, 400)
             return
         try:
-            from sare.memory.world_model import get_world_model
-            wm = get_world_model()
-            result = wm.generate_analogy(source, target)
+            from sare.brain import get_brain
+            brain = get_brain()
+            result = brain.world_analogy(source, target)
             if result:
                 self._json_response(result)
             else:
@@ -2957,9 +3632,9 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._json_response({"error": "Missing ?rule= parameter"}, 400)
             return
         try:
-            from sare.memory.world_model import get_world_model
-            wm = get_world_model()
-            result = wm.counterfactual(rule, negated=negated)
+            from sare.brain import get_brain
+            brain = get_brain()
+            result = brain.world_counterfactual(rule, negated=negated)
             self._json_response(result)
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
@@ -2967,8 +3642,8 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
     def _api_world_update(self, body: dict):
         """POST /api/world/update — add a fact or causal link to the world model."""
         try:
-            from sare.memory.world_model import get_world_model
-            wm = get_world_model()
+            from sare.brain import get_brain
+            brain = get_brain()
 
             added = []
             # Add a plain fact
@@ -2976,8 +3651,8 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
                 domain = body.get("domain", "general")
                 fact = body["fact"]
                 confidence = float(body.get("confidence", 0.9))
-                wm.add_fact(domain, fact, confidence, source="api")
-                added.append(f"fact: {fact}")
+                if brain.add_world_fact(domain, fact, confidence, source="api"):
+                    added.append(f"fact: {fact}")
 
             # Add a causal link
             if "cause" in body and "effect" in body:
@@ -2986,11 +3661,11 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
                 mechanism = body.get("mechanism", "user-specified")
                 domain = body.get("domain", "general")
                 confidence = float(body.get("confidence", 0.85))
-                wm.add_causal_link(cause, effect, mechanism, domain, confidence)
-                added.append(f"causal link: {cause} → {effect}")
+                if brain.add_world_causal_link(cause, effect, mechanism, domain, confidence):
+                    added.append(f"causal link: {cause} → {effect}")
 
             if added:
-                wm.save()
+                brain.save_world_models()
                 self._json_response({"status": "ok", "added": added})
             else:
                 self._json_response({
@@ -3004,19 +3679,12 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
     def _api_world_hypotheses(self):
         """GET /api/world/hypotheses — LLM-generated hypotheses from high-surprise events."""
         try:
-            from sare.memory.world_model import get_world_model
-            wm = get_world_model()
-            hyps = getattr(wm, "_hypotheses", [])
-            # Also load persisted hypotheses file if in-memory is empty
-            if not hyps:
-                from pathlib import Path
-                _p = Path(__file__).resolve().parents[3] / "data" / "memory" / "world_hypotheses.json"
-                if _p.exists():
-                    import json as _j
-                    hyps = _j.loads(_p.read_text())
+            from sare.brain import get_brain
+            brain = get_brain()
+            hyps = brain.world_hypotheses()
             self._json_response({
                 "count": len(hyps),
-                "hypotheses": sorted(hyps, key=lambda h: -h.get("evidence", 1)),
+                "hypotheses": hyps,
             })
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
@@ -3024,11 +3692,10 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
     def _api_world_schema_learn(self, domain: str):
         """GET /api/world/schema/learn?domain=... — trigger LLM schema synthesis."""
         try:
-            from sare.memory.world_model import get_world_model
-            wm = get_world_model()
-            schema = wm.learn_schema_from_llm(domain)
+            from sare.brain import get_brain
+            brain = get_brain()
+            schema = brain.world_schema_learn(domain)
             if schema:
-                wm.save()
                 self._json_response({"status": "learned", "domain": domain, "schema": schema})
             else:
                 self._json_response({
@@ -3042,9 +3709,9 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
     def _api_world_beliefs(self, domain: str = None):
         """GET /api/world/beliefs[?domain=...] — Bayesian belief tracking (v3)."""
         try:
-            from sare.memory.world_model import get_world_model
-            wm = get_world_model()
-            beliefs = wm.get_beliefs(domain)
+            from sare.brain import get_brain
+            brain = get_brain()
+            beliefs = brain.world_beliefs(domain)
             self._json_response({
                 "domain": domain or "all",
                 "count": len(beliefs),
@@ -3056,12 +3723,9 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
     def _api_world_analogies(self, domain: str = None):
         """GET /api/world/analogies[?domain=...] — discovered structural analogies (v3)."""
         try:
-            from sare.memory.world_model import get_world_model
-            wm = get_world_model()
-            # Also trigger discovery if few analogies
-            if len(wm._analogies) < 5 and len(wm._solve_history) >= 30:
-                wm.discover_analogies()
-            analogies = wm.get_analogies(domain)
+            from sare.brain import get_brain
+            brain = get_brain()
+            analogies = brain.world_analogies(domain)
             self._json_response({
                 "domain": domain or "all",
                 "count": len(analogies),
@@ -3073,12 +3737,9 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
     def _api_world_predict(self, expression: str, domain: str = "arithmetic"):
         """GET /api/world/predict?expression=...&domain=... — v3-style ranked prediction."""
         try:
-            from sare.memory.world_model import get_world_model
-            from sare.engine import get_transforms
-            wm = get_world_model()
-            transforms = [t.name() if hasattr(t, "name") else str(t)
-                          for t in get_transforms()]
-            result = wm.predict(expression, domain, transforms)
+            from sare.brain import get_brain
+            brain = get_brain()
+            result = brain.world_predict(expression, domain)
             self._json_response(result)
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
@@ -3086,70 +3747,83 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
     def _api_world_consistency(self):
         """GET /api/world/consistency — run LLM pairwise consistency check on promoted rules."""
         try:
-            from sare.memory.world_model import get_world_model
-            wm = get_world_model()
-            # Gather promoted rule names from concept registry if available
-            rule_names = []
-            try:
-                if concept_registry is not None:
-                    rule_names = [r.name for r in concept_registry.get_rules()]
-            except Exception as _e:
-                                log.debug("[web] Suppressed: %s", _e)
-            if len(rule_names) < 2:
-                self._json_response({"status": "insufficient_rules", "rule_count": len(rule_names)})
-                return
-            conflicts = wm.check_all_rules_consistency(rule_names)
-            self._json_response({
-                "rules_checked": len(rule_names),
-                "conflicts": conflicts,
-                "consistent": len(conflicts) == 0,
-            })
+            from sare.brain import get_brain
+            brain = get_brain()
+            self._json_response(brain.world_consistency())
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
     def _api_world_graph(self):
         """GET /api/world/graph — causal link graph for visualization."""
         try:
-            from sare.memory.world_model import get_world_model
-            wm = get_world_model()
-            links = list(wm._causal_links.values()) if hasattr(wm, "_causal_links") else []
-            # Build node set from domains
-            domain_counts: dict = {}
-            for link in links:
-                for d in (getattr(link, "domain", "general"),):
-                    domain_counts[d] = domain_counts.get(d, 0) + 1
-            nodes = [{"id": d, "domain": d, "link_count": c} for d, c in domain_counts.items()]
-            edges = [
-                {
-                    "cause":          getattr(l, "cause", ""),
-                    "effect":         getattr(l, "effect", ""),
-                    "mechanism":      getattr(l, "mechanism", ""),
-                    "domain":         getattr(l, "domain", "general"),
-                    "confidence":     round(getattr(l, "confidence", 0.5), 3),
-                    "evidence_count": getattr(l, "evidence_count", 1),
-                }
-                for l in links[:500]  # cap at 500 edges
-            ]
+            from sare.brain import get_brain
+            brain = get_brain()
+            graph = brain.world_graph()
             self._json_response({
-                "node_count": len(nodes),
-                "edge_count": len(edges),
-                "nodes": nodes,
-                "edges": edges,
+                "node_count": len(graph.get("nodes", [])),
+                "edge_count": len(graph.get("edges", [])),
+                **graph,
             })
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
     def _api_world_ingest(self, body: dict):
-        """POST /api/world/ingest — ingest free-form text into the world model via LLM."""
+        """POST /api/world/ingest — ingest free-form text through Brain ingestion."""
         text = body.get("text", "").strip()
         domain = body.get("domain", "general")
         if not text:
             self._json_response({"error": "text required"}, 400)
             return
         try:
-            from sare.interface.llm_bridge import ingest_text_for_world_model
-            result = ingest_text_for_world_model(text, domain)
+            from sare.brain import get_brain, IngestionSourceConfig
+            brain = get_brain()
+            result = brain.ingest(IngestionSourceConfig(
+                source_type="text",
+                payload=text,
+                source_id="api.world_ingest",
+                domain=domain,
+                trust_level="user",
+                metadata={"endpoint": "/api/world/ingest"},
+            ))
             self._json_response({"status": "ok", "domain": domain, **result})
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_world_live(self):
+        """GET /api/world/live — LiveWorld persistent state + recent discoveries."""
+        try:
+            from sare.world.live_world import get_live_world
+            lw = get_live_world()
+            summary = lw.summary()
+            recent = lw.get_recent(20)
+            self._json_response({
+                "ok": True,
+                "summary": summary,
+                "recent_discoveries": recent,
+                "objects": list(lw._objects.keys()),
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_code_run(self, body: dict):
+        """POST /api/code/run — execute code in sandbox, return stdout."""
+        code = body.get("code", "").strip()
+        if not code:
+            self._json_response({"error": "Missing 'code' field"}, 400)
+            return
+        try:
+            from sare.execution.code_executor import get_executor
+            result = get_executor().execute(code)
+            self._json_response({
+                "ok": not result.blocked and result.exit_code == 0,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "exit_code": result.exit_code,
+                "elapsed_ms": round(result.elapsed_ms, 1),
+                "blocked": result.blocked,
+                "block_reason": result.block_reason,
+                "timed_out": result.timed_out,
+            })
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
@@ -3160,15 +3834,15 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             "You have direct awareness of your own internal state. Here is your current status:",
         ]
         try:
-            from sare.memory.world_model import get_world_model
-            wm = get_world_model()
-            wm_links = len(wm._causal_links)
-            wm_facts = sum(len(v) for v in wm._facts.values())
-            wm_schemas = len(wm._schemas)
-            solve_counts = getattr(wm, "_solve_counts", {})
+            from sare.brain import get_brain
+            brain = get_brain()
+            world_summary = brain.world_summary()
+            wm_links = int(world_summary.get("causal_link_count", 0))
+            wm_facts = int(world_summary.get("fact_count", 0))
+            wm_schemas = int(brain.world_schema_count())
+            solve_counts = brain.world_solve_counts()
             total_solves = sum(solve_counts.values())
-            pred_stats = wm.prediction_stats() if hasattr(wm, "prediction_stats") else {}
-            accuracy = pred_stats.get("accuracy", 0)
+            accuracy = brain.world_prediction_stats().get("accuracy", 0)
             lines.append(f"- World model: {wm_links} causal links, {wm_facts} facts, {wm_schemas} schemas")
             lines.append(f"- Total problems solved: {total_solves}")
             if solve_counts:
@@ -3176,7 +3850,7 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
                 lines.append(f"- Domain solve counts: {', '.join(f'{d}={n}' for d, n in top)}")
             if accuracy:
                 lines.append(f"- World model prediction accuracy: {accuracy:.1%}")
-            recent = wm.get_activity_log()[:5]
+            recent = brain.world_activity_log(5)
             if recent:
                 lines.append("- Recent learning events:")
                 for e in recent:
@@ -3246,18 +3920,17 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             if not _llm_avail():
                 self._json_response({"error": "LLM offline"}, 503)
                 return
-            from sare.memory.world_model import get_world_model
-            wm = get_world_model()
+            from sare.brain import get_brain
+            brain = get_brain()
             # Gather stats
-            solve_counts = getattr(wm, "_solve_counts", {})
+            solve_counts = brain.world_solve_counts()
             total = sum(solve_counts.values())
-            wm_links = len(wm._causal_links)
-            wm_facts = sum(len(v) for v in wm._facts.values())
+            world_summary = brain.world_summary()
             stats = {
                 "total_solves": total,
                 "domain_counts": solve_counts,
-                "wm_links": wm_links,
-                "wm_facts": wm_facts,
+                "wm_links": int(world_summary.get("causal_link_count", 0)),
+                "wm_facts": int(world_summary.get("fact_count", 0)),
             }
             # Find high-surprise domains (low solve rate)
             high_surprise = []
@@ -3428,20 +4101,18 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
     def _api_autolearn_log(self):
         """GET /api/autolearn/log — recent auto-learning events from world model."""
         try:
-            from sare.memory.world_model import get_world_model
-            wm = get_world_model()
-            events = wm.get_activity_log()
-            # Also include solve count per domain
-            solve_counts = getattr(wm, "_solve_counts", {})
-            total_links = len(wm._causal_links)
-            total_facts = sum(len(v) for v in wm._facts.values())
+            from sare.brain import get_brain
+            brain = get_brain()
+            events = brain.world_activity_log(limit=1000)
+            solve_counts = brain.world_solve_counts()
+            world_summary = brain.world_summary()
             self._json_response({
                 "events": events,
                 "total_events": len(events),
                 "solve_counts": solve_counts,
-                "wm_links": total_links,
-                "wm_facts": total_facts,
-                "wm_schemas": len(wm._schemas),
+                "wm_links": int(world_summary.get("causal_link_count", 0)),
+                "wm_facts": int(world_summary.get("fact_count", 0)),
+                "wm_schemas": int(brain.world_schema_count()),
             })
         except Exception as e:
             self._json_response({"error": str(e), "events": []})
@@ -3522,16 +4193,16 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
     def _api_self_improve_status(self):
         """GET /api/self-improve/status — debate history, applied patches, daemon state."""
         try:
-            from sare.meta.self_improver import get_self_improver
-            self._json_response(get_self_improver().get_status())
+            from sare.brain import get_brain
+            self._json_response(get_brain().self_improvement_status())
         except Exception as e:
             self._json_response({"error": str(e), "running": False, "patches": []})
 
     def _api_self_improve_patches(self):
         """GET /api/self-improve/patches — list all patches (applied + rejected)."""
         try:
-            from sare.meta.self_improver import get_self_improver
-            self._json_response({"patches": get_self_improver().get_patches()})
+            from sare.brain import get_brain
+            self._json_response(get_brain().self_improvement_patches())
         except Exception as e:
             self._json_response({"error": str(e), "patches": []})
 
@@ -3590,11 +4261,91 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         except Exception as e:
             self._json_response({"error": str(e), "velocity_score": 0.0})
 
+    def _api_learning_monitor(self):
+        """GET /api/learning/monitor — internal self-evaluation: pattern mastery, velocity."""
+        try:
+            from sare.brain import get_brain
+            brain = get_brain()
+            self._json_response(brain.evaluation_summary().get("learning_monitor", {}))
+        except Exception as e:
+            self._json_response({"error": str(e)})
+
+    def _api_learning_mastery(self):
+        """GET /api/learning/mastery — Real vs fake learning breakdown."""
+        try:
+            from sare.brain import get_brain
+            from sare.neuro.neural_learner import get_neural_learner
+
+            brain = get_brain()
+            evaluation = brain.evaluation_summary()
+            s = evaluation.get("learning_monitor", {})
+            nl = get_neural_learner()
+            nl_stats = nl.get_stats()
+            gss = evaluation.get("general_solver", {})
+            world_summary = evaluation.get("knowledge", {}).get("world_model", {})
+
+            # Real learning indicators
+            heldout_attempts = s.get("heldout_attempts", 0)
+            heldout_pass     = s.get("heldout_successes", 0)
+            heldout_rate     = round(heldout_pass / heldout_attempts, 3) if heldout_attempts else None
+
+            # Retrieval vs abstraction breakdown from general_solver_stats
+            total_attempts = sum(d.get("attempts", 0) for d in gss.values())
+            total_solved   = sum(int(round(d.get("solve_rate", 0.0) * d.get("attempts", 0))) for d in gss.values())
+            total_free_solve = sum(d.get("modes", {}).get("free_solve", {}).get("attempts", 0) for d in gss.values())
+            total_retrieval  = sum(d.get("modes", {}).get("retrieval",  {}).get("attempts", 0) for d in gss.values())
+            total_template   = sum(d.get("modes", {}).get("template_replay", {}).get("attempts", 0) for d in gss.values())
+            total_failed     = sum(d.get("modes", {}).get("failed_attempt", {}).get("attempts", 0) for d in gss.values())
+
+            self._json_response({
+                # Is it REALLY learning?
+                "verdict": {
+                    "heldout_pass_rate": heldout_rate,
+                    "heldout_attempts": heldout_attempts,
+                    "heldout_successes": heldout_pass,
+                    "neural_memories": nl_stats.get("memory_size", 0),
+                    "neural_recall_hit_rate": nl_stats.get("hit_rate", 0),
+                    "symbolic_mastered": s.get("symbolic_mastered_patterns", 0),
+                    "general_mastered": s.get("verified_general_patterns", 0),
+                },
+                # Solve mode breakdown (real vs retrieval)
+                "solve_modes": {
+                    "total_attempts": total_attempts,
+                    "total_solved": total_solved,
+                    "free_solve_pct": round(100 * total_free_solve / max(total_attempts, 1), 1),
+                    "retrieval_pct": round(100 * total_retrieval / max(total_attempts, 1), 1),
+                    "template_pct": round(100 * total_template / max(total_attempts, 1), 1),
+                    "failed_pct": round(100 * total_failed / max(total_attempts, 1), 1),
+                },
+                # Learning velocity (recent epochs)
+                "epochs": s.get("recent_epochs", [])[-3:],
+                # World model growth
+                "knowledge": {
+                    "world_model_beliefs": world_summary.get("belief_count", 0),
+                    "world_model_facts": world_summary.get("fact_count", 0),
+                    "causal_links": world_summary.get("causal_link_count", 0),
+                },
+                # Raw LearningMonitor summary
+                "monitor": s,
+                "runtime": evaluation.get("runtime", {}),
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_learning_understanding(self):
+        """GET /api/learning/understanding — evidence-gated understanding vs memorization report."""
+        try:
+            from sare.brain import get_brain
+
+            brain = get_brain()
+            self._json_response(brain.understanding_report())
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
     def _api_agi_value_net(self):
         """GET /api/agi/value-net — MLX value network stats (M1 GPU training)."""
         try:
-            from sare.heuristics.mlx_value_net import get_value_net
-            self._json_response(get_value_net().get_stats())
+            self._json_response(_read_value_net_stats())
         except Exception as e:
             self._json_response({"error": str(e), "ready": False})
 
@@ -3604,14 +4355,15 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         """
         import threading as _th
         try:
-            from sare.meta.self_improver import get_self_improver
-            si = get_self_improver()
+            from sare.brain import get_brain
+            brain = get_brain()
             target_file     = body.get("target_file")
             improvement_type = body.get("improvement_type")
             # Run in background thread (may take 30-60s for LLM calls)
             result_box = {}
             def _run():
-                result_box["result"] = si.run_once(
+                result_box["result"] = brain.self_improvement_action(
+                    "trigger",
                     target_file=target_file,
                     improvement_type=improvement_type,
                 )
@@ -3626,16 +4378,16 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
     def _api_self_improve_start(self):
         """POST /api/self-improve/start — start the improvement daemon."""
         try:
-            from sare.meta.self_improver import get_self_improver
-            self._json_response(get_self_improver().start())
+            from sare.brain import get_brain
+            self._json_response(get_brain().self_improvement_action("start"))
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
     def _api_self_improve_stop(self):
         """POST /api/self-improve/stop — stop the improvement daemon."""
         try:
-            from sare.meta.self_improver import get_self_improver
-            self._json_response(get_self_improver().stop())
+            from sare.brain import get_brain
+            self._json_response(get_brain().self_improvement_action("stop"))
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
@@ -3646,8 +4398,8 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._json_response({"error": "patch_id required"}, 400)
             return
         try:
-            from sare.meta.self_improver import get_self_improver
-            self._json_response(get_self_improver().rollback(patch_id))
+            from sare.brain import get_brain
+            self._json_response(get_brain().self_improvement_action("rollback", patch_id=patch_id))
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
@@ -3655,15 +4407,15 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         """POST /api/self-improve/multi — run a collective multi-file improvement cycle."""
         cluster_name = body.get("cluster_name") or None
         try:
-            from sare.meta.self_improver import get_self_improver
-            si = get_self_improver()
+            from sare.brain import get_brain
+            brain = get_brain()
             # Run in background thread — respond immediately
             import threading
             result_box = {}
             ev = threading.Event()
             def _run():
                 try:
-                    result_box["r"] = si.run_multi_file(cluster_name=cluster_name)
+                    result_box["r"] = brain.self_improvement_action("multi", cluster_name=cluster_name)
                 except Exception as exc:
                     result_box["r"] = {"outcome": f"error: {exc}"}
                 ev.set()
@@ -4136,207 +4888,17 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
 
     def _api_agi_score(self):
         """GET /api/agi/score — Compute current AGI capability score across all dimensions."""
-        score = {}
-        _acc = [0.0, 0.0]   # [total, max_total] — mutable to avoid nonlocal issues
-
-        def _s(key, val, weight=10.0):
-            score[key] = {"value": round(float(val), 2), "weight": weight}
-            _acc[0] += float(val) * weight
-            _acc[1] += weight
-
-        # 1. Symbolic reasoning (0-10): benchmark solve rate
         try:
-            from pathlib import Path as _P
-            import json as _j
-            cache = _P(__file__).resolve().parents[3] / "data/memory/benchmark_cache.json"
-            if cache.exists():
-                d = _j.loads(cache.read_text())
-                rate = d.get("last_symbolic_pass_rate") or d.get("solve_rate", 0)
-                _s("symbolic_reasoning", float(rate) * 10, 15)
-            else:
-                _s("symbolic_reasoning", 5.0, 15)
-        except Exception:
-            _s("symbolic_reasoning", 0.0, 15)
-
-        # 2. Learning loop (0-10): solve rate from recent runs
-        try:
-            from pathlib import Path as _P
-            import json as _j
-            prog = _P(__file__).resolve().parents[3] / "data/memory/progress.json"
-            if prog.exists():
-                d = _j.loads(prog.read_text())
-                runs = d.get("runs", [])
-                if runs:
-                    recent = runs[-5:]
-                    avg_solve = sum(r.get("solve_rate", 0) for r in recent) / len(recent)
-                    _s("learning_loop", avg_solve * 10, 10)
-                else:
-                    _s("learning_loop", 0.0, 10)
-            else:
-                _s("learning_loop", 0.0, 10)
-        except Exception:
-            _s("learning_loop", 0.0, 10)
-
-        # 3. Memory & knowledge (0-10): rules promoted
-        try:
-            from pathlib import Path as _P
-            import json as _j
-            pr = _P(__file__).resolve().parents[3] / "data/memory/promoted_rules.json"
-            if pr.exists():
-                d = _j.loads(pr.read_text())
-                rules = d.get("promoted_rules", [])
-                n = len(rules) if isinstance(rules, list) else len(rules)
-                _s("memory_knowledge", min(10, n * 1.25), 10)
-            else:
-                _s("memory_knowledge", 0.0, 10)
-        except Exception:
-            _s("memory_knowledge", 0.0, 10)
-
-        # 4. Self-model accuracy (0-10): domains tracked
-        try:
-            from pathlib import Path as _P
-            import json as _j
-            sm_path = _P(__file__).resolve().parents[3] / "data/memory/self_model.json"
-            if sm_path.exists():
-                d = _j.loads(sm_path.read_text())
-                domains = len(d.get("domains", {}))
-                attempts = d.get("total_attempts", 0)
-                _s("self_awareness", min(10, domains * 1.5 + min(2, attempts / 50)), 10)
-            else:
-                _s("self_awareness", 0.0, 10)
-        except Exception:
-            _s("self_awareness", 0.0, 10)
-
-        # 5. Creativity (0-10): symbol + dream inventory
-        try:
-            from sare.neuro.symbol_creator import get_symbol_creator
-            from sare.neuro.creativity_engine import get_creativity_engine
-            sc = get_symbol_creator(); ce = get_creativity_engine()
-            n = sc.get_status()["total_invented"] + ce.get_status()["total_dreams"]
-            _s("creativity", min(10, n * 2.0), 8)
-        except Exception:
-            _s("creativity", 0.0, 8)
-
-        # 6. Self-improvement (0-10): patches applied
-        try:
-            from sare.meta.self_improver import get_self_improver
-            si = get_self_improver()
-            st = si.get_status()
-            applied = st["patches_applied"]
-            _s("self_improvement", min(10, applied * 2.5), 10)
-        except Exception:
-            _s("self_improvement", 0.0, 10)
-
-        # 7. Theory of Mind (0-10): agent models + false-belief benchmark
-        try:
-            from pathlib import Path as _P
-            import json as _j
-            tom_path = _P(__file__).resolve().parents[3] / "data/memory/theory_of_mind.json"
-            if tom_path.exists():
-                d = _j.loads(tom_path.read_text())
-                # File format: top-level dict of agent_id → mental_state
-                # (not {"agents": {...}})
-                agents = len([k for k in d if not k.startswith("_")])
-                total_beliefs = sum(
-                    len(v.get("beliefs", [])) + len(v.get("desires", []))
-                    for v in d.values() if isinstance(v, dict)
-                )
-                _s("theory_of_mind", min(10, agents * 2.5 + total_beliefs * 0.2), 8)
-            else:
-                _s("theory_of_mind", 0.0, 8)
-        except Exception:
-            _s("theory_of_mind", 0.0, 8)
-
-        # 8. Planning (0-10): plan traces + success
-        try:
-            from pathlib import Path as _P
-            import json as _j
-            traces = _P(__file__).resolve().parents[3] / "data/memory/plan_traces.jsonl"
-            if traces.exists():
-                lines = traces.read_text().strip().splitlines()
-                total = len(lines)
-                if total:
-                    solved = sum(1 for l in lines if '"solved": true' in l or '"success": true' in l)
-                    _s("planning", min(10, (solved / total) * 10 + min(2, total * 0.1)), 8)
-                else:
-                    _s("planning", 0.0, 8)
-            else:
-                _s("planning", 0.0, 8)
-        except Exception:
-            _s("planning", 0.0, 8)
-
-        # 9. Homeostasis / drive (0-10): tonic level
-        try:
-            from sare.neuro.dopamine import get_dopamine_system
-            ds = get_dopamine_system()
-            _s("motivation", ds.tonic_level * 10, 7)
-        except Exception:
-            _s("motivation", 0.0, 7)
-
-        # 10. Language understanding (0-10): world model hypotheses + dialogue
-        try:
-            from pathlib import Path as _P
-            import json as _j
-            hyp_path = _P(__file__).resolve().parents[3] / "data/memory/world_hypotheses.json"
-            dial_path = _P(__file__).resolve().parents[3] / "data/memory/dialogue_sessions.json"
-            n = 0
-            if hyp_path.exists():
-                hyp = _j.loads(hyp_path.read_text())
-                n += len(hyp) if isinstance(hyp, list) else 0
-            if dial_path.exists():
-                dial = _j.loads(dial_path.read_text())
-                sessions = len(dial) if isinstance(dial, list) else len(dial.get("sessions", []))
-                n += sessions
-            _s("language_grounding", min(10, n * 0.5), 7)
-        except Exception:
-            _s("language_grounding", 0.0, 7)
-
-        # 11. Embodiment (0-10): grid-world episodes + concepts discovered
-        try:
-            from sare.world.embodied_agent import EmbodiedAgent
-            _ea = EmbodiedAgent()
-            _ea_sum = _ea.summary() if hasattr(_ea, "summary") else {}
-            _episodes = _ea_sum.get("episodes_run", 0)
-            _concepts = len(_ea_sum.get("concepts_learned", []))
-            _s("embodiment", min(10, _episodes * 0.1 + _concepts * 0.5), 8)
-        except Exception:
-            _s("embodiment", 0.0, 8)
-
-        # 12. World simulation (0-10): CausalRollout horizon accuracy
-        try:
-            from sare.world.causal_rollout import CausalRollout
-            _cr = CausalRollout()
-            _cr_sum = _cr.summary() if hasattr(_cr, "summary") else {}
-            _pred_acc = _cr_sum.get("avg_accuracy", 0.0)
-            _observations = _cr_sum.get("total_sequences", 0)
-            _s("world_simulation", min(10, _pred_acc * 10 + min(2, _observations * 0.01)), 8)
-        except Exception:
-            _s("world_simulation", 0.0, 8)
-
-        # 13. Causal reasoning (0-10): CounterfactualReasoner analyses
-        try:
-            from sare.causal.counterfactual_reasoner import CounterfactualReasoner
-            _cfr = CounterfactualReasoner()
-            _cfr_sum = _cfr.summary() if hasattr(_cfr, "summary") else {}
-            _analyses = _cfr_sum.get("total_analyses", 0)
-            _insights = _cfr_sum.get("top_transforms_count", 0)
-            _s("causal_reasoning", min(10, _analyses * 0.2 + _insights * 0.5), 8)
-        except Exception:
-            _s("causal_reasoning", 0.0, 8)
-
-        final = (_acc[0] / (_acc[1] * 10) * 100) if _acc[1] > 0 else 0.0
-        self._json_response({
-            "agi_score": round(final, 1),
-            "max_score": 100,
-            "dimensions": score,
-            "grade": "A" if final >= 85 else "B" if final >= 70 else "C" if final >= 55 else "D",
-            "timestamp": __import__("time").time(),
-        })
+            from sare.brain import get_brain
+            self._json_response(get_brain().agi_scorecard())
+        except Exception as e:
+            self._json_response({"error": str(e), "agi_score": 0.0, "dimensions": {}}, 500)
 
     def _api_benchmark_symbolic(self):
         """GET /api/benchmark/symbolic — Run symbolic math benchmark suite."""
         import json as _json
         from pathlib import Path as _Path
+        from sare.engine import get_transforms
 
         bench_path = _Path(__file__).resolve().parents[3] / "benchmarks/algebra/symbolic_math.json"
         cache_path = _Path(__file__).resolve().parents[3] / "data/memory/benchmark_cache.json"
@@ -4460,6 +5022,7 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         except Exception as e:
             return {"error": f"Cannot load benchmark {bench_path_rel}: {e}"}
 
+        from sare.engine import get_transforms
         energy_fn  = EnergyEvaluator()
         searcher   = BeamSearch()
         transforms = get_transforms()
@@ -4537,7 +5100,7 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._json_response({"error": str(e), "total": 0, "correct": 0, "accuracy": 0.0})
 
     def _api_benchmark_agi(self):
-        """GET /api/benchmark/agi — unified 5-category AGI benchmark."""
+        """GET /api/benchmark/agi — unified 10-category AGI benchmark."""
         try:
             from sare.benchmarks.agi_suite import AGISuite
             suite = AGISuite()
@@ -4547,8 +5110,52 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
                 "error": str(e),
                 "total_score": 0.0,
                 "categories": [],
-                "benchmark_version": "1.0",
+                "benchmark_version": "2.0",
             }, 500)
+
+    def _api_learning_trend(self):
+        """GET /api/learning/trend — historical benchmark scores + progress metrics for trend chart."""
+        import time as _t_mod
+        try:
+            from sare.brain import get_brain
+            _t0 = _t_mod.time()
+            result = get_brain().learning_trend_report()
+            log.debug("[trend] learning_trend_report: %.2fs", _t_mod.time()-_t0)
+            self._json_response(result)
+        except Exception as e:
+            self._json_response({"error": str(e), "benchmark_history": [], "progress_cycles": []}, 500)
+
+    def _api_agi_time_to_agi(self):
+        """GET /api/agi/time-to-agi — AGI progress tracker: 24h speed, days remaining, LLM narrative."""
+        try:
+            from sare.brain import get_brain
+            self._json_response(get_brain().time_to_agi_report())
+        except Exception as e:
+            self._json_response({"error": str(e), "days_to_agi_at_current_speed": None}, 500)
+
+    def _api_benchmark_novel(self):
+        """GET /api/benchmark/novel — Run held-out novel problem benchmark.
+
+        Generates fresh problems per domain, bypasses the schema cache,
+        and reports the FIRST-ATTEMPT solve rate. This is the real AGI
+        progress signal (not the cached-benchmark 97% figure).
+
+        Query params:
+            per_domain: int, default 3 — problems per domain
+            bypass: 1|0, default 1 — temporarily disable schema cache
+        """
+        try:
+            from urllib.parse import parse_qs as _pq
+            from urllib.parse import urlparse as _up
+            parsed = _up(self.path)
+            params = _pq(parsed.query)
+            per_domain = int(params.get("per_domain", ["3"])[0])
+            bypass = params.get("bypass", ["1"])[0] != "0"
+            from sare.benchmarks.novel_runner import run_novel_benchmark
+            result = run_novel_benchmark(per_domain=per_domain, bypass_schema_cache=bypass)
+            self._json_response(result)
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
 
     def _api_benchmark_all(self):
         """GET /api/benchmark/all — Run all benchmark suites and combine results."""
@@ -4647,27 +5254,8 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._json_response({"error": str(e)}, 500)
 
     def _api_brain_solve(self, body: dict):
-        """POST /api/brain/solve — Solve using the Brain orchestrator."""
-        expr = body.get("expression", "")
-        if not expr:
-            self._json_response({"error": "No expression"}, 400)
-            return
-        try:
-            from sare.brain import get_brain
-            brain = get_brain()
-            result = brain.solve(
-                expression=expr,
-                algorithm=body.get("algorithm", "beam"),
-                beam_width=body.get("beam_width", 8),
-                max_depth=body.get("max_depth", 30),
-                budget=body.get("budget", 10.0),
-                domain=body.get("domain", "general"),
-                kappa=float(body.get("kappa", 0.1)),
-                force_python=bool(body.get("force_python", False)),
-            )
-            self._json_response(result)
-        except Exception as e:
-            self._json_response({"error": str(e)}, 500)
+        """POST /api/brain/solve — Alias for /api/solve (same backend)."""
+        self._api_solve(body)
 
     def _api_brain_learn(self, body: dict):
         """POST /api/brain/learn — Run N autonomous learning cycles."""
@@ -4675,18 +5263,9 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         try:
             from sare.brain import get_brain
             brain = get_brain()
-            results = brain.learn_cycle(n=n)
-            successes = sum(1 for r in results if r.get("success"))
-
-            # Update curriculum with results
-            if brain.developmental_curriculum:
-                for r in results:
-                    try:
-                        brain.developmental_curriculum.record_attempt(
-                            r.get("expression", ""), r.get("domain", "general"),
-                            r.get("success", False), r.get("delta", 0))
-                    except Exception as _e:
-                                                log.debug("[web] Suppressed: %s", _e)
+            learn_result = brain.learn_cycle(max_tasks=n, mode="api")
+            results = list(learn_result)
+            successes = int(learn_result.summary.get("tasks_solved", 0))
 
             # Run transfer discovery after learning
             transfer_hyps = []
@@ -4711,6 +5290,7 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
                 "successes": successes,
                 "solve_rate": round(successes / max(len(results), 1), 3),
                 "stage": brain.stage.value,
+                "summary": learn_result.summary,
                 "transfer_hypotheses": transfer_hyps,
                 "analogies_found": analogies_found,
                 "results": [
@@ -4752,15 +5332,201 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             if action == "start":
                 interval = body.get("interval", 5.0)
                 problems = body.get("problems", 3)
-                brain.start_auto_learn(interval=interval, problems_per_cycle=problems)
-                self._json_response({"status": "started", "interval": interval, "problems": problems})
+                ingestion_budget = int(body.get("ingestion_budget", 10) or 10)
+                disable_github_acquisition = bool(body.get("disable_github_acquisition", True))
+                brain.start_autonomous_learning(
+                    interval=interval,
+                    problems_per_cycle=problems,
+                    ingestion_budget=ingestion_budget,
+                    disable_github_acquisition=disable_github_acquisition,
+                )
+                self._json_response(
+                    {
+                        "status": "started",
+                        "interval": interval,
+                        "problems": problems,
+                        "ingestion_budget": ingestion_budget,
+                        "disable_github_acquisition": disable_github_acquisition,
+                    }
+                )
             elif action == "stop":
-                brain.stop_auto_learn()
+                brain.stop_autonomous_learning()
                 self._json_response({"status": "stopped"})
             else:
                 self._json_response(brain.auto_learn_status())
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
+
+
+    def _api_daemon_status(self):
+        """GET /api/daemon/status - Check if learn_daemon is running and in which mode."""
+        import subprocess
+        import time as _time
+        import json as _json
+        hb_path = _DAEMON_HEARTBEAT_FILE
+        try:
+            heartbeat = {}
+            if hb_path.exists():
+                try:
+                    heartbeat = _json.loads(hb_path.read_text(encoding="utf-8"))
+                except Exception:
+                    heartbeat = {}
+            pid = _read_live_daemon_pid()
+            running = pid is not None
+            heartbeat_mode = str(heartbeat.get("mode", "") or "")
+            turbo = heartbeat_mode == "turbo"
+            if running and not heartbeat_mode:
+                try:
+                    result = subprocess.run(
+                        ["pgrep", "-f", "learn_daemon.py.*--turbo"],
+                        capture_output=True,
+                        text=True
+                    )
+                    turbo = result.returncode == 0
+                except:
+                    pass
+            hb_age = None
+            hb_ts = heartbeat.get("timestamp", heartbeat.get("ts", 0))
+            if hb_ts:
+                hb_age = round(_time.time() - float(hb_ts), 1)
+            self._json_response({
+                "running": running,
+                "turbo": turbo,
+                "pid": str(pid) if pid is not None else None,
+                "mode": heartbeat.get("mode", ("turbo" if turbo else "normal")),
+                "heartbeat_age_s": hb_age,
+                "heartbeat": heartbeat or None,
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_daemon_control(self, body: dict):
+        """POST /api/daemon/control - Start/stop/restart the learn_daemon."""
+        import subprocess
+        import time
+        action = body.get("action", "status")
+        mode = body.get("mode", "normal")
+        try:
+            if action == "start":
+                if _read_live_daemon_pid() is not None:
+                    self._json_response({"error": "Daemon already running"}, 400)
+                    return
+                subprocess.Popen(
+                    _daemon_python_cmd(mode),
+                    cwd=str(_REPO_ROOT),
+                    stdout=open(_DAEMON_LOG_FILE, "a"),
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True
+                )
+                self._json_response({"status": "started", "mode": mode})
+            elif action == "stop":
+                subprocess.run(["pkill", "-f", "learn_daemon.py"], capture_output=True)
+                self._json_response({"status": "stopped"})
+            elif action == "restart":
+                subprocess.run(["pkill", "-f", "learn_daemon.py"], capture_output=True)
+                time.sleep(1)
+                subprocess.Popen(
+                    _daemon_python_cmd(mode),
+                    cwd=str(_REPO_ROOT),
+                    stdout=open(_DAEMON_LOG_FILE, "a"),
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True
+                )
+                self._json_response({"status": "restarted", "mode": mode})
+            elif action == "status":
+                self._api_daemon_status()
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_daemon_activity(self):
+        """GET /api/daemon/activity - Get recent daemon activity."""
+        import os
+        try:
+            log_path = "/Users/akshitpatel/sare/daemon.log"
+            if not os.path.exists(log_path):
+                self._json_response({"activity": [], "log_file": log_path})
+                return
+            with open(log_path, "r") as f:
+                lines = f.readlines()
+            activity = []
+            for line in lines[-100:]:
+                line = line.strip()
+                if any(k in line for k in ["Cycle", "Solved", "ERROR", "WARNING", "domain", "batch"]):
+                    activity.append(line)
+            self._json_response({
+                "activity": activity[-30:] if len(activity) > 30 else activity,
+                "total_lines": len(lines),
+                "log_file": log_path
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_daemon_heartbeat(self):
+        """GET /api/daemon/heartbeat — Latest heartbeat written by the daemon each cycle."""
+        import time as _time
+        import json as _json
+        from pathlib import Path as _Path
+        hb_path = _Path(__file__).parent.parent.parent.parent / "data" / "memory" / "daemon_heartbeat.json"
+        try:
+            if not hb_path.exists():
+                self._json_response({"alive": False, "reason": "no heartbeat file yet"})
+                return
+            hb = _json.loads(hb_path.read_text())
+            age = _time.time() - float(hb.get("timestamp", hb.get("ts", 0)) or 0)
+            # >15 min = stuck; >60 s = slow; else ok
+            if age > 900:
+                status = "stuck"
+            elif age > 60:
+                status = "slow"
+            else:
+                status = "active"
+            self._json_response({
+                "alive": age < 900,
+                "status": status,
+                "age_s": round(age, 1),
+                **hb,
+            })
+        except Exception as e:
+            self._json_response({"alive": False, "status": "error", "error": str(e)})
+
+    def _api_daemon_livelog(self, lines: int = 60):
+        """GET /api/daemon/livelog?lines=60 — Last N lines from the daemon log file."""
+        import os as _os
+        _candidates = [
+            "/tmp/daemon_new.log",
+            "/tmp/daemon.log",
+            str(Path(__file__).resolve().parents[3] / "daemon.log"),
+        ]
+        # Pick the most recently modified non-empty candidate
+        _DAEMON_LOG = _candidates[-1]
+        _best_mtime = -1.0
+        for _candidate in _candidates:
+            if _os.path.exists(_candidate) and _os.path.getsize(_candidate) > 0:
+                _mtime = _os.path.getmtime(_candidate)
+                if _mtime > _best_mtime:
+                    _best_mtime = _mtime
+                    _DAEMON_LOG = _candidate
+        try:
+            if not _os.path.exists(_DAEMON_LOG):
+                self._json_response({"lines": [], "log_file": _DAEMON_LOG, "exists": False})
+                return
+            # Efficient tail: read last ~4KB and split lines
+            with open(_DAEMON_LOG, "rb") as f:
+                f.seek(0, 2)
+                size = f.tell()
+                read_bytes = min(size, lines * 200)  # estimate ~200 bytes/line
+                f.seek(max(0, size - read_bytes))
+                raw = f.read().decode("utf-8", errors="replace")
+            all_lines = raw.splitlines()
+            tail = all_lines[-lines:] if len(all_lines) > lines else all_lines
+            self._json_response({
+                "lines": tail,
+                "total_read": len(all_lines),
+                "log_file": _DAEMON_LOG,
+                "exists": True,
+            })
+        except Exception as e:
+            self._json_response({"error": str(e), "lines": []}, 500)
 
     def _api_brain_conjectures(self):
         """GET /api/brain/conjectures — Generate conjectures from learned knowledge."""
@@ -5313,35 +6079,9 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
 
     def _api_brain_progress(self):
         """GET /api/brain/progress — time-series from data/memory/progress.json."""
-        import pathlib
         try:
-            p = pathlib.Path(__file__).resolve().parents[3] / "data" / "memory" / "progress.json"
-            if p.exists():
-                data = json.loads(p.read_text())
-                runs = data.get("runs", [])
-                # Return last 200 points plus live snapshot from brain
-                self._json_response({
-                    "runs":  runs[-200:],
-                    "total": len(runs),
-                    "has_data": len(runs) > 0,
-                })
-            else:
-                # Return live snapshot from currently running brain
-                from sare.brain import get_brain
-                brain = get_brain()
-                snapshot = {"cycle": 0, "ts": __import__("time").time(),
-                            "solve_rate": 0, "avg_energy": 1.0}
-                if brain:
-                    try:
-                        if brain.robustness_hardener:
-                            snapshot["robustness"] = brain.robustness_hardener.overall_robustness()
-                        if brain.meta_curriculum:
-                            snapshot["meta_lp"] = brain.meta_curriculum.learning_progress_score()
-                        if brain.concept_graph and hasattr(brain.concept_graph, '_concepts'):
-                            snapshot["concept_count"] = len(brain.concept_graph._concepts)
-                    except Exception as _e:
-                                                log.debug("[web] Suppressed: %s", _e)
-                self._json_response({"runs": [snapshot], "total": 1, "has_data": False})
+            from sare.brain import get_brain
+            self._json_response(get_brain().progress_report())
         except Exception as e:
             self._json_response({"error": str(e), "runs": [], "total": 0, "has_data": False})
 
@@ -5866,14 +6606,27 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
     # ── Gap 2: Autonomous Trainer ──────────────────────────────────────────────
     def _api_brain_trainer(self):
         """GET /api/brain/trainer — autonomous trainer summary + live stats."""
+        import json as _json
+        from pathlib import Path as _Path
+        _stats_path = _Path(__file__).resolve().parents[3] / "data" / "memory" / "autonomous_trainer_stats.json"
         try:
             from sare.brain import get_brain
             brain = get_brain()
-            if brain and brain.autonomous_trainer:
+            if brain and brain.autonomous_trainer and brain.autonomous_trainer._running:
                 self._json_response(brain.autonomous_trainer.summary())
-            else:
-                self._json_response({"running": False, "total_problems": 0,
-                                     "error": "AutonomousTrainer not loaded"})
+                return
+            # Fall back to last persisted stats written by the daemon process
+            if _stats_path.exists():
+                try:
+                    data = _json.loads(_stats_path.read_text(encoding="utf-8"))
+                    data["from_disk"] = True
+                    data["running"] = False
+                    self._json_response(data)
+                    return
+                except Exception:
+                    pass
+            self._json_response({"running": False, "total_problems": 0,
+                                 "error": "Trainer not running (daemon not active)"})
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
@@ -5900,6 +6653,90 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
                 self._json_response({"injected": expr, "domain": dom})
             else:
                 self._json_response(at.summary())
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_brain_composite(self):
+        """GET /api/brain/composite — CompositeRuleLearner stats."""
+        try:
+            from sare.learning.composite_rule_learner import get_composite_learner
+            cl = get_composite_learner()
+            self._json_response({
+                "total_traces": cl._total_traces,
+                "pair_count": len(cl._pair_counts),
+                "registered_composites": len(cl._registered),
+                "top_pairs": [{"pair": list(k), "count": v}
+                              for k, v in cl._pair_counts.most_common(10)],
+                "registered": list(cl._registered.values())[:20],
+            })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_brain_astar_stats(self):
+        """GET /api/brain/astar — AStarSearch availability check."""
+        try:
+            from sare.search.astar_search import AStarSearch
+            self._json_response({"available": True, "max_open_set": 512})
+        except Exception as e:
+            self._json_response({"available": False, "error": str(e)})
+
+    def _api_config_update(self, path: str, body: dict):
+        """POST /api/config/beam_width or /api/config/budget_seconds — live param update."""
+        try:
+            from sare.brain import get_brain
+            brain = get_brain()
+            value = body.get("value")
+            if value is None:
+                self._json_response({"error": "missing value"}, 400)
+                return
+            if path == "/api/config/beam_width" and brain:
+                brain.beam_width = int(value)
+                self._json_response({"beam_width": int(value)})
+            elif path == "/api/config/budget_seconds" and brain:
+                if hasattr(brain, 'experiment_runner') and brain.experiment_runner:
+                    brain.experiment_runner.budget_seconds = float(value)
+                self._json_response({"budget_seconds": float(value)})
+            else:
+                self._json_response({"error": "not found"}, 404)
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_brain_hypothesis(self):
+        """GET /api/brain/hypothesis — HypothesisEngine stats."""
+        try:
+            from sare.search.hypothesis_engine import get_hypothesis_engine
+            self._json_response(get_hypothesis_engine().summary())
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_datasets(self):
+        """GET /api/datasets — external dataset ingester summary."""
+        try:
+            from sare.knowledge.external_datasets import get_dataset_ingester
+            self._json_response(get_dataset_ingester().summary())
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_benchmark_hard(self):
+        """GET /api/benchmark/hard — hard suite score trend."""
+        try:
+            from sare.benchmarks.hard_suite_runner import get_hard_suite_runner
+            self._json_response(get_hard_suite_runner().trend())
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_benchmark_hard_run(self):
+        """POST /api/benchmark/hard — run hard suite and return full results."""
+        try:
+            from sare.benchmarks.hard_suite_runner import get_hard_suite_runner
+            from sare.brain import get_brain
+            brain = get_brain()
+            if not brain:
+                self._json_response({"error": "Brain not available"}, 503)
+                return
+            runner = get_hard_suite_runner()
+            result = runner.run(lambda expr: brain.solve(expr), budget_seconds=5.0)
+            self._json_response(result)
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
@@ -6052,16 +6889,14 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
 
             # ── World model surprise domains ──────────────────────────────────
             try:
-                from sare.memory.world_model import get_world_model
-                wm = get_world_model()
-                if hasattr(wm, 'get_high_surprise_domains'):
+                if brain:
                     result["high_surprise_domains"] = [
                         {"domain": d, "surprise": round(s, 3)}
-                        for d, s in wm.get_high_surprise_domains(top_n=5)
+                        for d, s in brain.high_surprise_domains(top_n=5)
                     ]
-                wm_state = wm.prediction_stats() if hasattr(wm, 'prediction_stats') else {}
-                result["wm_accuracy"] = round(wm_state.get("accuracy", 0), 3)
-                result["wm_links"] = len(wm._causal_links)
+                    wm_state = brain.world_prediction_stats()
+                    result["wm_accuracy"] = round(wm_state.get("accuracy", 0), 3)
+                    result["wm_links"] = int(brain.world_graph().get("causal_links_total", 0))
             except Exception as _e:
                                 log.debug("[web] Suppressed: %s", _e)
 
@@ -6246,8 +7081,13 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
             self._json_response({"error": "q parameter required"}, 400)
             return
         try:
-            from sare.memory.knowledge_lookup import KnowledgeLookup, DIRECT_THRESHOLD
-            kl  = KnowledgeLookup()
+            from sare.brain import get_brain
+            from sare.memory.knowledge_lookup import DIRECT_THRESHOLD
+            brain = get_brain()
+            kl = brain.kb_lookup
+            if kl is None:
+                from sare.memory.knowledge_lookup import KnowledgeLookup
+                kl = KnowledgeLookup()
             hit = kl.lookup(q, domain)
             self._json_response({
                 "hit":        hit is not None,
@@ -6260,61 +7100,273 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
+    def _api_books_status(self):
+        """GET /api/books — list ingested books and totals."""
+        try:
+            from sare.knowledge.book_ingester import get_book_ingester
+            self._json_response(get_book_ingester().status())
+        except Exception as e:
+            self._json_response({"error": str(e), "total_books": 0, "books": []})
+
+    def _api_books_ingest(self, body: dict):
+        """POST /api/books/ingest {"path": "/absolute/path/to/book.pdf"} — ingest a book file."""
+        import threading as _bt
+        path_str = body.get("path", "").strip()
+        if not path_str:
+            self._json_response({"error": "path required"}, 400)
+            return
+        from pathlib import Path as _P
+        fpath = _P(path_str)
+        if not fpath.exists():
+            self._json_response({"error": f"File not found: {path_str}"}, 404)
+            return
+
+        def _do_ingest():
+            try:
+                from sare.knowledge.book_ingester import get_book_ingester
+                get_book_ingester().ingest_file(fpath, force=body.get("force", False))
+            except Exception:
+                pass
+
+        _bt.Thread(target=_do_ingest, daemon=True).start()
+        self._json_response({"status": "ingesting", "path": str(fpath),
+                             "message": "Ingestion started in background"})
+
     def _api_knowledge_stats(self):
         """GET /api/knowledge/stats — aggregate KB statistics."""
         try:
-            from sare.memory.world_model import get_world_model
-            wm = get_world_model()
-            wm_facts = sum(len(v) for v in wm._facts.values())
+            from sare.brain import get_brain
+            brain = get_brain()
+            self._json_response(brain.knowledge_stats())
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
 
-            kg_nodes = 0
-            try:
-                from sare.memory.knowledge_graph import KnowledgeGraph
-                kg = KnowledgeGraph()
-                kg_nodes = len(kg._nodes)
-            except Exception:
-                pass
+    def _api_learning_summary(self):
+        """GET /api/learning/summary — general intelligence KB metrics."""
+        try:
+            from sare.brain import get_brain
+            brain = get_brain()
+            self._json_response(brain.learning_summary())
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
 
-            cs_facts = 0
-            try:
-                from sare.knowledge.commonsense import CommonSenseBase
-                cs = CommonSenseBase()
-                cs.load()
-                cs_facts = cs.total_facts()
-            except Exception:
-                pass
+    def _api_learning_live(self):
+        """GET /api/learning/live — live snapshot: domain accuracy, web search log, LLM call stats."""
+        try:
+            from sare.brain import get_brain
+            brain = get_brain()
+            self._json_response(brain.learning_live_snapshot())
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
 
-            wm_sessions = 0
-            kb_hit_rate = 0.0
-            try:
-                from sare.memory.working_memory import WorkingMemory
-                wmem = WorkingMemory()
-                wm_sessions = wmem._session_count
-            except Exception:
-                pass
+    def _api_acquisition_dashboard(self):
+        """GET /api/acquisition — Brain-owned acquisition status and recent artifacts."""
+        try:
+            from sare.brain import get_brain
+            self._json_response(get_brain().acquisition_dashboard())
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
 
-            # Prefer Brain's live kb_lookup for hit rate if Brain is running
-            try:
-                from sare.brain import get_brain
-                _b = get_brain()
-                if _b and _b.kb_lookup is not None:
-                    kb_hit_rate = _b.kb_lookup.get_hit_rate()
-                    wm_sessions = _b.working_memory._session_count if _b.working_memory else wm_sessions
-                else:
-                    from sare.cognition.general_solver import get_general_solver
-                    gs = get_general_solver()
-                    if gs._kb_lookup is not None:
-                        kb_hit_rate = gs._kb_lookup.get_hit_rate()
-            except Exception:
-                pass
+    def _api_acquisition_artifacts(self):
+        """GET /api/acquisition/artifacts — recent learned artifacts."""
+        try:
+            from sare.brain import get_brain
+            brain = get_brain()
+            limit = int((parse_qs(urlparse(self.path).query).get("limit", ["50"])[0]) or 50)
+            self._json_response(brain.learned_artifacts(limit=limit))
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
 
-            self._json_response({
-                "world_model_facts":       wm_facts,
-                "knowledge_graph_nodes":   kg_nodes,
-                "commonsense_facts":       cs_facts,
-                "working_memory_sessions": wm_sessions,
-                "kb_hit_rate_last_100":    kb_hit_rate,
-            })
+    def _api_acquisition_artifact(self):
+        """GET /api/acquisition/artifact?id=... — test and inspect one learned artifact."""
+        try:
+            from sare.brain import get_brain
+            artifact_id = str(parse_qs(urlparse(self.path).query).get("id", [""])[0]).strip()
+            if not artifact_id:
+                self._json_response({"error": "id required"}, 400)
+                return
+            self._json_response(get_brain().test_learned_artifact(artifact_id))
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_acquisition_history(self):
+        """GET /api/acquisition/history?id=... — action history for one artifact."""
+        try:
+            from sare.brain import get_brain
+            query = parse_qs(urlparse(self.path).query)
+            artifact_id = str(query.get("id", [""])[0]).strip()
+            if not artifact_id:
+                self._json_response({"error": "id required"}, 400)
+                return
+            limit = int((query.get("limit", ["25"])[0]) or 25)
+            self._json_response(get_brain().artifact_history(artifact_id, limit=limit))
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_acquisition_plan(self):
+        """GET /api/acquisition/plan — Brain-owned recommended next acquisition jobs."""
+        try:
+            from sare.brain import get_brain
+            limit = int((parse_qs(urlparse(self.path).query).get("limit", ["4"])[0]) or 4)
+            self._json_response(get_brain().acquisition_plan(limit=limit))
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_acquisition_verification(self):
+        """GET /api/acquisition/verification — pending verification queue."""
+        try:
+            from sare.brain import get_brain
+            brain = get_brain()
+            limit = int((parse_qs(urlparse(self.path).query).get("limit", ["50"])[0]) or 50)
+            self._json_response(brain.verification_queue(limit=limit))
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_learning_audit(self):
+        """GET /api/learning/audit — canonical audit report for what the system truly learned."""
+        try:
+            from sare.brain import get_brain
+            scope = parse_qs(urlparse(self.path).query).get("scope", ["incremental"])[0]
+            self._json_response(get_brain().run_learning_audit(scope=scope))
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_github_learning_status(self):
+        """GET /api/github/learning — status of public GitHub repo learning."""
+        try:
+            from sare.brain import get_brain
+            self._json_response(get_brain().github_learning_status())
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_github_discover(self):
+        """GET /api/github/discover?topic=... — discover public GitHub repos for a topic."""
+        try:
+            from sare.brain import get_brain
+            query = parse_qs(urlparse(self.path).query)
+            topic = str(query.get("topic", [""])[0]).strip()
+            if not topic:
+                self._json_response({"error": "topic required"}, 400)
+                return
+            limit = int((query.get("limit", ["5"])[0]) or 5)
+            self._json_response(get_brain().discover_github_repositories(topic, limit=limit))
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_chrome_discover(self):
+        """GET /api/chrome/discover?kind=github|books&q=... — browser-assisted discovery with allowlisted sources."""
+        try:
+            from sare.brain import get_brain
+            query = parse_qs(urlparse(self.path).query)
+            kind = str(query.get("kind", ["github"])[0]).strip() or "github"
+            q = str(query.get("q", [""])[0]).strip()
+            if not q:
+                self._json_response({"error": "q required"}, 400)
+                return
+            limit = int((query.get("limit", ["5"])[0]) or 5)
+            open_in_chrome = str(query.get("open", ["1"])[0]).strip() not in {"0", "false", "False"}
+            kind = "open_access_books" if kind in {"books", "open_access_books"} else kind
+            self._json_response(get_brain().discover_with_browser(kind, q, limit=limit, open_in_chrome=open_in_chrome))
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_acquire(self, body: dict):
+        """POST /api/acquire — canonical acquisition entrypoint."""
+        try:
+            from sare.brain import get_brain
+            brain = get_brain()
+            self._json_response(brain.acquire(body))
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_acquisition_artifact_action(self, body: dict):
+        """POST /api/acquisition/artifact/action — verify, quarantine, promote, or retest one artifact."""
+        try:
+            from sare.brain import get_brain
+            artifact_id = str(body.get("artifact_id", body.get("id", ""))).strip()
+            action = str(body.get("action", "")).strip()
+            if not artifact_id or not action:
+                self._json_response({"error": "artifact_id and action required"}, 400)
+                return
+            self._json_response(
+                get_brain().artifact_action(
+                    artifact_id,
+                    action,
+                    reason=str(body.get("reason", "")),
+                    metadata=dict(body.get("metadata", {}) or {}),
+                )
+            )
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_acquire_schedule(self, body: dict):
+        """POST /api/acquire/schedule — schedule one or more background acquisition jobs."""
+        try:
+            from sare.brain import get_brain
+            brain = get_brain()
+            sources = body.get("sources", [])
+            if not isinstance(sources, list) or not sources:
+                self._json_response({"error": "sources list required"}, 400)
+                return
+            ok = brain.schedule_acquisition(
+                sources=sources,
+                interval_seconds=float(body.get("interval_seconds", 0.0) or 0.0),
+                max_runs=int(body.get("max_runs", 1) or 1),
+            )
+            self._json_response({"scheduled": bool(ok), "sources": len(sources)})
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_acquire_github(self, body: dict):
+        """POST /api/acquire/github — ingest a public GitHub repo via Brain."""
+        try:
+            from sare.brain import get_brain
+            repo = str(body.get("repo", "")).strip()
+            if not repo:
+                self._json_response({"error": "repo required"}, 400)
+                return
+            self._json_response(get_brain().acquire_github_repo(repo, mode=str(body.get("mode", "full_repo"))))
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_acquire_github_topic(self, body: dict):
+        """POST /api/acquire/github/topic — discover public repos by topic and ingest them."""
+        try:
+            from sare.brain import get_brain
+            topic = str(body.get("topic", body.get("locator", ""))).strip()
+            if not topic:
+                self._json_response({"error": "topic required"}, 400)
+                return
+            repo_limit = int(body.get("repo_limit", 3) or 3)
+            per_repo_items = int(body.get("per_repo_items", 12) or 12)
+            mode = str(body.get("mode", "full_repo"))
+            self._json_response(
+                get_brain().acquire_github_topic(
+                    topic,
+                    repo_limit=repo_limit,
+                    mode=mode,
+                    per_repo_items=per_repo_items,
+                )
+            )
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_acquire_open_book(self, body: dict):
+        """POST /api/acquire/open-book — discover and ingest an open-access book, optionally opening Chrome."""
+        try:
+            from sare.brain import get_brain
+            query = str(body.get("query", body.get("locator", ""))).strip()
+            if not query:
+                self._json_response({"error": "query required"}, 400)
+                return
+            self._json_response(
+                get_brain().acquire_open_access_book(
+                    query,
+                    domain=str(body.get("domain", "general") or "general"),
+                    max_items=int(body.get("max_items", 8) or 8),
+                    open_in_chrome=bool(body.get("open_in_chrome", True)),
+                )
+            )
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
@@ -6540,30 +7592,8 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
     def _api_brain_promoted_rules(self):
         """GET /api/brain/promoted-rules — promoted rules with usage counts."""
         try:
-            import json as _json
-            from pathlib import Path as _P
-            p = _P(__file__).resolve().parents[3] / "data" / "memory" / "promoted_rules.json"
-            if p.exists():
-                d = _json.loads(p.read_text())
-                counts = d.get("pattern_counts", {})
-                rules = d.get("promoted_rules", [])
-                enriched = []
-                for r in rules:
-                    name = r.get("name", "")
-                    enriched.append({
-                        "name": name,
-                        "domain": r.get("domain", "general"),
-                        "confidence": round(r.get("confidence", 0.0), 3),
-                        "use_count": counts.get(name, 0),
-                    })
-                enriched.sort(key=lambda x: x["use_count"], reverse=True)
-                self._json_response({
-                    "rules": enriched,
-                    "total": len(enriched),
-                    "pattern_counts": counts,
-                })
-            else:
-                self._json_response({"rules": [], "total": 0, "pattern_counts": {}})
+            from sare.brain import get_brain
+            self._json_response(get_brain().promoted_rules_summary())
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
@@ -6730,20 +7760,30 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
         context      = body.get("context", "")
         problem_type = body.get("type") or None
         try:
-            from sare.cognition.general_solver import get_general_solver
-            solver = get_general_solver()
-            result = solver.solve(problem, context=context, problem_type=problem_type)
+            from sare.brain import get_brain
+            brain = get_brain()
+            result = brain.solve(
+                problem,
+                context={
+                    "force_general_solver": True,
+                    "context": context,
+                    "problem_type": problem_type,
+                    "allow_retrieval": body.get("allow_retrieval", True),
+                    "allow_llm": body.get("allow_llm", True),
+                    "metadata": {"endpoint": "/api/think"},
+                },
+            )
             self._json_response({
-                "problem_id":    result.problem_id,
-                "problem_type":  result.problem_type,
-                "answer":        result.answer,
-                "confidence":    round(result.confidence, 3),
+                "problem_id":    result.get("request_id"),
+                "problem_type":  result.get("domain"),
+                "answer":        result.get("answer"),
+                "confidence":    round(float(result.get("confidence", 0.0) or 0.0), 3),
                 "solved":        result.solved,
-                "solver_used":   result.solver_used,
-                "elapsed_ms":    round(result.elapsed_ms, 1),
-                "reasoning":     result.reasoning[:1500] if result.reasoning else "",
-                "lesson":        result.lesson,
-                "sub_steps":     result.sub_steps,
+                "solver_used":   result.get("solver_path"),
+                "elapsed_ms":    round(float(result.get("elapsed_seconds", 0.0) or 0.0) * 1000.0, 1),
+                "reasoning":     (result.get("reasoning") or "")[:1500],
+                "lesson":        result.get("learning_mode"),
+                "sub_steps":     result.get("transforms", []),
             })
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
@@ -6751,9 +7791,9 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
     def _api_intelligence_domains(self):
         """GET /api/intelligence/domains — per-domain performance stats."""
         try:
-            from sare.cognition.general_solver import get_general_solver
-            solver = get_general_solver()
-            stats  = solver.get_stats()
+            from sare.brain import get_brain
+            brain = get_brain()
+            stats = brain.evaluation_summary().get("general_solver", {})
             # Annotate with domain metadata
             domain_meta = {
                 "math":      {"label": "Symbolic Math",        "icon": "∑"},
@@ -6795,6 +7835,60 @@ class SareAPIHandler(SimpleHTTPRequestHandler):
                 "overall_solve_rate": round(overall_solved / max(overall_attempts, 1), 3),
                 "active_domains":   len([d for d in domains if d["attempts"] > 0]),
             })
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_intelligence_learning_progress(self):
+        """GET /api/intelligence/learning-progress — understanding vs memorization report."""
+        try:
+            from sare.brain import get_brain
+            report = get_brain().learning_progress_report()
+            self._json_response(report)
+        except Exception as e:
+            self._json_response({"error": str(e)}, 500)
+
+    def _api_intelligence_learning_dashboard(self):
+        """GET /api/intelligence/learning-dashboard — bundled payload for learning ops UI."""
+        import subprocess as _subprocess
+
+        try:
+            from sare.brain import get_brain
+            brain = get_brain()
+            dashboard = brain.learning_dashboard_payload()
+
+            daemon = {"running": False, "turbo": False, "pid": None, "mode": "normal"}
+            try:
+                daemon_pid = _read_live_daemon_pid()
+                daemon["running"] = daemon_pid is not None
+                if daemon["running"]:
+                    daemon["pid"] = str(daemon_pid)
+                    try:
+                        heartbeat = json.loads(_DAEMON_HEARTBEAT_FILE.read_text(encoding="utf-8")) if _DAEMON_HEARTBEAT_FILE.exists() else {}
+                        daemon_mode = str(heartbeat.get("mode", "") or "")
+                        if daemon_mode:
+                            daemon["mode"] = daemon_mode
+                            daemon["turbo"] = daemon_mode == "turbo"
+                        else:
+                            turbo_result = _subprocess.run(
+                                ["pgrep", "-f", "learn_daemon.py.*--turbo"],
+                                capture_output=True,
+                                text=True,
+                            )
+                            daemon["turbo"] = turbo_result.returncode == 0
+                            daemon["mode"] = "turbo" if daemon["turbo"] else "normal"
+                    except Exception:
+                        daemon["turbo"] = False
+                        daemon["mode"] = "normal"
+            except Exception:
+                pass
+
+            self._json_response(
+                {
+                    "generated_at": dashboard.get("generated_at") or dashboard.get("report", {}).get("generated_at"),
+                    **dashboard,
+                    "daemon": daemon,
+                }
+            )
         except Exception as e:
             self._json_response({"error": str(e)}, 500)
 
@@ -6868,6 +7962,57 @@ def run_server(port=8080):
     _ensure_hippocampus_started()
     _ensure_self_improver_started()
 
+    def _write_web_run_marker() -> None:
+        _repo_root = Path(__file__).resolve().parents[3]
+        _path = _repo_root / "data" / "memory" / "web_run_marker.json"
+        try:
+            try:
+                _code_version = subprocess.check_output(
+                    ["git", "rev-parse", "--short", "HEAD"],
+                    cwd=str(_repo_root),
+                    stderr=subprocess.DEVNULL,
+                    text=True,
+                ).strip()
+            except Exception:
+                _code_version = "unknown"
+            _path.parent.mkdir(parents=True, exist_ok=True)
+            _payload = {
+                "role": "web",
+                "pid": os.getpid(),
+                "boot_timestamp": time.time(),
+                "code_version": _code_version,
+                "port": int(port),
+            }
+            _tmp = _path.with_name(f"{_path.stem}.{int(time.time() * 1000)}.tmp")
+            with open(_tmp, "w", encoding="utf-8") as _f:
+                json.dump(_payload, _f, indent=2)
+                _f.flush()
+                os.fsync(_f.fileno())
+            _tmp.replace(_path)
+        except Exception as _exc:
+            log.debug("web run marker write failed: %s", _exc)
+
+    _write_web_run_marker()
+
+    def _warm_brain():
+        try:
+            from sare.brain import get_brain
+            brain = get_brain()
+            # Warm the most common dashboard/report surfaces once so the first UI load
+            # doesn't pay the full boot + report generation cost on one request.
+            try:
+                brain.learning_progress_report()
+                brain.learning_dashboard_payload()
+                brain.run_learning_audit(scope="incremental")
+                brain.time_to_agi_report()
+            except Exception:
+                pass
+        except Exception as _warm_exc:
+            log.debug("Brain warmup skipped: %s", _warm_exc)
+
+    import threading as _warm_threading
+    _warm_threading.Thread(target=_warm_brain, daemon=True, name="BrainWarmup").start()
+
     # ── Install evolver log buffer early so no messages are missed ────────
     try:
         from sare.meta.evolver_chat import get_log_buffer
@@ -6883,6 +8028,71 @@ def run_server(port=8080):
 
     class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
         daemon_threads = True
+
+    # ── Daemon watchdog: auto-restart if stuck for 15 minutes ─────────────
+    import threading as _threading
+    import subprocess as _subprocess
+    import os as _wd_os
+
+    _REPO_ROOT_WD = str(__file__).split("/python/")[0]
+    _HB_FILE_WD   = _wd_os.path.join(_REPO_ROOT_WD, "data", "memory", "daemon_heartbeat.json")
+    _DAEMON_PID   = _wd_os.path.join(_REPO_ROOT_WD, "data", "memory", "daemon.pid")
+    _STUCK_THRESH = 15 * 60   # 15 minutes
+
+    def _daemon_is_running():
+        try:
+            pid = int(open(_DAEMON_PID).read().strip())
+            _wd_os.kill(pid, 0)
+            return True
+        except Exception:
+            return False
+
+    def _restart_daemon():
+        import logging as _wdlog
+        _wdlog.getLogger("watchdog").warning(
+            "[Watchdog] Daemon appears stuck (no heartbeat for >15 min). Restarting…"
+        )
+        # Kill old process if any
+        try:
+            pid = int(open(_DAEMON_PID).read().strip())
+            _wd_os.kill(pid, 15)   # SIGTERM
+            import time as _wt; _wt.sleep(3)
+            try: _wd_os.kill(pid, 9)
+            except Exception: pass
+        except Exception:
+            pass
+        # Start new daemon
+        _subprocess.Popen(
+            _daemon_python_cmd("normal"),
+            cwd=_REPO_ROOT_WD,
+            stdout=open("/tmp/daemon_new.log", "a"),
+            stderr=_subprocess.STDOUT,
+            start_new_session=True,
+        )
+        _wdlog.getLogger("watchdog").info("[Watchdog] Daemon restarted.")
+
+    def _watchdog_loop():
+        import time as _wt
+        import json as _wj
+        _wt.sleep(120)  # wait 2 min before first check (allow daemon startup)
+        while True:
+            try:
+                if _daemon_is_running():
+                    try:
+                        hb = _wj.loads(open(_HB_FILE_WD).read())
+                        age = _wt.time() - float(hb.get("timestamp", hb.get("ts", 0)) or 0)
+                        if age > _STUCK_THRESH:
+                            _restart_daemon()
+                    except FileNotFoundError:
+                        pass   # heartbeat not written yet — daemon just started
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            _wt.sleep(60)   # check every minute
+
+    _wd_thread = _threading.Thread(target=_watchdog_loop, daemon=True, name="daemon-watchdog")
+    _wd_thread.start()
 
     server = ThreadedHTTPServer(("localhost", port), SareAPIHandler)
     try:

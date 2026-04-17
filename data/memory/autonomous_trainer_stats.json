@@ -1,0 +1,109 @@
+{
+  "running": true,
+  "total_problems": 150,
+  "total_successes": 100,
+  "recent_rate": 0.75,
+  "current_difficulty": 0.35,
+  "uptime_seconds": 437.8,
+  "source_stats": {
+    "generated_problems": {
+      "problems": 0,
+      "successes": 0,
+      "rate": 0.0
+    },
+    "seed_library": {
+      "problems": 140,
+      "successes": 100,
+      "rate": 0.714
+    },
+    "knowledge_concepts": {
+      "problems": 0,
+      "successes": 0,
+      "rate": 0.0
+    },
+    "failure_replay": {
+      "problems": 10,
+      "successes": 0,
+      "rate": 0.0
+    },
+    "physics_expressions": {
+      "problems": 0,
+      "successes": 0,
+      "rate": 0.0
+    }
+  },
+  "domain_stats": {
+    "algebra": {
+      "problems": 22,
+      "rate": 0.682
+    },
+    "arithmetic": {
+      "problems": 64,
+      "rate": 0.656
+    },
+    "calculus": {
+      "problems": 6,
+      "rate": 1.0
+    },
+    "logic": {
+      "problems": 42,
+      "rate": 0.881
+    },
+    "thermodynamics": {
+      "problems": 16,
+      "rate": 0.0
+    }
+  },
+  "failure_queue": 50,
+  "recent_results": [
+    {
+      "expression": "A AND TRUE",
+      "domain": "logic",
+      "source": "seed_library",
+      "success": true,
+      "delta": 0.0,
+      "elapsed_ms": 1302.4
+    },
+    {
+      "expression": "d/dx(x^0)",
+      "domain": "calculus",
+      "source": "seed_library",
+      "success": true,
+      "delta": 0.0,
+      "elapsed_ms": 323.4
+    },
+    {
+      "expression": "x + y - y",
+      "domain": "arithmetic",
+      "source": "seed_library",
+      "success": false,
+      "delta": 0.0,
+      "elapsed_ms": 376.9
+    },
+    {
+      "expression": "0 + x + 0",
+      "domain": "arithmetic",
+      "source": "seed_library",
+      "success": true,
+      "delta": 0.0,
+      "elapsed_ms": 786.0
+    },
+    {
+      "expression": "Q = m * c * dT",
+      "domain": "thermodynamics",
+      "source": "seed_library",
+      "success": false,
+      "delta": 0.0,
+      "elapsed_ms": 897.7
+    },
+    {
+      "expression": "x * 1",
+      "domain": "arithmetic",
+      "source": "seed_library",
+      "success": true,
+      "delta": 0.0,
+      "elapsed_ms": 932.1
+    }
+  ],
+  "saved_at": 1774584391.038219
+}

@@ -18,7 +18,9 @@ from __future__ import annotations
 import json
 import logging
 import os
+import shutil
 import sys
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
@@ -37,7 +39,11 @@ for _candidate in [
 log = logging.getLogger(__name__)
 
 # ── C++ Bindings import (optional) ────────────────────────────
-_sb = None
+try:
+    import sare.sare_bindings as _sb  # type: ignore
+except Exception:
+    _sb = None
+
 GraphSignature = None
 StrategyMemory = None
 EpisodicStore = None
@@ -120,6 +126,10 @@ class MemoryManager:
         # Mapping from signature to problem_id/embedding payload
         self._payload_to_strategy: dict = {}
 
+        # Warmstart tracking
+        self._warmstart_hits: int = 0
+        self._warmstart_total: int = 0
+
     # ── Before-solve: strategy lookup ─────────────────────────
 
     def _semantic_lookup(self, graph) -> Optional[dict]:
@@ -129,7 +139,7 @@ class MemoryManager:
         
         try:
             embed = GraphEmbedder.embed(graph)
-            results = self._vector_db.search(embed, k=1, threshold=0.85)
+            results = self._vector_db.search(embed, k=1, threshold=0.70)
             if results:
                 best_match_sig = results[0][0]
                 return self._strategies.get(best_match_sig)
@@ -137,27 +147,92 @@ class MemoryManager:
             log.warning("VectorDB semantic lookup failed: %s", e)
         return None
 
-    def before_solve(self, graph) -> StrategyHint:
+    def before_solve(self, graph, domain: Optional[str] = None) -> StrategyHint:
         """
         Compute signature for `graph`, look up best past strategy.
         First tries exact structural match, then falls back to Semantic Vector ANN search.
         Returns a StrategyHint with the recommended transform sequence.
+        Tracks warmstart hit rate via _warmstart_hits / _warmstart_total.
+
+        domain: if provided, only return strategies whose stored domain matches
+        (or is compatible). This prevents cross-domain contamination — e.g.
+        `chemistry_stoich_reaction` being suggested for logic problems because
+        their generic signature (`operator:1_v`) matched.
         """
         hint = StrategyHint()
+        self._warmstart_total += 1
 
         try:
             sig = self._compute_signature(graph)
             hint.signature = sig
 
             strat = self._strategies.get(sig) or self._semantic_lookup(graph) or self._soft_lookup(sig)
+            # Domain filter: reject cross-domain suggestions. Two layers:
+            #   1. If the strategy has a stored domain and it doesn't match, reject.
+            #   2. Even without a stored domain, infer domain from transform names
+            #      using keyword-to-domain patterns. If ANY transform in the sequence
+            #      looks like it belongs to a different domain, reject.
+            if strat and domain:
+                d_lower = str(domain).lower()
+                strat_domain = str(strat.get("domain", "")).lower()
+                tseq = strat.get("transform_sequence", []) or []
+                rejected = False
+                reason = ""
+
+                # Layer 1: stored domain mismatch
+                if strat_domain and strat_domain != d_lower:
+                    rejected = True
+                    reason = f"stored_domain={strat_domain}"
+
+                # Layer 2: infer domain from transform names
+                if not rejected and tseq:
+                    _DOMAIN_SIGNALS = {
+                        "chemistry":  ("chemistry_", "stoich", "mole_", "_reaction"),
+                        "physics":    ("physics_", "kinematic", "newton", "force_", "mass_"),
+                        "logic":      ("bool_", "_and_", "_or_", "or_false",
+                                       "or_true", "and_false", "and_true",
+                                       "double_negation", "_implies", "conjunction",
+                                       "disjunction"),
+                        "set_theory": ("set_", "_set_union", "_set_inter", "set_idem",
+                                       "union_", "intersect_", "_demorgan"),
+                        "trigonometry": ("trig_", "sin_", "cos_", "tan_", "pythagorean"),
+                        "calculus":   ("deriv_", "integ_", "_derivative", "_integral",
+                                       "power_rule", "chain_rule"),
+                    }
+                    wrong_foreign: list = []
+                    for foreign_dom, sigs in _DOMAIN_SIGNALS.items():
+                        if foreign_dom == d_lower:
+                            continue
+                        for t in tseq:
+                            tl = t.lower()
+                            if any(s in tl for s in sigs):
+                                wrong_foreign.append(f"{t}→{foreign_dom}")
+                                break
+                    if wrong_foreign:
+                        rejected = True
+                        reason = f"transforms_from_{wrong_foreign[:2]}"
+
+                if rejected:
+                    log.debug(
+                        "Memory warmstart SKIPPED (domain mismatch): "
+                        "problem_domain=%s %s transforms=%s",
+                        domain, reason, tseq[:3],
+                    )
+                    strat = None
             if strat:
                 hint.found = True
                 hint.transform_sequence = strat.get("transform_sequence", [])
                 hint.avg_energy_reduction = strat.get("avg_energy_reduction", 0.0)
                 hint.success_rate = strat.get("success_rate", 0.0)
+                self._warmstart_hits += 1
                 log.info(
-                    "Memory hit: sig=%s, transforms=%s, success=%.0f%%",
-                    sig[:12], hint.transform_sequence[:3], hint.success_rate * 100,
+                    "Memory warmstart hit: sig=%s, transforms=%s, "
+                    "success=%.0f%%, energy_reduction=%.3f, hit_rate=%.1f%%",
+                    sig[:12],
+                    hint.transform_sequence[:3],
+                    hint.success_rate * 100,
+                    hint.avg_energy_reduction,
+                    100.0 * self._warmstart_hits / max(1, self._warmstart_total),
                 )
         except Exception as e:
             log.debug("before_solve lookup error: %s", e)
@@ -165,6 +240,31 @@ class MemoryManager:
         return hint
 
     # ── After-solve: record episode ────────────────────────────
+
+    def store(self, episode: SolveEpisode, graph=None, encoding_strength: float = 1.0):
+        """
+        Store a solve episode with optional dopamine-modulated encoding strength.
+        encoding_strength comes from DopamineSystem.encoding_strength:
+          - high surprise → stronger encoding (prioritised in replay)
+          - low surprise → weaker encoding (normal priority)
+
+        This is the Phase F (Ebbinghaus) integration point.
+        """
+        # Register with forgetting curve so the episode can decay and be reviewed
+        try:
+            from sare.memory.forgetting_curve import get_forgetting_curve
+            fc = get_forgetting_curve()
+            domain = getattr(episode, "domain", "general") or "general"
+            fc.register(
+                item_id=episode.problem_id,
+                item_type="episode",
+                domain=domain,
+                encoding_strength=encoding_strength,
+            )
+        except Exception:
+            pass
+
+        self.after_solve(episode, graph)
 
     def after_solve(self, episode: SolveEpisode, graph=None):
         """
@@ -193,10 +293,13 @@ class MemoryManager:
         """Update or insert a strategy record and its semantic vector."""
         if sig not in self._strategies:
             self._strategies[sig] = {
+                "signature": sig,
                 "transform_sequence": episode.transform_sequence,
                 "avg_energy_reduction": episode.initial_energy - episode.final_energy,
                 "success_rate": 1.0,
-                "attempts": 1
+                "attempts": 1,
+                "usage_count": 1,
+                "domain": getattr(episode, "domain", "general") or "general",
             }
             # Epic 12: Insert into VectorDB for semantic lookup
             if self._vector_db and GraphEmbedder and graph and episode.problem_id not in self._payload_to_strategy:
@@ -208,13 +311,19 @@ class MemoryManager:
                     log.warning("VectorDB insert failed: %s", e)
         else:
             strat = self._strategies[sig]
-            attempts = strat["attempts"] + 1
-            strat["success_rate"] = ((strat["success_rate"] * strat["attempts"]) + 1.0) / attempts
+            previous_attempts = int(strat.get("attempts", strat.get("usage_count", 1)))
+            attempts = previous_attempts + 1
+            strat["success_rate"] = (
+                (strat.get("success_rate", 0.0) * previous_attempts) + 1.0
+            ) / attempts
             
             new_reduction = episode.initial_energy - episode.final_energy
-            strat["avg_energy_reduction"] = ((strat["avg_energy_reduction"] * strat["attempts"]) + new_reduction) / attempts
+            strat["avg_energy_reduction"] = (
+                (strat.get("avg_energy_reduction", 0.0) * previous_attempts) + new_reduction
+            ) / attempts
             
             strat["attempts"] = attempts
+            strat["usage_count"] = attempts
             if new_reduction > strat["avg_energy_reduction"]:
                 strat["transform_sequence"] = episode.transform_sequence
 
@@ -223,15 +332,45 @@ class MemoryManager:
     def save(self):
         """Flush all in-memory data to disk."""
         try:
-            with open(self._episodes_path, "w", encoding="utf-8") as f:
-                for ep in self._episodes:
-                    f.write(json.dumps(ep.to_dict()) + "\n")
+            fd, tmp_name = tempfile.mkstemp(
+                prefix=f"{self._episodes_path.name}.",
+                suffix=".tmp",
+                dir=str(self._episodes_path.parent),
+            )
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    for ep in self._episodes:
+                        f.write(json.dumps(ep.to_dict()) + "\n")
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(tmp_name, self._episodes_path)
+            finally:
+                if os.path.exists(tmp_name):
+                    try:
+                        os.remove(tmp_name)
+                    except OSError:
+                        pass
         except OSError as e:
             log.warning("Failed to save episodes: %s", e)
 
         try:
-            with open(self._strategies_path, "w", encoding="utf-8") as f:
-                json.dump(self._strategies, f, indent=2)
+            fd, tmp_name = tempfile.mkstemp(
+                prefix=f"{self._strategies_path.name}.",
+                suffix=".tmp",
+                dir=str(self._strategies_path.parent),
+            )
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    json.dump(self._strategies, f, indent=2)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(tmp_name, self._strategies_path)
+            finally:
+                if os.path.exists(tmp_name):
+                    try:
+                        os.remove(tmp_name)
+                    except OSError:
+                        pass
         except OSError as e:
             log.warning("Failed to save strategies: %s", e)
 
@@ -253,12 +392,30 @@ class MemoryManager:
         if self._episodes_path.exists():
             try:
                 with open(self._episodes_path, encoding="utf-8") as f:
-                    for line in f:
+                    recovered_lines = 0
+                    bad_lines: List[int] = []
+                    for line_no, line in enumerate(f, start=1):
                         line = line.strip()
                         if line:
-                            self._episodes.append(
-                                SolveEpisode.from_dict(json.loads(line))
-                            )
+                            try:
+                                self._episodes.append(
+                                    SolveEpisode.from_dict(json.loads(line))
+                                )
+                            except Exception:
+                                recovered_lines += 1
+                                bad_lines.append(line_no)
+                    if recovered_lines:
+                        backup = self._episodes_path.with_suffix(self._episodes_path.suffix + ".corrupt")
+                        try:
+                            shutil.copyfile(self._episodes_path, backup)
+                        except Exception:
+                            pass
+                        self._rewrite_clean_episodes()
+                        log.warning(
+                            "Recovered episodes.jsonl by skipping %d corrupt lines (first bad line %s)",
+                            recovered_lines,
+                            bad_lines[0] if bad_lines else "?",
+                        )
                 log.info("Loaded %d episodes from disk", len(self._episodes))
             except Exception as e:
                 log.warning("Episode load error: %s", e)
@@ -280,7 +437,33 @@ class MemoryManager:
             except Exception as e:
                 log.warning("VectorDB load error: %s", e)
 
+    def _rewrite_clean_episodes(self) -> None:
+        try:
+            tmp = self._episodes_path.with_name(f"{self._episodes_path.stem}.{os.getpid()}.clean.tmp")
+            with open(tmp, "w", encoding="utf-8") as f:
+                for ep in self._episodes:
+                    f.write(json.dumps(ep.to_dict()) + "\n")
+            tmp.replace(self._episodes_path)
+        except Exception as exc:
+            log.warning("Failed to rewrite clean episodes: %s", exc)
+
     # ── Soft matching (Python fallback) ─────────────────────────────────────────────
+
+    def get_stats(self) -> dict:
+        """Return warmstart hit rate and episode count (suitable for API exposure)."""
+        hit_rate = (
+            self._warmstart_hits / self._warmstart_total
+            if self._warmstart_total > 0
+            else 0.0
+        )
+        return {
+            "warmstart_hit_rate": round(hit_rate, 4),
+            "warmstart_hits": self._warmstart_hits,
+            "warmstart_total": self._warmstart_total,
+            "total_episodes": len(self._episodes),
+            "strategy_count": len(self._strategies),
+            "vector_count": self._vector_db.size() if self._vector_db else 0,
+        }
 
     def stats(self) -> dict:
         total = len(self._episodes)
@@ -341,33 +524,6 @@ class MemoryManager:
 
         return self._strategies.get(best_key) if best_key else None
 
-    def _upsert_strategy(self, sig: str, episode: SolveEpisode):
-        """Update running-average strategy record for this signature."""
-        existing = self._strategies.get(sig)
-        delta = episode.initial_energy - episode.final_energy
-
-        if existing:
-            n = existing.get("usage_count", 1)
-            alpha = 1.0 / (n + 1)
-            existing["avg_energy_reduction"] = (
-                (1 - alpha) * existing["avg_energy_reduction"] + alpha * delta
-            )
-            existing["success_rate"] = (
-                (1 - alpha) * existing["success_rate"] + alpha * float(episode.success)
-            )
-            existing["usage_count"] = n + 1
-            # Keep the better transform sequence
-            if delta > existing.get("avg_energy_reduction", 0):
-                existing["transform_sequence"] = episode.transform_sequence
-        else:
-            self._strategies[sig] = {
-                "signature":          sig,
-                "transform_sequence": episode.transform_sequence,
-                "avg_energy_reduction": delta,
-                "success_rate":         1.0 if episode.success else 0.0,
-                "usage_count":          1,
-            }
-
     def _maybe_trigger_training(self, episode_count: int):
         """Auto-trigger heuristic model training when enough episodes accumulate."""
         try:
@@ -384,6 +540,17 @@ class MemoryManager:
                 )
         except Exception as e:
             log.debug("Auto-training trigger failed: %s", e)
+
+
+_MM_SINGLETON: Optional["MemoryManager"] = None
+
+
+def get_memory_manager() -> "MemoryManager":
+    """Return the process-wide MemoryManager singleton."""
+    global _MM_SINGLETON
+    if _MM_SINGLETON is None:
+        _MM_SINGLETON = MemoryManager()
+    return _MM_SINGLETON
 
 
 # ── Standalone self-test ───────────────────────────────────────────────────────
@@ -460,4 +627,3 @@ if __name__ == "__main__":
     print()
     print("Tip: in production, instantiate with PYTHONPATH set so C++ bindings load.")
     print("     C++ bindings status:", "AVAILABLE" if EpisodicStore else "using pure-Python fallback")
-

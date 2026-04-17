@@ -76,6 +76,31 @@ _COMMONSENSE_SEEDS: List[Tuple[str, str, str]] = [
     ("infinity",   "HasProperty", "unbounded"),
     ("negative",   "IsA",         "number"),
     ("fraction",   "IsA",         "number"),
+
+    # Science
+    ("cell",           "IsA",         "living_unit"),
+    ("dna",            "HasProperty", "genetic_code"),
+    ("photosynthesis", "Causes",      "oxygen"),
+    ("atom",           "IsA",         "matter"),
+    ("electron",       "IsA",         "particle"),
+    ("acid",           "HasProperty", "low_pH"),
+    ("base",           "HasProperty", "high_pH"),
+
+    # Computer Science
+    ("algorithm",  "UsedFor",     "problem_solving"),
+    ("sort",       "IsA",         "algorithm"),
+    ("search",     "IsA",         "algorithm"),
+    ("loop",       "IsA",         "control_flow"),
+
+    # Economics / Social
+    ("market",     "HasA",        "supply"),
+    ("market",     "HasA",        "demand"),
+    ("price",      "Causes",      "demand_change"),
+
+    # Geography
+    ("earthquake", "Causes",      "damage"),
+    ("volcano",    "Causes",      "eruption"),
+    ("rain",       "IsA",         "precipitation"),
 ]
 
 
@@ -187,6 +212,84 @@ class CommonSenseBase:
 
     def total_facts(self) -> int:
         return sum(len(v) for v in self._forward.values())
+
+    def to_triples(self) -> List[Tuple[str, str, str]]:
+        """Return all facts as (subject, relation, object) tuples."""
+        result = []
+        for subj, facts in self._forward.items():
+            for rel, obj in facts:
+                result.append((subj, rel, obj))
+        return result
+
+    def augment_from_llm(self, llm_bridge=None, n_facts: int = 300) -> int:
+        """
+        Use LLM to generate broad commonsense facts across many domains.
+        llm_bridge is ignored (uses module-level _call_llm). Returns new facts added.
+        """
+        try:
+            from sare.interface.llm_bridge import _call_llm
+        except Exception as e:
+            log.warning("LLM bridge unavailable for commonsense expansion: %s", e)
+            return 0
+
+        domains = [
+            "physics (heat, motion, electricity, magnetism, optics)",
+            "chemistry (reactions, states of matter, acids/bases)",
+            "biology (cells, evolution, ecosystems, genetics)",
+            "psychology (emotions, motivation, memory, perception)",
+            "computer science (algorithms, data structures, networks, programming)",
+            "economics (supply/demand, money, markets, trade)",
+            "social science (culture, communication, relationships, ethics)",
+            "history (cause-effect of major events, inventions)",
+            "everyday life (cooking, transportation, health, weather)",
+            "mathematics (numbers, geometry, statistics)",
+        ]
+
+        system_prompt = (
+            "You are a knowledge graph builder. Output ONLY valid JSON arrays of triples. "
+            "No markdown, no explanations. Relations must be one of: "
+            "IsA, HasA, PartOf, Causes, UsedFor, CapableOf, HasProperty, LocatedAt, RequiredFor, Enables, OppositeOf."
+        )
+
+        prompt = (
+            f"Generate exactly {n_facts} commonsense knowledge triples as a JSON array. "
+            "Cover these domains: " + ", ".join(domains) + ". "
+            "Format: [{\"subject\": \"rain\", \"relation\": \"Causes\", \"object\": \"flooding\"}, ...]\n"
+            "Rules:\n"
+            "- subject and object must be lowercase single words or short phrases (no spaces if possible)\n"
+            "- relation must be one of: IsA, HasA, PartOf, Causes, UsedFor, CapableOf, HasProperty, LocatedAt, RequiredFor, Enables, OppositeOf\n"
+            "- cover diverse topics, avoid duplicating existing facts\n"
+            "- include programming, AI, science, society facts\n"
+            "Output ONLY the JSON array, nothing else."
+        )
+
+        added = 0
+        try:
+            raw = _call_llm(prompt, system_prompt=system_prompt)
+            # Extract JSON array from response
+            import re as _re
+            match = _re.search(r'\[.*\]', raw, _re.DOTALL)
+            if not match:
+                log.warning("LLM commonsense expansion: no JSON array found in response")
+                return 0
+            triples = json.loads(match.group())
+            for item in triples:
+                s = str(item.get("subject", "")).strip().lower()
+                r = str(item.get("relation", "")).strip()
+                o = str(item.get("object", "")).strip().lower()
+                if s and r and o and len(s) < 60 and len(o) < 60:
+                    # Only add if not already present
+                    existing = self._forward.get(s, [])
+                    if (r, o) not in existing:
+                        self._add(s, r, o)
+                        added += 1
+            log.info("LLM commonsense expansion: +%d new facts (total: %d)", added, self.total_facts())
+            if added > 0:
+                self.save()
+        except Exception as e:
+            log.warning("LLM commonsense expansion failed: %s", e)
+
+        return added
 
     def to_graph_dict(self):
         """Convert the knowledge base into a SARE-HX graph for reasoning."""

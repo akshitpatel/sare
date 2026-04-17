@@ -1,0 +1,66 @@
+{
+  "session_count": 1,
+  "total_solves": 5918,
+  "domain_strengths": {
+    "logic": 0.6000000000000001,
+    "arithmetic": 0.506,
+    "general": 0.506,
+    "code": 0.6000000000000001,
+    "algebra": 0.506,
+    "calculus": 0.6000000000000001,
+    "combine_like_terms": 0.6000000000000001,
+    "modular": 0.6000000000000001,
+    "analysis": 0.6000000000000001,
+    "multi_step": 0.6000000000000001,
+    "double_negation": 0.6000000000000001,
+    "trig": 0.6000000000000001,
+    "linear_algebra": 0.6000000000000001,
+    "linear_equation": 0.6000000000000001,
+    "combinatorics": 0.6000000000000001,
+    "conditional": 0.6000000000000001,
+    "distribution": 0.6000000000000001,
+    "factoring": 0.6000000000000001,
+    "trigonometry": 0.6000000000000001,
+    "logic_basics": 0.6000000000000001,
+    "set_theory": 0.6000000000000001,
+    "probability": 0.6000000000000001
+  },
+  "best_strategy_history": [],
+  "birth_timestamp": 1773561251.612971,
+  "key_discoveries": [
+    {
+      "session": 1,
+      "description": "addition_logic_blend",
+      "domain": "arithmetic",
+      "timestamp": 1773586554.217186
+    },
+    {
+      "session": 1,
+      "description": "addition_logic_blend",
+      "domain": "arithmetic",
+      "timestamp": 1773586554.217189
+    }
+  ],
+  "personality": {
+    "persistence": {
+      "name": "persistence",
+      "value": 1.0,
+      "evidence": "session 1: 22029 fails out of 27947"
+    },
+    "curiosity": {
+      "name": "curiosity",
+      "value": 1.0,
+      "evidence": "22 domains in session 1"
+    },
+    "mastery": {
+      "name": "mastery",
+      "value": 1.0,
+      "evidence": "best domain rate 100%"
+    },
+    "confidence": {
+      "name": "confidence",
+      "value": 0.212,
+      "evidence": "overall rate 21% this session"
+    }
+  }
+}

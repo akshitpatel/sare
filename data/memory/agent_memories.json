@@ -1,0 +1,147 @@
+{
+  "arithmetician": {
+    "agent_id": "arithmetician",
+    "skill_profile": {},
+    "trust_score": 0.489,
+    "personality": {
+      "curiosity": 0.5,
+      "stubbornness": 0.5,
+      "collaboration": 0.5
+    },
+    "total_interactions": 0,
+    "sessions_seen": 5,
+    "episodic_count": 0,
+    "semantic_count": 0,
+    "top_skills": [],
+    "recent_episodic": [],
+    "top_facts": [],
+    "episodic_memory": [],
+    "semantic_memory": [],
+    "created_at": 1773478365.1323671
+  },
+  "logician": {
+    "agent_id": "logician",
+    "skill_profile": {},
+    "trust_score": 0.489,
+    "personality": {
+      "curiosity": 0.5,
+      "stubbornness": 0.5,
+      "collaboration": 0.5
+    },
+    "total_interactions": 0,
+    "sessions_seen": 5,
+    "episodic_count": 0,
+    "semantic_count": 0,
+    "top_skills": [],
+    "recent_episodic": [],
+    "top_facts": [],
+    "episodic_memory": [],
+    "semantic_memory": [],
+    "created_at": 1773478365.13237
+  },
+  "physicist": {
+    "agent_id": "physicist",
+    "skill_profile": {},
+    "trust_score": 0.489,
+    "personality": {
+      "curiosity": 0.5,
+      "stubbornness": 0.5,
+      "collaboration": 0.5
+    },
+    "total_interactions": 0,
+    "sessions_seen": 5,
+    "episodic_count": 0,
+    "semantic_count": 0,
+    "top_skills": [],
+    "recent_episodic": [],
+    "top_facts": [],
+    "episodic_memory": [],
+    "semantic_memory": [],
+    "created_at": 1773478365.132371
+  },
+  "agent_0": {
+    "agent_id": "agent_0",
+    "skill_profile": {
+      "algebra": 0.671
+    },
+    "trust_score": 0.489,
+    "personality": {
+      "curiosity": 0.2,
+      "stubbornness": 0.015,
+      "collaboration": 0.984
+    },
+    "total_interactions": 4,
+    "sessions_seen": 5,
+    "episodic_count": 4,
+    "semantic_count": 0,
+    "top_skills": [
+      [
+        "algebra",
+        0.671
+      ]
+    ],
+    "recent_episodic": [
+      {
+        "event_type": "autonomous",
+        "description": "learn_cycle",
+        "domain": "algebra",
+        "outcome": "success",
+        "age_s": 31.7
+      },
+      {
+        "event_type": "autonomous",
+        "description": "learn_cycle",
+        "domain": "algebra",
+        "outcome": "success",
+        "age_s": 28.9
+      },
+      {
+        "event_type": "autonomous",
+        "description": "learn_cycle",
+        "domain": "algebra",
+        "outcome": "success",
+        "age_s": 6.9
+      },
+      {
+        "event_type": "autonomous",
+        "description": "learn_cycle",
+        "domain": "algebra",
+        "outcome": "success",
+        "age_s": 1.2
+      }
+    ],
+    "top_facts": [],
+    "episodic_memory": [
+      {
+        "event_type": "autonomous",
+        "description": "learn_cycle",
+        "domain": "algebra",
+        "outcome": "success",
+        "age_s": 31.7
+      },
+      {
+        "event_type": "autonomous",
+        "description": "learn_cycle",
+        "domain": "algebra",
+        "outcome": "success",
+        "age_s": 28.9
+      },
+      {
+        "event_type": "autonomous",
+        "description": "learn_cycle",
+        "domain": "algebra",
+        "outcome": "success",
+        "age_s": 6.9
+      },
+      {
+        "event_type": "autonomous",
+        "description": "learn_cycle",
+        "domain": "algebra",
+        "outcome": "success",
+        "age_s": 1.2
+      }
+    ],
+    "semantic_memory": [],
+    "created_at": 1773478365.9472919
+  }
+}

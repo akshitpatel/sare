@@ -1,0 +1,1045 @@
+{
+  "sare.agent.domains.task_scheduler_domain": {
+    "extend": {
+      "applied": 3,
+      "rejected": 26,
+      "avg_critic": 1.103448275862069
+    }
+  },
+  "sare.agent.recursive_tom": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 8,
+      "avg_critic": 2.0
+    }
+  },
+  "sare.agent.red_team": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 5,
+      "avg_critic": 1.5
+    }
+  },
+  "sare.brain": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 3,
+      "avg_critic": 5.0
+    }
+  },
+  "sare.causal.abductive_ranker": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 9,
+      "avg_critic": 0.8888888888888888
+    }
+  },
+  "sare.causal.chain_detector": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 39,
+      "avg_critic": 0.28205128205128205
+    }
+  },
+  "sare.causal.analogy_transfer": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 32,
+      "avg_critic": 0.21212121212121218
+    }
+  },
+  "sare.agent.qa_pipeline": {
+    "extend": {
+      "applied": 1,
+      "rejected": 29,
+      "avg_critic": 0.6666666666666666
+    }
+  },
+  "sare.concept.concept_blender": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 2,
+      "avg_critic": 2.6666666666666665
+    }
+  },
+  "sare.memory.hippocampus": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 2,
+      "avg_critic": 2.0
+    }
+  },
+  "sare.concept.environment": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 12,
+      "avg_critic": 1.0769230769230769
+    }
+  },
+  "sare.concept.concept_graph": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 5,
+      "avg_critic": 2.1666666666666665
+    }
+  },
+  "sare.concept.goal_planner": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 7,
+      "avg_critic": 1.1428571428571428
+    }
+  },
+  "sare.curiosity.curriculum_generator": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 93,
+      "avg_critic": 0.46236559139784916
+    }
+  },
+  "sare.curiosity.frontier_manager": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 7,
+      "avg_critic": 1.875
+    }
+  },
+  "sare.curiosity.experiment_runner": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 87,
+      "avg_critic": 0.5795454545454543
+    }
+  },
+  "sare.curriculum.developmental": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 27,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.curiosity.multi_agent_learner": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 44,
+      "avg_critic": 0.13636363636363635
+    }
+  },
+  "sare.curriculum.problem_generator": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 17,
+      "avg_critic": 0.5294117647058824
+    }
+  },
+  "sare.energy.affective_energy": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 10,
+      "avg_critic": 0.7272727272727273
+    }
+  },
+  "sare.learning.abstraction_learning": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 7,
+      "avg_critic": 0.875
+    }
+  },
+  "sare.social.dialogue_manager": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 30,
+      "avg_critic": 0.03333333333333333
+    }
+  },
+  "sare.meta.self_model": {
+    "optimize": {
+      "applied": 2,
+      "rejected": 92,
+      "avg_critic": 0.49999999999999983
+    }
+  },
+  "sare.memory.concept_formation": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 41,
+      "avg_critic": 0.12195121951219512
+    }
+  },
+  "sare.reasoning.counterfactual": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 30,
+      "avg_critic": 0.2333333333333334
+    }
+  },
+  "sare.logging.logger": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 2,
+      "avg_critic": 2.3333333333333335
+    }
+  },
+  "sare.transfer.synthesizer": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 20,
+      "avg_critic": 0.45
+    }
+  },
+  "sare.self_learner": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 21,
+      "avg_critic": 0.14285714285714285
+    }
+  },
+  "sare.heuristics.heuristic_model": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 21,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.meta.temporal_identity": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 43,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.memory.autobiographical": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 5,
+      "avg_critic": 1.3333333333333333
+    }
+  },
+  "sare.perception.perception_bridge": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 6,
+      "avg_critic": 1.3333333333333333
+    }
+  },
+  "sare.memory.concept_rule": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 31,
+      "avg_critic": 0.1935483870967742
+    }
+  },
+  "sare.memory.attention": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 5,
+      "avg_critic": 1.1666666666666667
+    }
+  },
+  "sare.meta.inner_monologue": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 16,
+      "avg_critic": 0.1875
+    }
+  },
+  "sare.agent.agent_memory": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 6,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.meta.evolution_monitor": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 9,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.meta.active_questioner": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 6,
+      "avg_critic": 1.1428571428571428
+    }
+  },
+  "sare.meta.meta_learner": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 12,
+      "avg_critic": 0.4166666666666667
+    }
+  },
+  "sare.meta.proof_builder": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 11,
+      "avg_critic": 0.8181818181818182
+    }
+  },
+  "sare.perception.graph_builders": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 9,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.memory.metacognition": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 14,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.memory.attention_router": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 10,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.core.graph_bridge": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 10,
+      "avg_critic": 0.7272727272727273
+    }
+  },
+  "sare.curiosity.question_generator": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 6,
+      "avg_critic": 1.1428571428571428
+    }
+  },
+  "sare.reflection.py_reflection": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 28,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.knowledge.llm_knowledge_expander": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 11,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.learning.continuous_stream": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 16,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.world.physics_simulator": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 16,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.neuro.dopamine": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 16,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.causal.knowledge_base": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 9,
+      "avg_critic": 0.8888888888888888
+    }
+  },
+  "sare.heuristics.trainer_bootstrap": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 8,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.cognition.predictive_engine": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 14,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.language.grounding": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 19,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.knowledge.commonsense": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 14,
+      "avg_critic": 0.6428571428571429
+    }
+  },
+  "sare.meta.architecture_designer": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 18,
+      "avg_critic": 0.2222222222222222
+    }
+  },
+  "sare.agent.multi_agent_arena": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 5,
+      "avg_critic": 0.2
+    }
+  },
+  "sare.memory.global_buffer": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 14,
+      "avg_critic": 0.2857142857142857
+    }
+  },
+  "sare.world.predictive_loop": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 17,
+      "avg_critic": 0.4444444444444444
+    }
+  },
+  "sare.social.theory_of_mind": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 19,
+      "avg_critic": 0.10526315789473684
+    }
+  },
+  "sare.transforms.logic_transforms": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 26,
+      "avg_critic": 0.3076923076923077
+    }
+  },
+  "sare.sare_logging.logger": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 9,
+      "avg_critic": 0.9
+    }
+  },
+  "sare.meta.conjecture_engine": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 36,
+      "avg_critic": 0.05555555555555555
+    }
+  },
+  "sare.learning.stream_bridge": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 17,
+      "avg_critic": 0.4117647058823529
+    }
+  },
+  "sare.meta.algorithm_selector": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 13,
+      "avg_critic": 0.46153846153846156
+    }
+  },
+  "sare.causal.induction": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 37,
+      "avg_critic": 0.21052631578947367
+    }
+  },
+  "sare.meta.evolver_chat": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 18,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.learning.dream_consolidator": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 4,
+      "avg_critic": 1.6
+    }
+  },
+  "sare.meta.project_guide": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 11,
+      "avg_critic": 0.18181818181818182
+    }
+  },
+  "sare.neuro.creativity_engine": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 14,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.learning.meta_curriculum": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 15,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.curiosity.multi_task_scheduler": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 17,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.meta.robustness_hardener": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 11,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.learning.autonomous_trainer": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 11,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.memory.forgetting_curve": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 15,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.learning.credit_assignment": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 48,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.interface.nl_parser_v2": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 26,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.interface.universal_parser": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 15,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.language.internal_grammar": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 19,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.memory.concept_seed_loader": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 6,
+      "avg_critic": 1.1428571428571428
+    }
+  },
+  "sare.learning.llm_transform_synthesizer": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 10,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.transfer.engine": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 23,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.world.generative_world": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 20,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.meta.transform_generator": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 10,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.memory.identity": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 2,
+      "avg_critic": 2.3333333333333335
+    }
+  },
+  "sare.meta.macro_registry": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 14,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.heuristics.trainer": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 27,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.meta.homeostasis": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 31,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.search.attention_beam": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 20,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.interface.cli": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 15,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.cognition.core_knowledge": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 3,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.world.sensory_bridge": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 13,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.world.action_physics": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 11,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.interface.dialogue_context": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 20,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.perception.world_grounder": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 15,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.memory.program_synthesizer": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 14,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.memory.memory_manager": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 32,
+      "avg_critic": 0.25
+    }
+  },
+  "sare.memory.knowledge_graph": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 16,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.memory.world_model_v3": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 14,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.search.transform_predictor": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 22,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.meta.goal_setter": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 13,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.perception.multimodal": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 11,
+      "avg_critic": 0.5833333333333334
+    }
+  },
+  "sare.interface.nl_parser": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 15,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.memory.working_memory": {
+    "optimize": {
+      "applied": 1,
+      "rejected": 11,
+      "avg_critic": 0.5833333333333334
+    }
+  },
+  "sare.perception.perception_engine": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 12,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.heuristics.mlx_value_net": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 14,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.learning.teacher_protocol": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 13,
+      "avg_critic": 0.5384615384615384
+    }
+  },
+  "sare.heuristics.graph_embedding": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 8,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.transforms.code_transforms": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 24,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.agent.agent_society": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 24,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.interface.llm_bridge": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 11,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.neuro.symbol_creator": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 14,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.memory.world_model": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 15,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.cognition.fact_inference": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 11,
+      "avg_critic": 0.6363636363636364
+    }
+  },
+  "sare.neuro.algorithm_inventor": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 18,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.memory.fact_ingester": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 4,
+      "avg_critic": 1.75
+    }
+  },
+  "sare.memory.knowledge_lookup": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 13,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.knowledge.knowledge_ingester": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 18,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.learning.agent_negotiator": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 15,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.meta.llm_teacher": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 10,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.cognition.general_solver": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 11,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.learning.general_curriculum": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 8,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.meta.bottleneck_analyzer": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 2,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.knowledge.static_knowledge": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 9,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.knowledge.problem_factory": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 12,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.causal.counterfactual_reasoner": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 12,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.memory.experiential_learner": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 9,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.world.embodied_agent": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 10,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.memory.global_workspace": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 7,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.knowledge.dataset_hub": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 8,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.neuro.htm_predictor": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 8,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.cognition.self_verifier": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 6,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.world.causal_rollout": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 6,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.benchmarks.arc_runner": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 10,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.memory.causal_hierarchy": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 8,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.core.event_bus": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 5,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.cognition.hypothesis_maker": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 8,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.learning.forgetting_prevention": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 4,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.cognition.schema_matcher": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 2,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.cognition.novelty_detector": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 3,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.perception.neural_perception": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 3,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.learning.few_shot_adapter": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 4,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.cognition.global_workspace": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 7,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.transforms.chemistry_transforms": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 7,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.benchmarks.agi_suite": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 9,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.transforms.physics_transforms": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 9,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.world.toy_physics": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 3,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.search.astar_search": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 1,
+      "avg_critic": 0.0
+    }
+  },
+  "sare.learning.composite_rule_learner": {
+    "optimize": {
+      "applied": 0,
+      "rejected": 1,
+      "avg_critic": 0.0
+    }
+  }
+}

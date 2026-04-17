@@ -1,0 +1,141 @@
+{
+  "generated_at": 1774582958.146016,
+  "capability_gaps": [
+    {
+      "gap_type": "unused_capability",
+      "description": "Event 'memory_consolidated' has never fired \u2014 capability may be disconnected",
+      "domain": "meta",
+      "severity": 0.4,
+      "evidence": {
+        "event": "memory_consolidated"
+      }
+    },
+    {
+      "gap_type": "unused_capability",
+      "description": "Event 'strategy_updated' has never fired \u2014 capability may be disconnected",
+      "domain": "meta",
+      "severity": 0.4,
+      "evidence": {
+        "event": "strategy_updated"
+      }
+    },
+    {
+      "gap_type": "unused_capability",
+      "description": "Event 'brain_booted' has never fired \u2014 capability may be disconnected",
+      "domain": "meta",
+      "severity": 0.4,
+      "evidence": {
+        "event": "brain_booted"
+      }
+    },
+    {
+      "gap_type": "unused_capability",
+      "description": "Event 'goal_achieved' has never fired \u2014 capability may be disconnected",
+      "domain": "meta",
+      "severity": 0.4,
+      "evidence": {
+        "event": "goal_achieved"
+      }
+    },
+    {
+      "gap_type": "unused_capability",
+      "description": "Event 'macro_created' has never fired \u2014 capability may be disconnected",
+      "domain": "meta",
+      "severity": 0.4,
+      "evidence": {
+        "event": "macro_created"
+      }
+    },
+    {
+      "gap_type": "unused_capability",
+      "description": "Event 'transfer_attempted' has never fired \u2014 capability may be disconnected",
+      "domain": "meta",
+      "severity": 0.4,
+      "evidence": {
+        "event": "transfer_attempted"
+      }
+    },
+    {
+      "gap_type": "unused_capability",
+      "description": "Event 'domain_unlocked' has never fired \u2014 capability may be disconnected",
+      "domain": "meta",
+      "severity": 0.4,
+      "evidence": {
+        "event": "domain_unlocked"
+      }
+    },
+    {
+      "gap_type": "unused_capability",
+      "description": "Event 'analogy_found' has never fired \u2014 capability may be disconnected",
+      "domain": "meta",
+      "severity": 0.4,
+      "evidence": {
+        "event": "analogy_found"
+      }
+    },
+    {
+      "gap_type": "unused_capability",
+      "description": "Event 'domain_mastered' has never fired \u2014 capability may be disconnected",
+      "domain": "meta",
+      "severity": 0.4,
+      "evidence": {
+        "event": "domain_mastered"
+      }
+    },
+    {
+      "gap_type": "unused_capability",
+      "description": "Event 'competence_updated' has never fired \u2014 capability may be disconnected",
+      "domain": "meta",
+      "severity": 0.4,
+      "evidence": {
+        "event": "competence_updated"
+      }
+    },
+    {
+      "gap_type": "unused_capability",
+      "description": "Event 'stage_advanced' has never fired \u2014 capability may be disconnected",
+      "domain": "meta",
+      "severity": 0.4,
+      "evidence": {
+        "event": "stage_advanced"
+      }
+    },
+    {
+      "gap_type": "unused_capability",
+      "description": "Event 'brain_shutdown' has never fired \u2014 capability may be disconnected",
+      "domain": "meta",
+      "severity": 0.4,
+      "evidence": {
+        "event": "brain_shutdown"
+      }
+    },
+    {
+      "gap_type": "unused_capability",
+      "description": "Event 'rule_demoted' has never fired \u2014 capability may be disconnected",
+      "domain": "meta",
+      "severity": 0.4,
+      "evidence": {
+        "event": "rule_demoted"
+      }
+    },
+    {
+      "gap_type": "unused_capability",
+      "description": "Event 'sleep_ended' has never fired \u2014 capability may be disconnected",
+      "domain": "meta",
+      "severity": 0.4,
+      "evidence": {
+        "event": "sleep_ended"
+      }
+    },
+    {
+      "gap_type": "unused_capability",
+      "description": "Event 'sleep_started' has never fired \u2014 capability may be disconnected",
+      "domain": "meta",
+      "severity": 0.4,
+      "evidence": {
+        "event": "sleep_started"
+      }
+    }
+  ],
+  "total_gaps_found": 19
+}

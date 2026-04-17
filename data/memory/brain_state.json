@@ -1,0 +1,31 @@
+{
+  "stage": "teenager",
+  "stats": {
+    "solves_attempted": 37110,
+    "solves_succeeded": 6062,
+    "rules_discovered": 5169,
+    "rules_promoted": 5,
+    "transfers_attempted": 0,
+    "transfers_succeeded": 0,
+    "domains_mastered": [
+      "logic",
+      "algebra",
+      "arithmetic",
+      "qa",
+      "calculus",
+      "code",
+      "set_theory"
+    ],
+    "sleep_cycles": 0,
+    "runtime_errors": 1711,
+    "failure_reasons": {
+      "zero_delta": 10404,
+      "no_matching_transforms": 20600
+    }
+  },
+  "total_solves": 0,
+  "total_rules_learned": 5169,
+  "cpp_enabled": true,
+  "boot_time": 1774349214.697047,
+  "saved_at": 1774349218.6500359
+}

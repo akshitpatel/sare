@@ -1,0 +1,1191 @@
+{
+  "runs": [
+    {
+      "cycle": 1,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.00615,
+      "elapsed_s": 216.0,
+      "timestamp": 1773814723.7878988
+    },
+    {
+      "cycle": 2,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 5,
+      "cost_usd": 0.093903,
+      "elapsed_s": 329.0,
+      "timestamp": 1773816253.1897879
+    },
+    {
+      "cycle": 3,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 1556.1,
+      "timestamp": 1773819805.609292
+    },
+    {
+      "cycle": 4,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 3,
+      "cost_usd": 0.093603,
+      "elapsed_s": 635.6,
+      "timestamp": 1773831563.904499
+    },
+    {
+      "cycle": 5,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.00189,
+      "elapsed_s": 483.3,
+      "timestamp": 1773833310.839103
+    },
+    {
+      "cycle": 6,
+      "outcome": "rolled_back_verifier (concern=9)",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 7,
+      "cost_usd": 0.116309,
+      "elapsed_s": 285.7,
+      "timestamp": 1773834797.055885
+    },
+    {
+      "cycle": 7,
+      "outcome": "rolled_back_verifier (concern=10)",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 7,
+      "cost_usd": 0.107146,
+      "elapsed_s": 163.7,
+      "timestamp": 1773836161.3066628
+    },
+    {
+      "cycle": 8,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 6,
+      "cost_usd": 0.087518,
+      "elapsed_s": 180.4,
+      "timestamp": 1773842213.347518
+    },
+    {
+      "cycle": 9,
+      "outcome": "rejected_mutation_guard: patch shrinks file from 739 to 432 lines (>40% reduction)",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 7,
+      "cost_usd": 0.095652,
+      "elapsed_s": 4046.1,
+      "timestamp": 1773847459.855176
+    },
+    {
+      "cycle": 10,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 6,
+      "cost_usd": 0.095494,
+      "elapsed_s": 261.2,
+      "timestamp": 1773850249.036709
+    },
+    {
+      "cycle": 11,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.001707,
+      "elapsed_s": 526.0,
+      "timestamp": 1773851975.494368
+    },
+    {
+      "cycle": 12,
+      "outcome": "applied",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 7,
+      "cost_usd": 0.028544,
+      "elapsed_s": 175.2,
+      "timestamp": 1773853351.110098
+    },
+    {
+      "cycle": 13,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 101.3,
+      "timestamp": 1773854653.4128141
+    },
+    {
+      "cycle": 14,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 489.5,
+      "timestamp": 1773856343.894449
+    },
+    {
+      "cycle": 15,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 35.2,
+      "timestamp": 1773857579.948292
+    },
+    {
+      "cycle": 16,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 78.9,
+      "timestamp": 1773858859.689418
+    },
+    {
+      "cycle": 17,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 54.4,
+      "timestamp": 1773860114.997727
+    },
+    {
+      "cycle": 18,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 37.9,
+      "timestamp": 1773861353.825572
+    },
+    {
+      "cycle": 19,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 40.3,
+      "timestamp": 1773862594.917245
+    },
+    {
+      "cycle": 20,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 85.5,
+      "timestamp": 1773863881.299519
+    },
+    {
+      "cycle": 21,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 43.4,
+      "timestamp": 1773865125.5809221
+    },
+    {
+      "cycle": 22,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 26.9,
+      "timestamp": 1773866353.329238
+    },
+    {
+      "cycle": 23,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 46.3,
+      "timestamp": 1773867600.441427
+    },
+    {
+      "cycle": 24,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 63.6,
+      "timestamp": 1773868864.834441
+    },
+    {
+      "cycle": 25,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 57.7,
+      "timestamp": 1773870123.385175
+    },
+    {
+      "cycle": 26,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 48.1,
+      "timestamp": 1773871372.335616
+    },
+    {
+      "cycle": 27,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 40.3,
+      "timestamp": 1773872613.464046
+    },
+    {
+      "cycle": 28,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 38.4,
+      "timestamp": 1773873852.7988858
+    },
+    {
+      "cycle": 29,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 57.6,
+      "timestamp": 1773875111.290783
+    },
+    {
+      "cycle": 30,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 58.7,
+      "timestamp": 1773876370.933258
+    },
+    {
+      "cycle": 31,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 35.6,
+      "timestamp": 1773877607.314466
+    },
+    {
+      "cycle": 32,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 72.2,
+      "timestamp": 1773878880.420362
+    },
+    {
+      "cycle": 33,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 42.6,
+      "timestamp": 1773880123.985286
+    },
+    {
+      "cycle": 34,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 51.3,
+      "timestamp": 1773881376.16902
+    },
+    {
+      "cycle": 35,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 1.3,
+      "timestamp": 1773882578.41381
+    },
+    {
+      "cycle": 36,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 1.3,
+      "timestamp": 1773883780.535871
+    },
+    {
+      "cycle": 37,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 0.4,
+      "timestamp": 1773884981.907569
+    },
+    {
+      "cycle": 38,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 0.8,
+      "timestamp": 1773888670.801192
+    },
+    {
+      "cycle": 39,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 3.7e-05,
+      "elapsed_s": 46.2,
+      "timestamp": 1773889917.5130339
+    },
+    {
+      "cycle": 1,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 4.2e-05,
+      "elapsed_s": 24.8,
+      "timestamp": 1773889979.7517152
+    },
+    {
+      "cycle": 1,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 6,
+      "cost_usd": 0.089783,
+      "elapsed_s": 183.8,
+      "timestamp": 1773890217.658721
+    },
+    {
+      "cycle": 1,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 4,
+      "cost_usd": 0.082707,
+      "elapsed_s": 101.2,
+      "timestamp": 1773891263.8880389
+    },
+    {
+      "cycle": 2,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 2,
+      "cost_usd": 0.086589,
+      "elapsed_s": 105.2,
+      "timestamp": 1773892779.605608
+    },
+    {
+      "cycle": 3,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 6,
+      "cost_usd": 0.083081,
+      "elapsed_s": 198.7,
+      "timestamp": 1773895125.9594738
+    },
+    {
+      "cycle": 4,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.000302,
+      "elapsed_s": 1065.9,
+      "timestamp": 1773899980.533694
+    },
+    {
+      "cycle": 5,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.01957,
+      "elapsed_s": 304.8,
+      "timestamp": 1773901486.12143
+    },
+    {
+      "cycle": 6,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 15.0,
+      "timestamp": 1773902702.304042
+    },
+    {
+      "cycle": 7,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 14.6,
+      "timestamp": 1773904361.804184
+    },
+    {
+      "cycle": 8,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 15.2,
+      "timestamp": 1773911553.525865
+    },
+    {
+      "cycle": 9,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 16.7,
+      "timestamp": 1773912771.145281
+    },
+    {
+      "cycle": 10,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 15.1,
+      "timestamp": 1773913987.067559
+    },
+    {
+      "cycle": 11,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 15.1,
+      "timestamp": 1773915202.859512
+    },
+    {
+      "cycle": 12,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 14.7,
+      "timestamp": 1773917780.601929
+    },
+    {
+      "cycle": 13,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 18.4,
+      "timestamp": 1773921946.169873
+    },
+    {
+      "cycle": 14,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 14.8,
+      "timestamp": 1773924849.17422
+    },
+    {
+      "cycle": 15,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 14.8,
+      "timestamp": 1773931509.34729
+    },
+    {
+      "cycle": 16,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 15.5,
+      "timestamp": 1773982156.335802
+    },
+    {
+      "cycle": 1,
+      "outcome": "applied",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 8,
+      "cost_usd": 0.001244,
+      "elapsed_s": 507.7,
+      "timestamp": 1773983257.677939
+    },
+    {
+      "cycle": 1,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 553.5,
+      "timestamp": 1773983960.8294
+    },
+    {
+      "cycle": 2,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 561.2,
+      "timestamp": 1773985723.545682
+    },
+    {
+      "cycle": 3,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.000157,
+      "elapsed_s": 969.6,
+      "timestamp": 1773987894.6281621
+    },
+    {
+      "cycle": 4,
+      "outcome": "rejected_api_surface: missing externally-imported: get_confusion_detector, get_teacher_registry",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 7,
+      "cost_usd": 0.000542,
+      "elapsed_s": 927.9,
+      "timestamp": 1773990024.255567
+    },
+    {
+      "cycle": 1,
+      "outcome": "rejected_safety: syntax error: unterminated triple-quoted string literal (detected at line 67) (<unknown>, line 40)",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 7,
+      "cost_usd": 0.00051,
+      "elapsed_s": 914.8,
+      "timestamp": 1774001443.662035
+    },
+    {
+      "cycle": 1,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.00032,
+      "elapsed_s": 1348.6,
+      "timestamp": 1774003757.829629
+    },
+    {
+      "cycle": 2,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 1.4e-05,
+      "elapsed_s": 562.8,
+      "timestamp": 1774005521.397086
+    },
+    {
+      "cycle": 3,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.000839,
+      "elapsed_s": 710.0,
+      "timestamp": 1774007432.3971589
+    },
+    {
+      "cycle": 4,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.000894,
+      "elapsed_s": 1699.2,
+      "timestamp": 1774010332.668853
+    },
+    {
+      "cycle": 5,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.000703,
+      "elapsed_s": 588.0,
+      "timestamp": 1774012510.942965
+    },
+    {
+      "cycle": 6,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.001037,
+      "elapsed_s": 638.5,
+      "timestamp": 1774014350.787895
+    },
+    {
+      "cycle": 7,
+      "outcome": "rejected_mutation_guard: patch shrinks file from 1066 to 625 lines (>40% reduction)",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 7,
+      "cost_usd": 0.007626,
+      "elapsed_s": 862.6,
+      "timestamp": 1774016414.609136
+    },
+    {
+      "cycle": 8,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.000885,
+      "elapsed_s": 567.5,
+      "timestamp": 1774018183.41374
+    },
+    {
+      "cycle": 9,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.000868,
+      "elapsed_s": 705.9,
+      "timestamp": 1774020090.9155562
+    },
+    {
+      "cycle": 10,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.000914,
+      "elapsed_s": 762.6,
+      "timestamp": 1774022054.732409
+    },
+    {
+      "cycle": 11,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 6.6e-05,
+      "elapsed_s": 282.0,
+      "timestamp": 1774023538.077376
+    },
+    {
+      "cycle": 12,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 282.1,
+      "timestamp": 1774025021.422532
+    },
+    {
+      "cycle": 13,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 281.4,
+      "timestamp": 1774026504.12615
+    },
+    {
+      "cycle": 14,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 282.0,
+      "timestamp": 1774027987.358927
+    },
+    {
+      "cycle": 15,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 86.9,
+      "timestamp": 1774029275.44415
+    },
+    {
+      "cycle": 16,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 281.4,
+      "timestamp": 1774030758.0683782
+    },
+    {
+      "cycle": 17,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 281.2,
+      "timestamp": 1774032240.621683
+    },
+    {
+      "cycle": 18,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 264.2,
+      "timestamp": 1774033706.0864918
+    },
+    {
+      "cycle": 19,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 281.9,
+      "timestamp": 1774035189.217651
+    },
+    {
+      "cycle": 20,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 281.5,
+      "timestamp": 1774036672.0425742
+    },
+    {
+      "cycle": 21,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 101.2,
+      "timestamp": 1774037974.657863
+    },
+    {
+      "cycle": 22,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 281.9,
+      "timestamp": 1774039457.902397
+    },
+    {
+      "cycle": 23,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 281.2,
+      "timestamp": 1774040940.4348009
+    },
+    {
+      "cycle": 24,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 264.1,
+      "timestamp": 1774042405.831373
+    },
+    {
+      "cycle": 25,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 287.0,
+      "timestamp": 1774043894.065779
+    },
+    {
+      "cycle": 26,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 282.9,
+      "timestamp": 1774045378.346058
+    },
+    {
+      "cycle": 27,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 259.7,
+      "timestamp": 1774046839.576597
+    },
+    {
+      "cycle": 28,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 185.8,
+      "timestamp": 1774048226.6359339
+    },
+    {
+      "cycle": 29,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 281.2,
+      "timestamp": 1774049709.178675
+    },
+    {
+      "cycle": 30,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 281.8,
+      "timestamp": 1774051192.4704099
+    },
+    {
+      "cycle": 31,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 94.5,
+      "timestamp": 1774052488.324285
+    },
+    {
+      "cycle": 32,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 281.5,
+      "timestamp": 1774053971.204412
+    },
+    {
+      "cycle": 33,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 281.6,
+      "timestamp": 1774055454.506481
+    },
+    {
+      "cycle": 34,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 100.9,
+      "timestamp": 1774056756.989145
+    },
+    {
+      "cycle": 35,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 282.4,
+      "timestamp": 1774058241.039437
+    },
+    {
+      "cycle": 36,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 129.1,
+      "timestamp": 1774059571.5899038
+    },
+    {
+      "cycle": 37,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 283.3,
+      "timestamp": 1774061057.2212212
+    },
+    {
+      "cycle": 38,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 282.6,
+      "timestamp": 1774062541.339006
+    },
+    {
+      "cycle": 39,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 283.4,
+      "timestamp": 1774064026.307193
+    },
+    {
+      "cycle": 40,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 281.9,
+      "timestamp": 1774065509.934853
+    },
+    {
+      "cycle": 41,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 282.9,
+      "timestamp": 1774066994.231709
+    },
+    {
+      "cycle": 42,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 283.3,
+      "timestamp": 1774068478.951179
+    },
+    {
+      "cycle": 43,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 263.1,
+      "timestamp": 1774069943.628682
+    },
+    {
+      "cycle": 44,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 133.3,
+      "timestamp": 1774071278.408958
+    },
+    {
+      "cycle": 45,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 817.0,
+      "timestamp": 1774073296.66592
+    },
+    {
+      "cycle": 46,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 357.3,
+      "timestamp": 1774077362.491084
+    },
+    {
+      "cycle": 47,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 901.0,
+      "timestamp": 1774082261.093046
+    },
+    {
+      "cycle": 48,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 86.9,
+      "timestamp": 1774087847.363904
+    },
+    {
+      "cycle": 49,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 282.2,
+      "timestamp": 1774089352.560142
+    },
+    {
+      "cycle": 50,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 284.9,
+      "timestamp": 1774098204.005197
+    },
+    {
+      "cycle": 51,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 2428.9,
+      "timestamp": 1774107205.465989
+    },
+    {
+      "cycle": 52,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 336.3,
+      "timestamp": 1774118854.228833
+    },
+    {
+      "cycle": 53,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.000362,
+      "elapsed_s": 144.1,
+      "timestamp": 1774122680.8453708
+    },
+    {
+      "cycle": 54,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 4574.4,
+      "timestamp": 1774136829.6589491
+    },
+    {
+      "cycle": 55,
+      "outcome": "rejected",
+      "target_file": "auto",
+      "improvement_type": "optimize",
+      "critic_score": 0,
+      "cost_usd": 0.0,
+      "elapsed_s": 2348.5,
+      "timestamp": 1774152611.8844512
+    }
+  ],
+  "total_applied": 2,
+  "total_rolled_back": 2,
+  "total_debates": 118,
+  "daily_spend": 0.000362,
+  "daily_date": "2026-03-22",
+  "daemon_started_at": 1774002409.183112,
+  "last_saved": 1774152611.885081
+}

@@ -1,0 +1,56 @@
+{
+  "drives": {
+    "curiosity": {
+      "name": "curiosity",
+      "level": 1.0,
+      "decay_rate": 0.005,
+      "last_satisfied": 1774000541.68282,
+      "urgency": "urgent"
+    },
+    "mastery": {
+      "name": "mastery",
+      "level": 1.0,
+      "decay_rate": 0.004,
+      "last_satisfied": 1774000537.250407,
+      "urgency": "urgent"
+    },
+    "social": {
+      "name": "social",
+      "level": 1.0,
+      "decay_rate": 0.006,
+      "last_satisfied": 1773985935.589348,
+      "urgency": "urgent"
+    },
+    "exploration": {
+      "name": "exploration",
+      "level": 1.0,
+      "decay_rate": 0.004,
+      "last_satisfied": 1774000541.68282,
+      "urgency": "urgent"
+    },
+    "consolidation": {
+      "name": "consolidation",
+      "level": 1.0,
+      "decay_rate": 0.003,
+      "last_satisfied": 1774000523.92207,
+      "urgency": "urgent"
+    },
+    "competence": {
+      "name": "competence",
+      "level": 1.0,
+      "decay_rate": 0.004,
+      "last_satisfied": 1773808265.8830621,
+      "urgency": "urgent"
+    },
+    "focus": {
+      "name": "focus",
+      "level": 1.0,
+      "decay_rate": 0.005,
+      "last_satisfied": 1773808265.8830621,
+      "urgency": "urgent"
+    }
+  },
+  "last_tick": 1774584389.797086,
+  "tick_count": 710830,
+  "saved_at": 1774584389.7971299
+}

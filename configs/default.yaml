@@ -30,8 +30,31 @@ phases:
   transforms: true     # Phase 1 ✓
   search: true         # Phase 1 ✓
   verification: true   # Phase 1 ✓
-  memory: false        # Phase 2
-  heuristics: false    # Phase 2
-  abstraction: false   # Phase 3
-  plasticity: false    # Phase 4
-  causal: false        # Phase 5
+  memory: true         # Phase 2 ✓ (activated)
+  heuristics: true     # Phase 2 ✓ (activated)
+  abstraction: true    # Phase 3 ✓ (activated)
+  plasticity: true     # Phase 4 ✓ (activated)
+  causal: true         # Phase 5 ✓ (activated)
+  reflection: true     # Phase 6 ✓ (activated)
+  curiosity: true      # Phase 7 ✓ (activated)
+  curriculum: true     # Phase 8 ✓ (developmental learning)
+
+brain_boot:
+  memory: true
+  metacognition: true
+  knowledge: true
+  world_model: true
+  perception: true
+  language: true
+  social: true
+  learning: true
+  curriculum: true
+  warmup_environment_discovery: true
+  warmup_physics_session: true
+  warmup_knowledge_ingestion: true
+  warmup_transform_generator: true
+  warmup_action_physics: true
+  warmup_robustness_batch: true
+  autostart_continuous_stream: true
+  autostart_hippocampus: true
+  seed_perception_priors: true

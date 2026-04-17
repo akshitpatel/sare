@@ -1,0 +1,245 @@
+{
+  "concepts": [
+    {
+      "name": "addition",
+      "meaning": "combine quantities to get a larger total",
+      "symbol": "+",
+      "domain": "arithmetic",
+      "examples": [],
+      "related": [
+        "subtraction",
+        "identity_addition",
+        "commutativity"
+      ],
+      "symbolic_rules": [
+        "x + 0 = x",
+        "x + y = y + x",
+        "(x + y) + z = x + (y + z)"
+      ],
+      "confidence": 0.5,
+      "use_count": 0,
+      "created_at": 1773890633.224769,
+      "well_grounded": false
+    },
+    {
+      "name": "subtraction",
+      "meaning": "remove a quantity from another",
+      "symbol": "-",
+      "domain": "arithmetic",
+      "examples": [],
+      "related": [
+        "addition",
+        "negation"
+      ],
+      "symbolic_rules": [
+        "x - 0 = x",
+        "x - x = 0"
+      ],
+      "confidence": 0.5,
+      "use_count": 0,
+      "created_at": 1773890633.224781,
+      "well_grounded": false
+    },
+    {
+      "name": "multiplication",
+      "meaning": "repeated addition of equal groups",
+      "symbol": "*",
+      "domain": "arithmetic",
+      "examples": [],
+      "related": [
+        "addition",
+        "identity_multiplication",
+        "distribution"
+      ],
+      "symbolic_rules": [
+        "x * 1 = x",
+        "x * 0 = 0",
+        "x * y = y * x"
+      ],
+      "confidence": 0.5,
+      "use_count": 0,
+      "created_at": 1773890633.2247849,
+      "well_grounded": false
+    },
+    {
+      "name": "identity_addition",
+      "meaning": "adding zero changes nothing",
+      "symbol": "0",
+      "domain": "arithmetic",
+      "examples": [],
+      "related": [
+        "addition",
+        "identity_multiplication"
+      ],
+      "symbolic_rules": [
+        "x + 0 = x"
+      ],
+      "confidence": 0.5,
+      "use_count": 0,
+      "created_at": 1773890633.224787,
+      "well_grounded": false
+    },
+    {
+      "name": "identity_multiplication",
+      "meaning": "multiplying by one changes nothing",
+      "symbol": "1",
+      "domain": "arithmetic",
+      "examples": [],
+      "related": [
+        "multiplication",
+        "identity_addition"
+      ],
+      "symbolic_rules": [
+        "x * 1 = x"
+      ],
+      "confidence": 0.5,
+      "use_count": 0,
+      "created_at": 1773890633.224788,
+      "well_grounded": false
+    },
+    {
+      "name": "annihilation",
+      "meaning": "multiplying by zero collapses to zero",
+      "symbol": "0",
+      "domain": "arithmetic",
+      "examples": [],
+      "related": [
+        "multiplication",
+        "identity_multiplication"
+      ],
+      "symbolic_rules": [
+        "x * 0 = 0"
+      ],
+      "confidence": 0.5,
+      "use_count": 0,
+      "created_at": 1773890633.22479,
+      "well_grounded": false
+    },
+    {
+      "name": "negation",
+      "meaning": "flip the truth value of a statement",
+      "symbol": "¬",
+      "domain": "logic",
+      "examples": [],
+      "related": [
+        "double_negation",
+        "conjunction"
+      ],
+      "symbolic_rules": [
+        "¬¬x = x"
+      ],
+      "confidence": 0.5,
+      "use_count": 0,
+      "created_at": 1773890633.224792,
+      "well_grounded": false
+    },
+    {
+      "name": "double_negation",
+      "meaning": "negating twice returns the original",
+      "symbol": "¬¬",
+      "domain": "logic",
+      "examples": [],
+      "related": [
+        "negation",
+        "involution"
+      ],
+      "symbolic_rules": [
+        "¬¬x = x"
+      ],
+      "confidence": 0.5,
+      "use_count": 0,
+      "created_at": 1773890633.2247932,
+      "well_grounded": false
+    },
+    {
+      "name": "conjunction",
+      "meaning": "both conditions must hold",
+      "symbol": "∧",
+      "domain": "logic",
+      "examples": [],
+      "related": [
+        "negation",
+        "disjunction"
+      ],
+      "symbolic_rules": [
+        "x ∧ x = x"
+      ],
+      "confidence": 0.5,
+      "use_count": 0,
+      "created_at": 1773890633.2247949,
+      "well_grounded": false
+    },
+    {
+      "name": "disjunction",
+      "meaning": "at least one condition must hold",
+      "symbol": "∨",
+      "domain": "logic",
+      "examples": [],
+      "related": [
+        "conjunction",
+        "negation"
+      ],
+      "symbolic_rules": [
+        "x ∨ x = x"
+      ],
+      "confidence": 0.5,
+      "use_count": 0,
+      "created_at": 1773890633.2247958,
+      "well_grounded": false
+    },
+    {
+      "name": "commutativity",
+      "meaning": "order does not affect the result",
+      "symbol": "↔",
+      "domain": "algebra",
+      "examples": [],
+      "related": [
+        "addition",
+        "multiplication"
+      ],
+      "symbolic_rules": [
+        "x + y = y + x",
+        "x * y = y * x"
+      ],
+      "confidence": 0.5,
+      "use_count": 0,
+      "created_at": 1773890633.224798,
+      "well_grounded": false
+    },
+    {
+      "name": "distribution",
+      "meaning": "one operation distributes over another",
+      "symbol": "⊗",
+      "domain": "algebra",
+      "examples": [],
+      "related": [
+        "multiplication",
+        "addition"
+      ],
+      "symbolic_rules": [
+        "x * (y + z) = x*y + x*z"
+      ],
+      "confidence": 0.5,
+      "use_count": 0,
+      "created_at": 1773890633.2248,
+      "well_grounded": false
+    },
+    {
+      "name": "involution",
+      "meaning": "applying an operation twice returns the original",
+      "symbol": "⟲",
+      "domain": "abstract",
+      "examples": [],
+      "related": [
+        "double_negation"
+      ],
+      "symbolic_rules": [
+        "f(f(x)) = x"
+      ],
+      "confidence": 0.5,
+      "use_count": 0,
+      "created_at": 1773890633.224801,
+      "well_grounded": false
+    }
+  ]
+}

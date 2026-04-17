@@ -1,0 +1,1438 @@
+[
+  {
+    "id": "hp_001",
+    "expression": "x^2 - 5*x + 6",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_002",
+    "expression": "sin(x)^2 + cos(x)^2",
+    "domain": "trig",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_003",
+    "expression": "x^2 + 2*x + 1",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_004",
+    "expression": "x^2 - 9",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_005",
+    "expression": "x^2 - 4*x + 4",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_006",
+    "expression": "2*x^2 + 3*x + 1",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_007",
+    "expression": "x^3 - x",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_008",
+    "expression": "x^2 + 5*x + 6",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_009",
+    "expression": "3*x^2 - 12",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_010",
+    "expression": "x^2 - 6*x + 9",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_011",
+    "expression": "4*x^2 - 1",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_012",
+    "expression": "x^2 + 4*x + 4",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_013",
+    "expression": "x^3 - 27",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_014",
+    "expression": "x^2 - 16",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_015",
+    "expression": "2*x^2 - 8",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_016",
+    "expression": "x^2 + 6*x + 9",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_017",
+    "expression": "x^2 - 2*x - 3",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_018",
+    "expression": "x^2 + 3*x - 10",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_019",
+    "expression": "9*x^2 - 4",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_020",
+    "expression": "x^2 - 10*x + 25",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_021",
+    "expression": "tan(x)^2 + 1",
+    "domain": "trig",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_022",
+    "expression": "sin(2*x) - 2*sin(x)*cos(x)",
+    "domain": "trig",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_023",
+    "expression": "cos(x)^2 - sin(x)^2",
+    "domain": "trig",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_024",
+    "expression": "1 - cos(x)^2",
+    "domain": "trig",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_025",
+    "expression": "lim(x->0, sin(x)/x)",
+    "domain": "analysis",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_026",
+    "expression": "d/dx(x^2)",
+    "domain": "analysis",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_027",
+    "expression": "integral(x, dx)",
+    "domain": "analysis",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_028",
+    "expression": "d/dx(sin(x))",
+    "domain": "analysis",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_029",
+    "expression": "if x > 0 then x else -x",
+    "domain": "conditional",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_030",
+    "expression": "if x = 0 then 1 else x",
+    "domain": "conditional",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_031",
+    "expression": "if a and b then a else b",
+    "domain": "conditional",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_032",
+    "expression": "x mod 2 = 0",
+    "domain": "modular",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_033",
+    "expression": "(x + 3) mod 7",
+    "domain": "modular",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_034",
+    "expression": "2^x mod 5",
+    "domain": "modular",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_035",
+    "expression": "det([[a,b],[c,d]])",
+    "domain": "linear_algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_036",
+    "expression": "trace([[a,0],[0,b]])",
+    "domain": "linear_algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_037",
+    "expression": "eigenvalue([[2,0],[0,3]])",
+    "domain": "linear_algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_038",
+    "expression": "dot([a,b],[c,d])",
+    "domain": "linear_algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_039",
+    "expression": "C(n, 2)",
+    "domain": "combinatorics",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_040",
+    "expression": "n! / (n-k)!",
+    "domain": "combinatorics",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_001",
+    "expression": "not (a and b)",
+    "domain": "logic",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_002",
+    "expression": "not (a or b)",
+    "domain": "logic",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_003",
+    "expression": "a and (b or c)",
+    "domain": "logic",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_004",
+    "expression": "a or (b and c)",
+    "domain": "logic",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_005",
+    "expression": "not (not a)",
+    "domain": "logic",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_006",
+    "expression": "a and a",
+    "domain": "logic",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_007",
+    "expression": "a or a",
+    "domain": "logic",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_008",
+    "expression": "a and true",
+    "domain": "logic",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_009",
+    "expression": "a or false",
+    "domain": "logic",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_010",
+    "expression": "a and false",
+    "domain": "logic",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_011",
+    "expression": "a or true",
+    "domain": "logic",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_012",
+    "expression": "(a or b) and (a or c)",
+    "domain": "logic",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_013",
+    "expression": "(a and b) or (a and c)",
+    "domain": "logic",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_014",
+    "expression": "a implies b",
+    "domain": "logic",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_015",
+    "expression": "not a or b",
+    "domain": "logic",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_016",
+    "expression": "1 and 1",
+    "domain": "boolean",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_017",
+    "expression": "1 or 0",
+    "domain": "boolean",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_018",
+    "expression": "not 0",
+    "domain": "boolean",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_019",
+    "expression": "x and not x",
+    "domain": "boolean",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_020",
+    "expression": "x or not x",
+    "domain": "boolean",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_021",
+    "expression": "not (x and not x)",
+    "domain": "boolean",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_022",
+    "expression": "(x and y) or (not x and y)",
+    "domain": "boolean",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_023",
+    "expression": "(x or y) and (not x or y)",
+    "domain": "boolean",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_024",
+    "expression": "x^2 + x - 6",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_025",
+    "expression": "x^3 + 8",
+    "domain": "algebra",
+    "difficulty": 6
+  },
+  {
+    "id": "expand_026",
+    "expression": "x^4 - 1",
+    "domain": "algebra",
+    "difficulty": 6
+  },
+  {
+    "id": "expand_027",
+    "expression": "(x + y)^2 - x^2 - y^2",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_028",
+    "expression": "x^2 - y^2",
+    "domain": "algebra",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_029",
+    "expression": "2*x + 4",
+    "domain": "algebra",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_030",
+    "expression": "3*x - 9",
+    "domain": "algebra",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_031",
+    "expression": "x*(x+1) - x",
+    "domain": "algebra",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_032",
+    "expression": "(x+1)*(x-1)",
+    "domain": "algebra",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_033",
+    "expression": "2 + 3",
+    "domain": "arithmetic",
+    "difficulty": 1
+  },
+  {
+    "id": "expand_034",
+    "expression": "5 * 4",
+    "domain": "arithmetic",
+    "difficulty": 1
+  },
+  {
+    "id": "expand_035",
+    "expression": "10 - 7",
+    "domain": "arithmetic",
+    "difficulty": 1
+  },
+  {
+    "id": "expand_036",
+    "expression": "8 / 2",
+    "domain": "arithmetic",
+    "difficulty": 2
+  },
+  {
+    "id": "expand_037",
+    "expression": "3 + 4 * 2",
+    "domain": "arithmetic",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_038",
+    "expression": "(3 + 4) * 2",
+    "domain": "arithmetic",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_039",
+    "expression": "2^10",
+    "domain": "arithmetic",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_040",
+    "expression": "100 / 4 + 5",
+    "domain": "arithmetic",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_041",
+    "expression": "3*4 - 2*5",
+    "domain": "arithmetic",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_042",
+    "expression": "0 * x",
+    "domain": "arithmetic",
+    "difficulty": 2
+  },
+  {
+    "id": "expand_043",
+    "expression": "1 * x",
+    "domain": "arithmetic",
+    "difficulty": 2
+  },
+  {
+    "id": "expand_044",
+    "expression": "x + 0",
+    "domain": "arithmetic",
+    "difficulty": 2
+  },
+  {
+    "id": "expand_045",
+    "expression": "x - x",
+    "domain": "arithmetic",
+    "difficulty": 2
+  },
+  {
+    "id": "expand_046",
+    "expression": "x^3 + 3*x^2 + 3*x + 1",
+    "domain": "polynomial",
+    "difficulty": 6
+  },
+  {
+    "id": "expand_047",
+    "expression": "x^3 - 3*x^2 + 3*x - 1",
+    "domain": "polynomial",
+    "difficulty": 6
+  },
+  {
+    "id": "expand_048",
+    "expression": "2*x^3 - 6*x^2 + 4*x",
+    "domain": "polynomial",
+    "difficulty": 6
+  },
+  {
+    "id": "expand_049",
+    "expression": "x^4 - 5*x^2 + 4",
+    "domain": "polynomial",
+    "difficulty": 7
+  },
+  {
+    "id": "expand_050",
+    "expression": "x^3 - x^2 - x + 1",
+    "domain": "polynomial",
+    "difficulty": 6
+  },
+  {
+    "id": "expand_051",
+    "expression": "3*x^2 + 6*x + 3",
+    "domain": "polynomial",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_052",
+    "expression": "x^4 + 2*x^3 + x^2",
+    "domain": "polynomial",
+    "difficulty": 6
+  },
+  {
+    "id": "expand_053",
+    "expression": "x^2*(x+1) + x*(x+1)",
+    "domain": "polynomial",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_054",
+    "expression": "(x^2 + x)*(x^2 - x)",
+    "domain": "polynomial",
+    "difficulty": 6
+  },
+  {
+    "id": "expand_055",
+    "expression": "sin(x)^2 - 1",
+    "domain": "trig_identity",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_056",
+    "expression": "cos(2*x) - 1 + 2*sin(x)^2",
+    "domain": "trig_identity",
+    "difficulty": 6
+  },
+  {
+    "id": "expand_057",
+    "expression": "cos(2*x) - cos(x)^2 + sin(x)^2",
+    "domain": "trig_identity",
+    "difficulty": 6
+  },
+  {
+    "id": "expand_058",
+    "expression": "sin(x + y) - sin(x)*cos(y) - cos(x)*sin(y)",
+    "domain": "trig_identity",
+    "difficulty": 7
+  },
+  {
+    "id": "expand_059",
+    "expression": "cos(x + y) - cos(x)*cos(y) + sin(x)*sin(y)",
+    "domain": "trig_identity",
+    "difficulty": 7
+  },
+  {
+    "id": "expand_060",
+    "expression": "2*sin(x)*cos(x)",
+    "domain": "trig_identity",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_061",
+    "expression": "1 + cot(x)^2",
+    "domain": "trig_identity",
+    "difficulty": 6
+  },
+  {
+    "id": "expand_062",
+    "expression": "sec(x)^2 - tan(x)^2",
+    "domain": "trig_identity",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_063",
+    "expression": "2^3 * 2^4",
+    "domain": "exponent",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_064",
+    "expression": "x^3 * x^2",
+    "domain": "exponent",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_065",
+    "expression": "(x^2)^3",
+    "domain": "exponent",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_066",
+    "expression": "x^0",
+    "domain": "exponent",
+    "difficulty": 2
+  },
+  {
+    "id": "expand_067",
+    "expression": "x^1",
+    "domain": "exponent",
+    "difficulty": 2
+  },
+  {
+    "id": "expand_068",
+    "expression": "x^(-1)",
+    "domain": "exponent",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_069",
+    "expression": "(x*y)^2",
+    "domain": "exponent",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_070",
+    "expression": "x^5 / x^3",
+    "domain": "exponent",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_071",
+    "expression": "(2*x)^3",
+    "domain": "exponent",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_072",
+    "expression": "1/2 + 1/3",
+    "domain": "fraction",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_073",
+    "expression": "3/4 - 1/4",
+    "domain": "fraction",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_074",
+    "expression": "2/3 * 3/4",
+    "domain": "fraction",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_075",
+    "expression": "(1/x) + (1/y)",
+    "domain": "fraction",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_076",
+    "expression": "(x/y) * (y/x)",
+    "domain": "fraction",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_077",
+    "expression": "(x+1)/(x+1)",
+    "domain": "fraction",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_078",
+    "expression": "x / (1/x)",
+    "domain": "fraction",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_079",
+    "expression": "(a/b + c/d)",
+    "domain": "fraction",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_080",
+    "expression": "x + 3 > 5",
+    "domain": "inequality",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_081",
+    "expression": "2*x - 4 < 8",
+    "domain": "inequality",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_082",
+    "expression": "x^2 > 0",
+    "domain": "inequality",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_083",
+    "expression": "x^2 + 1 > 0",
+    "domain": "inequality",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_084",
+    "expression": "x^2 >= 0",
+    "domain": "inequality",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_085",
+    "expression": "3*x + 6 >= 0",
+    "domain": "inequality",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_086",
+    "expression": "x*(x - 1) > 0",
+    "domain": "inequality",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_087",
+    "expression": "A union B",
+    "domain": "set_theory",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_088",
+    "expression": "A intersect B",
+    "domain": "set_theory",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_089",
+    "expression": "A union empty_set",
+    "domain": "set_theory",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_090",
+    "expression": "A intersect empty_set",
+    "domain": "set_theory",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_091",
+    "expression": "A union A",
+    "domain": "set_theory",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_092",
+    "expression": "A intersect A",
+    "domain": "set_theory",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_093",
+    "expression": "complement(complement(A))",
+    "domain": "set_theory",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_094",
+    "expression": "A - (A intersect B)",
+    "domain": "set_theory",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_095",
+    "expression": "(A union B) - B",
+    "domain": "set_theory",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_096",
+    "expression": "C(n, 0)",
+    "domain": "combinatorics",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_097",
+    "expression": "C(n, n)",
+    "domain": "combinatorics",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_098",
+    "expression": "C(n, 1)",
+    "domain": "combinatorics",
+    "difficulty": 3
+  },
+  {
+    "id": "expand_099",
+    "expression": "C(n, k) + C(n, k+1)",
+    "domain": "combinatorics",
+    "difficulty": 6
+  },
+  {
+    "id": "expand_100",
+    "expression": "C(n, k) * k",
+    "domain": "combinatorics",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_101",
+    "expression": "n! / (k! * (n-k)!)",
+    "domain": "combinatorics",
+    "difficulty": 6
+  },
+  {
+    "id": "expand_102",
+    "expression": "P(n, k) / k!",
+    "domain": "combinatorics",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_103",
+    "expression": "a_n = a_1 + (n-1)*d",
+    "domain": "sequence",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_104",
+    "expression": "sum(i, 1, n, i)",
+    "domain": "sequence",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_105",
+    "expression": "sum(i, 1, n, i^2)",
+    "domain": "sequence",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_106",
+    "expression": "a_n = a_1 * r^(n-1)",
+    "domain": "sequence",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_107",
+    "expression": "sum(i, 0, n, r^i)",
+    "domain": "sequence",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_108",
+    "expression": "n*(n+1)/2",
+    "domain": "sequence",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_109",
+    "expression": "n*(n+1)*(2*n+1)/6",
+    "domain": "sequence",
+    "difficulty": 5
+  },
+  {
+    "id": "expand_110",
+    "expression": "2^n - 1",
+    "domain": "sequence",
+    "difficulty": 4
+  },
+  {
+    "id": "expand_111",
+    "expression": "fib(n) + fib(n-1)",
+    "domain": "sequence",
+    "difficulty": 6
+  },
+  {
+    "id": "expand_112",
+    "expression": "sum(i, 1, n, 2*i - 1)",
+    "domain": "sequence",
+    "difficulty": 5
+  },
+  {
+    "id": "hp_041",
+    "expression": "x + 0",
+    "domain": "identity_basics",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_042",
+    "expression": "0 + x",
+    "domain": "identity_basics",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_043",
+    "expression": "y + 0",
+    "domain": "identity_basics",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_044",
+    "expression": "x * 1",
+    "domain": "identity_basics",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_045",
+    "expression": "1 * z",
+    "domain": "identity_basics",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_046",
+    "expression": "a * 1",
+    "domain": "identity_basics",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_047",
+    "expression": "neg neg x",
+    "domain": "identity_basics",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_048",
+    "expression": "not not A",
+    "domain": "identity_basics",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_049",
+    "expression": "neg neg y",
+    "domain": "identity_basics",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_050",
+    "expression": "n + 0 + 0",
+    "domain": "identity_basics",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_051",
+    "expression": "1 * x * 1",
+    "domain": "identity_basics",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_052",
+    "expression": "x + 0 - 0",
+    "domain": "identity_basics",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_053",
+    "expression": "x * 0",
+    "domain": "annihilation",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_054",
+    "expression": "0 * y",
+    "domain": "annihilation",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_055",
+    "expression": "x * 0 + 5",
+    "domain": "annihilation",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_056",
+    "expression": "A AND False",
+    "domain": "annihilation",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_057",
+    "expression": "False AND B",
+    "domain": "annihilation",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_058",
+    "expression": "x - x",
+    "domain": "annihilation",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_059",
+    "expression": "y - y + 3",
+    "domain": "annihilation",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_060",
+    "expression": "z^0",
+    "domain": "annihilation",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_061",
+    "expression": "x^0 + 1",
+    "domain": "annihilation",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_062",
+    "expression": "3 + 5",
+    "domain": "constant_arithmetic",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_063",
+    "expression": "4 * 7",
+    "domain": "constant_arithmetic",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_064",
+    "expression": "10 - 3",
+    "domain": "constant_arithmetic",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_065",
+    "expression": "2^8",
+    "domain": "constant_arithmetic",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_066",
+    "expression": "12 / 4",
+    "domain": "constant_arithmetic",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_067",
+    "expression": "3 * 4 + 2",
+    "domain": "constant_arithmetic",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_068",
+    "expression": "100 - 37 + 7",
+    "domain": "constant_arithmetic",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_069",
+    "expression": "5 * 5 - 1",
+    "domain": "constant_arithmetic",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_070",
+    "expression": "A AND True",
+    "domain": "logic_basics",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_071",
+    "expression": "A OR False",
+    "domain": "logic_basics",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_072",
+    "expression": "True AND B",
+    "domain": "logic_basics",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_073",
+    "expression": "B OR True",
+    "domain": "logic_basics",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_074",
+    "expression": "A AND A",
+    "domain": "logic_basics",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_075",
+    "expression": "B OR B",
+    "domain": "logic_basics",
+    "difficulty": 1
+  },
+  {
+    "id": "hp_076",
+    "expression": "not not not A",
+    "domain": "logic_basics",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_077",
+    "expression": "A AND True AND True",
+    "domain": "logic_basics",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_078",
+    "expression": "x + 5 = 12",
+    "domain": "equation",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_079",
+    "expression": "2 * x = 10",
+    "domain": "equation",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_080",
+    "expression": "x - 3 = 7",
+    "domain": "equation",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_081",
+    "expression": "3 * x = 15",
+    "domain": "equation",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_082",
+    "expression": "x + 10 = 25",
+    "domain": "equation",
+    "difficulty": 3
+  },
+  {
+    "id": "hp_083",
+    "expression": "4 * x = 20",
+    "domain": "equation",
+    "difficulty": 3
+  },
+  {
+    "id": "hp_084",
+    "expression": "x * 1 + 0",
+    "domain": "multi_step",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_085",
+    "expression": "0 + y * 1",
+    "domain": "multi_step",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_086",
+    "expression": "(x + 0) * 1",
+    "domain": "multi_step",
+    "difficulty": 3
+  },
+  {
+    "id": "hp_087",
+    "expression": "neg neg x + 0",
+    "domain": "multi_step",
+    "difficulty": 3
+  },
+  {
+    "id": "hp_088",
+    "expression": "1 * (y + 0)",
+    "domain": "multi_step",
+    "difficulty": 3
+  },
+  {
+    "id": "hp_089",
+    "expression": "x * 0 + y * 1",
+    "domain": "multi_step",
+    "difficulty": 3
+  },
+  {
+    "id": "hp_090",
+    "expression": "(a + 0) * (b * 1)",
+    "domain": "multi_step",
+    "difficulty": 4
+  },
+  {
+    "id": "hp_091",
+    "expression": "NOT (NOT A OR NOT B)",
+    "domain": "boolean",
+    "difficulty": 4
+  },
+  {
+    "id": "hp_092",
+    "expression": "NOT (NOT A AND NOT B)",
+    "domain": "boolean",
+    "difficulty": 4
+  },
+  {
+    "id": "hp_093",
+    "expression": "A AND (B OR C)",
+    "domain": "boolean",
+    "difficulty": 4
+  },
+  {
+    "id": "hp_094",
+    "expression": "(A AND B) OR (A AND C)",
+    "domain": "boolean",
+    "difficulty": 4
+  },
+  {
+    "id": "hp_095",
+    "expression": "A OR (NOT A)",
+    "domain": "boolean",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_096",
+    "expression": "A AND (NOT A)",
+    "domain": "boolean",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_097",
+    "expression": "2 * (x + 3)",
+    "domain": "algebra",
+    "difficulty": 3
+  },
+  {
+    "id": "hp_098",
+    "expression": "x * (y + z)",
+    "domain": "algebra",
+    "difficulty": 3
+  },
+  {
+    "id": "hp_099",
+    "expression": "3 * x + 3 * y",
+    "domain": "algebra",
+    "difficulty": 3
+  },
+  {
+    "id": "hp_100",
+    "expression": "x^2 + 2*x + 1",
+    "domain": "polynomial",
+    "difficulty": 4
+  },
+  {
+    "id": "hp_101",
+    "expression": "x^2 - 1",
+    "domain": "polynomial",
+    "difficulty": 4
+  },
+  {
+    "id": "hp_102",
+    "expression": "4*x + 2*x",
+    "domain": "algebra",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_103",
+    "expression": "3*x - x",
+    "domain": "algebra",
+    "difficulty": 2
+  },
+  {
+    "id": "hp_104",
+    "expression": "x + x + x",
+    "domain": "algebra",
+    "difficulty": 3
+  },
+  {
+    "id": "hp_synth_001",
+    "expression": "sin(x)^2 + cos(x)^2",
+    "domain": "calculus",
+    "difficulty": 9,
+    "note": "Pythagorean identity \u2014 no transform exists"
+  },
+  {
+    "id": "hp_synth_002",
+    "expression": "1 - cos(x)^2",
+    "domain": "calculus",
+    "difficulty": 9,
+    "note": "Pythagorean identity variant"
+  },
+  {
+    "id": "hp_synth_003",
+    "expression": "(a + b)^2",
+    "domain": "algebra",
+    "difficulty": 8,
+    "note": "Binomial square \u2014 a^2+2ab+b^2"
+  },
+  {
+    "id": "hp_synth_004",
+    "expression": "(x + 1)^3",
+    "domain": "algebra",
+    "difficulty": 9,
+    "note": "Binomial cube"
+  },
+  {
+    "id": "hp_synth_005",
+    "expression": "(x - y)^2",
+    "domain": "algebra",
+    "difficulty": 8,
+    "note": "Difference square"
+  },
+  {
+    "id": "hp_synth_006",
+    "expression": "integral x * exp(x)",
+    "domain": "calculus",
+    "difficulty": 10,
+    "note": "Integration by parts"
+  },
+  {
+    "id": "hp_synth_007",
+    "expression": "integral x * sin(x)",
+    "domain": "calculus",
+    "difficulty": 10,
+    "note": "Integration by parts \u2014 trig"
+  },
+  {
+    "id": "hp_synth_008",
+    "expression": "log(a * b)",
+    "domain": "algebra",
+    "difficulty": 8,
+    "note": "Log product rule"
+  },
+  {
+    "id": "hp_synth_009",
+    "expression": "log(a^n)",
+    "domain": "algebra",
+    "difficulty": 8,
+    "note": "Log power rule"
+  },
+  {
+    "id": "hp_synth_010",
+    "expression": "log(a / b)",
+    "domain": "algebra",
+    "difficulty": 8,
+    "note": "Log quotient rule"
+  },
+  {
+    "id": "hp_synth_011",
+    "expression": "x^2 + 5*x + 6",
+    "domain": "algebra",
+    "difficulty": 8,
+    "note": "Quadratic factoring: (x+2)(x+3)"
+  },
+  {
+    "id": "hp_synth_012",
+    "expression": "x^2 - 4",
+    "domain": "algebra",
+    "difficulty": 8,
+    "note": "Difference of squares: (x-2)(x+2)"
+  },
+  {
+    "id": "hp_synth_013",
+    "expression": "x^2 + 2*x + 1",
+    "domain": "algebra",
+    "difficulty": 8,
+    "note": "Perfect square trinomial (x+1)^2"
+  },
+  {
+    "id": "hp_synth_014",
+    "expression": "d/dx sin(x^2)",
+    "domain": "calculus",
+    "difficulty": 9,
+    "note": "Chain rule: 2x*cos(x^2)"
+  },
+  {
+    "id": "hp_synth_015",
+    "expression": "d/dx exp(x^2)",
+    "domain": "calculus",
+    "difficulty": 9,
+    "note": "Chain rule: 2x*exp(x^2)"
+  },
+  {
+    "id": "hp_synth_016",
+    "expression": "(x^2 - 1) / (x - 1)",
+    "domain": "algebra",
+    "difficulty": 9,
+    "note": "Cancel: (x+1)(x-1)/(x-1) = x+1"
+  },
+  {
+    "id": "hp_synth_017",
+    "expression": "2*x^2 + 4*x",
+    "domain": "algebra",
+    "difficulty": 8,
+    "note": "Factor out 2x: 2x(x+2)"
+  },
+  {
+    "id": "hp_synth_018",
+    "expression": "-(x + y)",
+    "domain": "algebra",
+    "difficulty": 8,
+    "note": "Distribute negation: -x - y"
+  },
+  {
+    "id": "hp_synth_019",
+    "expression": "-(-(x + y))",
+    "domain": "algebra",
+    "difficulty": 8,
+    "note": "Double neg + distribute"
+  },
+  {
+    "id": "hp_synth_020",
+    "expression": "x^3 - x^3 + 2*x^2 - 2*x^2 + x",
+    "domain": "algebra",
+    "difficulty": 9,
+    "note": "Multi-level cancellation"
+  }
+]
