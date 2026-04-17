@@ -18,7 +18,7 @@ import re
 import textwrap
 import time
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 log = logging.getLogger(__name__)
 
@@ -132,7 +132,8 @@ REQUIREMENTS:
 2. `match(self, graph)` returns a list of dicts (one per pattern match found), or []
 3. `apply(self, graph, context)` returns (new_graph, delta) where delta < 0 means simpler
 4. Import ONLY from: `from sare.engine import Transform, Graph`
-   You MAY also use `from typing import List, Tuple, Dict, Optional` and `import math`, `import re`
+   You MUST include this exact import at the top of the file: from typing import Tuple, List, Dict, Any, Optional
+   You MAY also use `import math` and `import re`
    FORBIDDEN: `import os`, `import sys`, `import subprocess`, `import socket`, `import shutil`
    FORBIDDEN: `eval(`, `exec(`, `open(`, `__import__(`, `compile(`
 5. Return ONLY the raw Python class code — NO markdown fences, NO explanation text, NO ```
@@ -214,7 +215,14 @@ def _extract_code(raw: str) -> str:
 def _load_transform_class(code: str, class_name: str):
     """Exec code in safe namespace, return the Transform subclass or None."""
     from sare.engine import Transform
-    ns: dict = {"Transform": Transform}
+    ns: dict = {
+        "Transform": Transform,
+        "Tuple": Tuple,
+        "List": List,
+        "Dict": Dict,
+        "Any": Any,
+        "Optional": Optional,
+    }
     try:
         exec(compile(code, "<synthesized>", "exec"), ns)
     except Exception as exc:
@@ -457,6 +465,7 @@ class LLMTransformSynthesizer:
             # Auto-synthesized Transform — domain: {domain}
             # Generated: {time.strftime('%Y-%m-%d %H:%M:%S')}
             # Name: {actual_name}
+            from typing import Tuple, List, Dict, Any, Optional
             from sare.engine import Transform, Graph
 
         """)

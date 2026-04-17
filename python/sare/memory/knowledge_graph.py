@@ -367,3 +367,14 @@ class KnowledgeGraph:
 
     def health(self) -> dict:
         return dict(self._health)
+
+
+_KG_SINGLETON: Optional["KnowledgeGraph"] = None
+
+
+def get_kg() -> "KnowledgeGraph":
+    """Get the process-wide KnowledgeGraph singleton."""
+    global _KG_SINGLETON
+    if _KG_SINGLETON is None:
+        _KG_SINGLETON = KnowledgeGraph()
+    return _KG_SINGLETON

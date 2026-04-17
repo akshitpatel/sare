@@ -21,7 +21,9 @@ import hashlib
 import json
 import logging
 import math
+import re
 import time
+import threading
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -691,8 +693,9 @@ class WorldModel:
         self._predictions: List[Prediction] = []        # recent predictions (capped at 500)
         self._belief_accuracy: Dict[str, list] = {}     # transform_name → [was_correct bools]
         self._surprise_history: List[float] = []        # last 100 surprise values
-        self._last_llm_hypothesis_time: float = 0.0    # cooldown for LLM hypothesis generation
-        self._llm_hypothesis_cooldown: float = 60.0    # seconds between LLM hypothesis calls
+        self._last_llm_hypothesis_time: float = 0.0    # global cooldown for LLM hypothesis
+        self._llm_hypothesis_cooldown: float = 1800.0  # 30 min between LLM hypothesis calls (was 10 min)
+        self._llm_hypothesis_per_key: Dict[str, float] = {}  # (domain,transform) → last time
 
         # Auto-learning counters
         self._solve_counts: Dict[str, int] = {}         # domain → solve count (for distillation trigger)
@@ -714,9 +717,24 @@ class WorldModel:
         self._solve_history: List[dict] = []            # for SchemaInduction
         self._v3_stats: dict = {
             "total_observations": 0,
+            "total_solves": 0,
             "links_discovered":   0,
             "schemas_induced":    0,
             "analogies_found":    0,
+        }
+
+        # ── General-domain failure tracking for concept synthesis ──────────────
+        self._domain_failures: Dict[str, List[dict]] = {}  # domain → [{text, expected, ts}]
+        self._last_concept_synthesis: Dict[str, float] = {}  # domain → timestamp, 10-min cooldown
+        self._domain_failures_lock = threading.Lock()
+        self._concept_synthesis_lock = threading.Lock()
+        self._concept_synthesis_inflight: Set[str] = set()
+        self._concept_hypotheses: Dict[str, dict] = {}
+        self._concept_hypothesis_stats: Dict[str, int] = {
+            "generated": 0,
+            "verified": 0,
+            "verification_attempts": 0,
+            "verification_successes": 0,
         }
 
         # Load from v2 file (or bootstrap from v1 + seeds)
@@ -1489,6 +1507,11 @@ class WorldModel:
         domains = (set(self._facts.keys())
                    | {l.domain for l in self._causal_links.values()}
                    | {s.domain for s in self._schemas.values()})
+        def _floatish(value: Any) -> float:
+            try:
+                return float(value)
+            except Exception:
+                return 0.0
         return {
             "fact_count": sum(len(v) for v in self._facts.values()),
             "causal_link_count": len(self._causal_links),
@@ -1497,48 +1520,108 @@ class WorldModel:
             "analogy_count": len(self._analogies) + len(_STRUCTURAL_ANALOGIES),
             "discovered_analogies": len(self._analogies),
             "solve_history_size": len(self._solve_history),
-            "domains": sorted(domains),
+            "domains": sorted((str(domain) for domain in domains), key=str),
             "v3_stats": self._v3_stats,
             "top_beliefs": sorted(
                 [b.to_dict() for b in self._beliefs.values()],
-                key=lambda x: x["confidence"], reverse=True
+                key=lambda x: _floatish(x.get("confidence")), reverse=True
             )[:10],
             "top_causal_links": [
                 {"key": l.key, "mechanism": l.mechanism, "domain": l.domain,
                  "confidence": round(l.confidence, 3)}
                 for l in sorted(self._causal_links.values(),
-                                key=lambda x: x.confidence, reverse=True)[:5]
+                                key=lambda x: _floatish(getattr(x, "confidence", 0.0)), reverse=True)[:5]
             ],
             "imagination_seed_count": len(_IMAGINATION_AXES),
+            "concept_hypotheses_pending": sum(
+                1 for item in self._concept_hypotheses.values() if not item.get("verified")
+            ),
+            "concept_hypotheses_verified": self._concept_hypothesis_stats.get("verified", 0),
+            "concept_hypothesis_stats": dict(self._concept_hypothesis_stats),
         }
 
     # ─────────────────────────────────────────────────────────────────────────
     # 11. Persistence
     # ─────────────────────────────────────────────────────────────────────────
 
+    def _snapshot_data(self, saved_at: Optional[float] = None) -> dict:
+        ts = time.time() if saved_at is None else float(saved_at)
+        return {
+            "version": 4,
+            "saved_at": ts,
+            "facts": {d: [f.to_dict() for f in facts] for d, facts in self._facts.items()},
+            "causal_links": {k: l.to_dict() for k, l in self._causal_links.items()},
+            "schemas": {n: s.to_dict() for n, s in self._schemas.items()},
+            "predictions": [p.to_dict() for p in self._predictions[-200:]],
+            "belief_accuracy": {k: v[-50:] for k, v in self._belief_accuracy.items()},
+            "surprise_history": self._surprise_history[-100:],
+            "beliefs": {k: v.to_dict() for k, v in self._beliefs.items()},
+            "analogies": {k: v.to_dict() for k, v in self._analogies.items()},
+            "solve_history": self._solve_history[-500:],
+            "v3_stats": dict(self._v3_stats),
+            "domain_failures": {
+                d: entries[-100:]
+                for d, entries in self._domain_failures.items()
+                if entries
+            },
+            "concept_hypotheses": self._concept_hypotheses,
+            "concept_hypothesis_stats": self._concept_hypothesis_stats,
+        }
+
+    def _maybe_generate_readable_report(self, solve_count: int) -> None:
+        import os
+
+        every_solves = int(getattr(self, "_readable_report_every_solves", 1000) or 1000)
+        if solve_count <= 0 or solve_count % every_solves != 0:
+            return
+        if os.environ.get("SARE_RUNTIME_ROLE", "").strip().lower() == "web":
+            return
+        if not hasattr(self, "_readable_report_lock"):
+            self._readable_report_lock = threading.Lock()
+        if not hasattr(self, "_readable_report_inflight"):
+            self._readable_report_inflight = False
+        with self._readable_report_lock:
+            if self._readable_report_inflight:
+                return
+            self._readable_report_inflight = True
+        snapshot = self._snapshot_data(saved_at=time.time())
+
+        def _run() -> None:
+            try:
+                from sare.meta.world_model_readable_report import write_report_files
+
+                write_report_files(
+                    snapshot,
+                    source_path=self._path,
+                    every_solves=every_solves,
+                    solve_count=solve_count,
+                )
+            except Exception as exc:
+                log.debug("WorldModel readable report generation skipped: %s", exc)
+            finally:
+                with self._readable_report_lock:
+                    self._readable_report_inflight = False
+
+        threading.Thread(
+            target=_run,
+            daemon=True,
+            name=f"WorldModelReadableReport-{solve_count}",
+        ).start()
+
     def save(self) -> None:
         """Save unified world model to JSON (atomic write via temp-file + rename)."""
         try:
-            data = {
-                "version": 4,       # v4 = v2 + v3 merged
-                "saved_at": time.time(),
-                "facts": {d: [f.to_dict() for f in facts]
-                          for d, facts in self._facts.items()},
-                "causal_links": {k: l.to_dict() for k, l in self._causal_links.items()},
-                "schemas": {n: s.to_dict() for n, s in self._schemas.items()},
-                "predictions": [p.to_dict() for p in self._predictions[-200:]],
-                "belief_accuracy": {k: v[-50:] for k, v in self._belief_accuracy.items()},
-                "surprise_history": self._surprise_history[-100:],
-                # V3 additions
-                "beliefs": {k: v.to_dict() for k, v in self._beliefs.items()},
-                "analogies": {k: v.to_dict() for k, v in self._analogies.items()},
-                "solve_history": self._solve_history[-500:],
-                "v3_stats": self._v3_stats,
-            }
+            data = self._snapshot_data(saved_at=time.time())
             import os
             tmp = self._path.with_suffix(".json.tmp")
             with open(tmp, "w", encoding="utf-8") as fp:
-                json.dump(data, fp, indent=2)
+                # Dump then sanitize: strip control chars before final write
+                raw_json = json.dumps(data, indent=2)
+                safe_json = "".join(
+                    c if (ord(c) >= 0x20 or c in "\t\n\r") else " "
+                    for c in raw_json
+                )
+                fp.write(safe_json)
             os.replace(tmp, self._path)
             log.debug("WorldModel saved: %d facts, %d links, %d schemas, %d beliefs",
                       sum(len(v) for v in self._facts.values()),
@@ -1556,7 +1639,13 @@ class WorldModel:
         if self._path.exists():
             try:
                 with open(self._path, encoding="utf-8") as fp:
-                    data = json.load(fp)
+                    raw = fp.read()
+                # Strip control chars that corrupt JSON (everything < 0x20 except tab/newline/CR)
+                raw = "".join(
+                    c if (ord(c) >= 0x20 or c in "\t\n\r") else " "
+                    for c in raw
+                )
+                data = json.loads(raw)
 
                 for domain, fact_list in data.get("facts", {}).items():
                     self._facts[domain] = [Fact.from_dict(f) for f in fact_list]
@@ -1572,7 +1661,7 @@ class WorldModel:
                 ]
                 self._belief_accuracy = data.get("belief_accuracy", {})
                 self._surprise_history = data.get("surprise_history", [])
-                # V3/V4 fields
+                # V3 additions
                 for k, v in data.get("beliefs", {}).items():
                     try:
                         self._beliefs[k] = Belief.from_dict(v)
@@ -1585,6 +1674,11 @@ class WorldModel:
                         log.warning("[world_model] Skipped corrupt analogy entry '%s': %s", k, e)
                 self._solve_history = data.get("solve_history", [])
                 self._v3_stats.update(data.get("v3_stats", {}))
+                # Restore failure tracking
+                for d, entries in data.get("domain_failures", {}).items():
+                    self._domain_failures[d] = list(entries)
+                self._concept_hypotheses = data.get("concept_hypotheses", {}) or {}
+                self._concept_hypothesis_stats.update(data.get("concept_hypothesis_stats", {}) or {})
 
                 log.info(
                     "WorldModel loaded (v%s): %d facts, %d links, %d schemas, "
@@ -1704,6 +1798,29 @@ class WorldModel:
         )
         return pred
 
+    def rank_transforms(self, transforms: list, domain: str = "general") -> List[tuple]:
+        """
+        Score all transforms using causal links + belief accuracy history.
+        Returns list of (transform, score) sorted descending — highest confidence first.
+        No graph argument needed; uses domain-level causal statistics.
+        """
+        if self._causal_idx_dirty:
+            self._build_causal_idx()
+        scored = []
+        for t in transforms:
+            tname = t.name() if hasattr(t, "name") else str(t)
+            acc_list = self._belief_accuracy.get(tname, [])
+            base_acc = sum(acc_list[-20:]) / len(acc_list[-20:]) if acc_list else 0.4
+            causal_boost = self._get_causal_boost(tname, domain)
+            schema_boost = sum(
+                0.1 for s in self._schemas.values()
+                if s.domain == domain and s.activation > 0.3
+            )
+            score = min(1.0, base_acc + causal_boost + min(schema_boost, 0.2))
+            scored.append((t, score))
+        scored.sort(key=lambda x: x[1], reverse=True)
+        return scored
+
     def record_outcome(self, prediction: "Prediction", actual_transforms: list,
                        actual_delta: float, domain: str = "general") -> float:
         """
@@ -1761,12 +1878,24 @@ class WorldModel:
             self._predictions = self._predictions[-500:]
 
         # High surprise → ask LLM to generate a hypothesis (async, best-effort)
-        if surprise > 2.0:
+        # Gated: global 10-min cooldown + per-(domain,transform) 30-min cooldown
+        if surprise > 2.5:   # raised threshold (was 2.0) — only truly surprising events
             now = time.time()
-            if now - self._last_llm_hypothesis_time >= self._llm_hypothesis_cooldown:
-                self._async_generate_hypothesis(domain, prediction.transform_name,
+            _hkey = f"{domain}:{prediction.transform_name}"
+            _per_key_ok = now - self._llm_hypothesis_per_key.get(_hkey, 0) >= 1800  # 30 min
+            if (now - self._last_llm_hypothesis_time >= self._llm_hypothesis_cooldown
+                    and _per_key_ok):
+                if hasattr(self, '_async_generate_hypothesis'):
+                    self._async_generate_hypothesis(domain, prediction.transform_name,
                                                 expected, actual_delta)
                 self._last_llm_hypothesis_time = now
+                self._llm_hypothesis_per_key[_hkey] = now
+                # Prune old keys to avoid unbounded growth
+                if len(self._llm_hypothesis_per_key) > 200:
+                    oldest = sorted(self._llm_hypothesis_per_key,
+                                    key=lambda k: self._llm_hypothesis_per_key[k])
+                    for k in oldest[:50]:
+                        del self._llm_hypothesis_per_key[k]
 
         return surprise
 
@@ -1811,75 +1940,17 @@ class WorldModel:
         if len(self._surprise_history) > 200:
             self._surprise_history = self._surprise_history[-200:]
 
-        # Very high surprise → generate LLM hypothesis
-        if surprise > 2.0 and predicted_t:
+        # Very high surprise → generate LLM hypothesis (same 10-min/30-min gates)
+        if surprise > 2.5 and predicted_t:
             now = time.time()
-            if now - self._last_llm_hypothesis_time >= self._llm_hypothesis_cooldown:
-                self._async_generate_hypothesis(domain, predicted_t, predicted_d, actual_d)
+            _hkey = f"{domain}:{predicted_t}"
+            _per_key_ok = now - self._llm_hypothesis_per_key.get(_hkey, 0) >= 1800
+            if (now - self._last_llm_hypothesis_time >= self._llm_hypothesis_cooldown
+                    and _per_key_ok):
+                if hasattr(self, '_async_generate_hypothesis'):
+                    self._async_generate_hypothesis(domain, predicted_t, predicted_d, actual_d)
                 self._last_llm_hypothesis_time = now
-
-    def _async_generate_hypothesis(self, domain: str, transform_name: str,
-                                   expected: float, actual: float) -> None:
-        """Fire-and-forget: ask Qwen3.5 why prediction was wrong, store hypothesis."""
-        import threading
-
-        def _run():
-            try:
-                from sare.interface.llm_bridge import _call_llm
-                import json as _json
-                prompt = (
-                    f"In {domain} math, the transform '{transform_name}' was expected to reduce "
-                    f"expression complexity by {expected:.1f} but actually reduced it by {actual:.1f}. "
-                    "Write ONE hypothesis explaining why as a JSON object with exactly these keys: "
-                    '{"hypothesis": "...", "pattern": "...", "confidence": 0.0}. '
-                    "Return ONLY valid JSON, no markdown, no explanation."
-                )
-                raw = _call_llm(prompt)
-                raw = raw.strip().strip("`")
-                if raw.startswith("json"):
-                    raw = raw[4:].strip()
-                hyp = _json.loads(raw)
-                hyp["domain"] = domain
-                hyp["transform"] = transform_name
-                hyp["expected"] = expected
-                hyp["actual"] = actual
-                hyp["surprise"] = abs(expected - actual) / max(abs(expected), 0.1)
-                hyp["evidence"] = 1
-                hyp["timestamp"] = time.time()
-                if not hasattr(self, "_hypotheses"):
-                    self._hypotheses = []
-                # Merge with existing hypothesis for same pattern or append new
-                merged = False
-                for existing in self._hypotheses:
-                    if (existing.get("pattern") == hyp.get("pattern")
-                            and existing.get("domain") == domain):
-                        existing["evidence"] = existing.get("evidence", 1) + 1
-                        existing["confidence"] = min(
-                            0.95, existing.get("confidence", 0.3) + 0.05
-                        )
-                        merged = True
-                        break
-                if not merged:
-                    self._hypotheses.append(hyp)
-                    if len(self._hypotheses) > 100:
-                        self._hypotheses = self._hypotheses[-100:]
-                log.info(
-                    "[WorldModel] LLM hypothesis for surprise %.1f in %s: %s",
-                    hyp["surprise"], domain, hyp.get("hypothesis", "")[:80],
-                )
-                # Persist hypotheses alongside world model
-                _hyp_path = Path(__file__).resolve().parents[3] / "data" / "memory" / "world_hypotheses.json"
-                try:
-                    import os as _os
-                    _tmp = _hyp_path.parent / f"{_hyp_path.stem}.{os.getpid()}.{threading.get_ident()}.tmp"
-                    _tmp.write_text(_json.dumps(self._hypotheses, indent=2))
-                    _os.replace(_tmp, _hyp_path)
-                except Exception:
-                    pass
-            except Exception as exc:
-                log.debug("[WorldModel] LLM hypothesis generation failed: %s", exc)
-
-        threading.Thread(target=_run, daemon=True, name="WorldModelHypothesis").start()
+                self._llm_hypothesis_per_key[_hkey] = now
 
     def get_high_surprise_domains(self, top_n: int = 3) -> List[Tuple[str, float]]:
         """
@@ -2080,6 +2151,8 @@ class WorldModel:
         schema induction (v2 + v3 unified learning hook).
         """
         self._v3_stats["total_observations"] += 1
+        if solved:
+            self._v3_stats["total_solves"] = int(self._v3_stats.get("total_solves", 0) or 0) + 1
 
         if solved and energy_delta > 0.05 and transforms_used:
             # V2: per-transform causal links
@@ -2163,6 +2236,8 @@ class WorldModel:
             schema.decay(0.01)
 
         self._causal_idx_dirty = True
+        if solved:
+            self._maybe_generate_readable_report(int(self._v3_stats.get("total_solves", 0) or 0))
 
         # Reactive wiring: publish "surprise_high" when recent average surprise > 2.5
         try:
@@ -2178,6 +2253,403 @@ class WorldModel:
                     })
         except Exception:
             pass
+
+    # ── General-domain failure tracking and concept synthesis ─────────────────
+
+    def record_domain_failure(
+        self,
+        domain: str,
+        problem_text: str,
+        expected: str,
+        attempt: str = "",
+    ) -> None:
+        """Record a genuine failure in a knowledge domain.
+
+        Called by GeneralSolver when KB+retrieval+symbolic all fail.
+        Feeds the concept synthesis pipeline so the system can grow new rules
+        instead of silently failing.  prediction_error = 1.0.
+        """
+        entry = {
+            "text":     problem_text[:200],
+            "expected": (expected or "")[:100],
+            "attempt":  (attempt or "")[:80],
+            "ts":       time.time(),
+        }
+        with self._domain_failures_lock:
+            bucket = self._domain_failures.setdefault(domain, [])
+            bucket.append(entry)
+            if len(bucket) > 500:
+                self._domain_failures[domain] = bucket[-500:]
+
+        # Track rolling domain solve accuracy (0 = failure)
+        acc_key = f"domain_solve_acc:{domain}"
+        self._belief_accuracy.setdefault(acc_key, [])
+        self._belief_accuracy[acc_key].append(0.0)
+        if len(self._belief_accuracy[acc_key]) > 200:
+            self._belief_accuracy[acc_key] = self._belief_accuracy[acc_key][-200:]
+
+    def record_domain_success(self, domain: str) -> None:
+        """Record a successful solve in a knowledge domain (prediction_error = 0)."""
+        acc_key = f"domain_solve_acc:{domain}"
+        self._belief_accuracy.setdefault(acc_key, [])
+        self._belief_accuracy[acc_key].append(1.0)
+        if len(self._belief_accuracy[acc_key]) > 200:
+            self._belief_accuracy[acc_key] = self._belief_accuracy[acc_key][-200:]
+
+    def get_domain_solve_accuracy(self, domain: str, window: int = 100) -> float:
+        """Rolling solve accuracy (0.0–1.0) for a knowledge domain."""
+        key = f"domain_solve_acc:{domain}"
+        hist = self._belief_accuracy.get(key, [])
+        if not hist:
+            return 0.5  # unknown → assume 50%
+        return round(sum(hist[-window:]) / len(hist[-window:]), 3)
+
+    def get_failure_patterns(
+        self,
+        domain: str,
+        min_count: int = 2,
+        window_seconds: float = 3600.0,
+    ) -> List[dict]:
+        """Return clusters of similar failures ready for concept synthesis.
+
+        A cluster is ≥ min_count failures with ≥35% keyword overlap within
+        the last window_seconds.  Returns list of cluster dicts.
+        """
+        _STOP = {"what", "is", "the", "a", "an", "of", "in", "to", "and",
+                 "or", "how", "why", "when", "where", "who", "does", "do",
+                 "was", "were", "are", "has", "have", "had", "can", "could"}
+
+        def _kw(text: str) -> set:
+            return {w.lower() for w in re.sub(r"[^\w\s]", " ", text).split()
+                    if len(w) > 3 and w.lower() not in _STOP}
+
+        now = time.time()
+        with self._domain_failures_lock:
+            recent = [f for f in self._domain_failures.get(domain, [])
+                      if now - f["ts"] <= window_seconds]
+
+        if len(recent) < min_count:
+            return []
+
+        clusters: List[dict] = []
+        assigned: set = set()
+
+        for i, seed in enumerate(recent):
+            if i in assigned:
+                continue
+            kw_seed = _kw(seed["text"])
+            if not kw_seed:
+                continue
+            group = [seed]
+            assigned.add(i)
+            for j, other in enumerate(recent):
+                if j in assigned:
+                    continue
+                kw_other = _kw(other["text"])
+                overlap = len(kw_seed & kw_other) / max(len(kw_seed | kw_other), 1)
+                if overlap >= 0.35:
+                    group.append(other)
+                    assigned.add(j)
+            if len(group) >= min_count:
+                common_kw = kw_seed.copy()
+                for g in group[1:]:
+                    common_kw &= _kw(g["text"])
+                clusters.append({
+                    "domain":            domain,
+                    "representative":    seed["text"],
+                    "examples":          [g["text"] for g in group[:6]],
+                    "expected_examples": [g["expected"] for g in group[:6]],
+                    "count":             len(group),
+                    "keywords":          sorted(common_kw)[:8],
+                })
+
+        return clusters
+
+    def schedule_concept_synthesis(
+        self,
+        domain: str,
+        *,
+        min_count: int = 2,
+        window_seconds: float = 3600.0,
+    ) -> bool:
+        """
+        Queue one background synthesis pass for a domain if enough clustered
+        failures exist and the domain is not already cooling down/in-flight.
+        """
+        domain = str(domain or "general").strip() or "general"
+        now = time.time()
+        if now - float(self._last_concept_synthesis.get(domain, 0.0) or 0.0) < 600.0:
+            return False
+
+        clusters = self.get_failure_patterns(domain, min_count=min_count, window_seconds=window_seconds)
+        if not clusters:
+            return False
+
+        with self._concept_synthesis_lock:
+            if domain in self._concept_synthesis_inflight:
+                return False
+            self._concept_synthesis_inflight.add(domain)
+
+        def _run() -> None:
+            try:
+                self.synthesize_knowledge_rule(domain, clusters[0])
+            except Exception as exc:
+                log.debug("[ConceptSynth] background synth error for %s: %s", domain, exc)
+            finally:
+                with self._concept_synthesis_lock:
+                    self._concept_synthesis_inflight.discard(domain)
+
+        threading.Thread(
+            target=_run,
+            daemon=True,
+            name=f"ConceptSynth-{domain}",
+        ).start()
+        return True
+
+    @staticmethod
+    def _concept_keywords(text: str) -> List[str]:
+        stop = {
+            "what", "which", "who", "when", "where", "why", "how", "the",
+            "a", "an", "of", "in", "to", "and", "or", "is", "are", "was",
+            "were", "does", "do", "did", "with", "from", "into",
+        }
+        tokens = [
+            token.lower()
+            for token in re.sub(r"[^\w\s]", " ", text or "").split()
+            if len(token) > 3 and token.lower() not in stop
+        ]
+        return list(dict.fromkeys(tokens))[:12]
+
+    def answer_with_concept_hypothesis(
+        self,
+        hypothesis_id: str,
+        question: str,
+        domain: Optional[str] = None,
+    ) -> Optional[dict]:
+        """Apply a pending concept hypothesis to a held-out verification item."""
+        hypothesis = self._concept_hypotheses.get(str(hypothesis_id or ""))
+        if not hypothesis:
+            return None
+        hypothesis_domain = str(hypothesis.get("domain", "general") or "general")
+        if domain and hypothesis_domain not in (str(domain), "general"):
+            return None
+
+        q_keywords = set(self._concept_keywords(question))
+        h_keywords = set(hypothesis.get("keywords", []) or [])
+        overlap = len(q_keywords & h_keywords) / max(len(q_keywords | h_keywords), 1) if (q_keywords or h_keywords) else 0.0
+
+        examples = hypothesis.get("verification_examples", []) or []
+        best_answer = str(hypothesis.get("value", "") or "")
+        best_score = overlap
+        subject_keywords = set(self._concept_keywords(
+            " ".join(
+                [
+                    str(hypothesis.get("subject", "") or ""),
+                    str(hypothesis.get("predicate", "") or ""),
+                    str(hypothesis.get("pattern_key", "") or ""),
+                ]
+            )
+        ))
+        for example in examples:
+            if not isinstance(example, dict):
+                continue
+            ex_question = str(example.get("question", "") or "")
+            ex_answer = str(example.get("answer", "") or "")
+            ex_keywords = set(self._concept_keywords(ex_question))
+            score = len(q_keywords & ex_keywords) / max(len(q_keywords | ex_keywords), 1) if (q_keywords or ex_keywords) else 0.0
+            if score > best_score and ex_answer:
+                best_score = score
+                best_answer = ex_answer
+
+        if best_score < 0.18 and not (q_keywords & subject_keywords):
+            return None
+
+        return {
+            "answer": best_answer or str(hypothesis.get("value", "") or ""),
+            "confidence": max(0.45, min(0.85, float(hypothesis.get("confidence", 0.6) or 0.6) - 0.05)),
+            "rule": str(hypothesis.get("rule", "") or ""),
+            "pattern_key": str(hypothesis.get("pattern_key", "") or ""),
+        }
+
+    def record_concept_hypothesis_verification(self, hypothesis_id: str, success: bool) -> Optional[dict]:
+        hypothesis = self._concept_hypotheses.get(str(hypothesis_id or ""))
+        if not hypothesis:
+            return None
+        hypothesis["verification_attempts"] = int(hypothesis.get("verification_attempts", 0)) + 1
+        self._concept_hypothesis_stats["verification_attempts"] += 1
+        if success:
+            hypothesis["verification_successes"] = int(hypothesis.get("verification_successes", 0)) + 1
+            self._concept_hypothesis_stats["verification_successes"] += 1
+        self.save()
+        return hypothesis
+
+    def promote_concept_hypothesis(self, hypothesis_id: str) -> Optional[dict]:
+        """Promote a verified concept hypothesis into persistent world knowledge."""
+        hypothesis = self._concept_hypotheses.get(str(hypothesis_id or ""))
+        if not hypothesis:
+            return None
+        if hypothesis.get("verified"):
+            return hypothesis
+
+        domain = str(hypothesis.get("domain", "general") or "general")
+        subject = str(hypothesis.get("subject", "") or "").strip()[:80]
+        predicate = str(hypothesis.get("predicate", "") or "").strip()[:60]
+        value = str(hypothesis.get("value", "") or "").strip()[:120]
+        rule_text = str(hypothesis.get("rule", "") or "").strip()[:200]
+        confidence = max(0.4, min(0.98, float(hypothesis.get("confidence", 0.65) or 0.65)))
+
+        if subject and predicate and value:
+            self.update_belief(subject, predicate, value, confidence=confidence, domain=domain)
+        self.add_fact(domain, rule_text or f"{subject} {predicate} {value}", confidence=confidence, source="concept_synthesis_verified")
+
+        try:
+            from sare.memory.concept_hierarchy import get_concept_hierarchy
+
+            parent = str(hypothesis.get("parent", "") or "").strip() or None
+            pattern_key = str(hypothesis.get("pattern_key", "") or "").strip()
+            if pattern_key:
+                get_concept_hierarchy().add_concept(pattern_key, domain, parent=parent)
+                get_concept_hierarchy().save()
+        except Exception as exc:
+            log.debug("[ConceptSynth] hierarchy promotion error: %s", exc)
+
+        hypothesis["verified"] = True
+        hypothesis["verified_at"] = time.time()
+        self._concept_hypothesis_stats["verified"] += 1
+        self.save()
+        return hypothesis
+
+    def concept_hypothesis_summary(self) -> dict:
+        pending = sum(1 for item in self._concept_hypotheses.values() if not item.get("verified"))
+        return {
+            "pending": pending,
+            "verified": int(self._concept_hypothesis_stats.get("verified", 0)),
+            "generated": int(self._concept_hypothesis_stats.get("generated", 0)),
+            "verification_attempts": int(self._concept_hypothesis_stats.get("verification_attempts", 0)),
+            "verification_successes": int(self._concept_hypothesis_stats.get("verification_successes", 0)),
+            "verification_pass_rate": round(
+                int(self._concept_hypothesis_stats.get("verification_successes", 0))
+                / max(int(self._concept_hypothesis_stats.get("verification_attempts", 0)), 1),
+                3,
+            ) if int(self._concept_hypothesis_stats.get("verification_attempts", 0)) else None,
+        }
+
+    def synthesize_knowledge_rule(
+        self,
+        domain: str,
+        failure_cluster: dict,
+    ) -> Optional[dict]:
+        """Ask LLM to synthesize a concept hypothesis plus held-out checks.
+
+        The result is staged as a hypothesis, not immediately treated as learned.
+        It is only promoted after held-out verification succeeds.
+        """
+        # Cooldown check
+        last = self._last_concept_synthesis.get(domain, 0.0)
+        if time.time() - last < 600.0:
+            return None
+        self._last_concept_synthesis[domain] = time.time()
+
+        examples  = failure_cluster.get("examples", [])[:5]
+        expected  = failure_cluster.get("expected_examples", [])[:5]
+        keywords  = failure_cluster.get("keywords", [])
+
+        try:
+            from sare.interface.llm_bridge import _call_llm
+            pairs = "\n".join(
+                f"  Q: {q}\n  A: {a}"
+                for q, a in zip(examples, expected) if a
+            )
+            if not pairs:
+                return None
+            prompt = (
+                f"A learning system repeatedly fails on these {domain} questions:\n"
+                f"{pairs}\n\n"
+                f"Common topic keywords: {', '.join(keywords)}\n\n"
+                "Synthesize ONE concise generalizable knowledge rule that would let "
+                "a system answer questions like these. Also generate 3 held-out "
+                "verification questions with short answers that test transfer.\n"
+                "Return ONLY valid JSON (no markdown):\n"
+                '{"rule": "...", "subject": "...", "predicate": "...", '
+                '"value": "...", "pattern_key": "...", "parent": "...", '
+                '"confidence": 0.0, "verification": [{"question": "...", "answer": "..."}]}\n'
+                "confidence should reflect how certain the rule is (0.5–0.95)."
+            )
+            raw = _call_llm(prompt, max_tokens_override=256)
+            raw = re.sub(r"```[a-z]*", "", raw).strip().strip("`").strip()
+            result = json.loads(raw)
+
+            confidence  = max(0.3, min(0.95, float(result.get("confidence", 0.65))))
+            subject     = str(result.get("subject", "")).strip()[:80]
+            predicate   = str(result.get("predicate", "")).strip()[:60]
+            value       = str(result.get("value", "")).strip()[:120]
+            rule_text   = str(result.get("rule", "")).strip()[:200]
+            pattern_key = str(result.get("pattern_key", "")).strip()[:120]
+            parent = str(result.get("parent", "")).strip()[:80]
+            verification = result.get("verification", [])
+            if not isinstance(verification, list):
+                verification = []
+
+            staged_examples: List[dict] = []
+            for item in verification[:5]:
+                if not isinstance(item, dict):
+                    continue
+                question = str(item.get("question", "")).strip()[:200]
+                answer = str(item.get("answer", "")).strip()[:120]
+                if question and answer:
+                    staged_examples.append({"question": question, "answer": answer})
+            if not staged_examples:
+                staged_examples = [
+                    {"question": q[:200], "answer": a[:120]}
+                    for q, a in zip(examples, expected)
+                    if q and a
+                ][:3]
+
+            if subject and predicate and value:
+                if not pattern_key:
+                    pattern_key = f"{domain}:{hashlib.md5(f'{subject}|{predicate}|{value}'.encode('utf-8')).hexdigest()[:10]}"
+                hypothesis_id = f"{domain}:{hashlib.md5(f'{pattern_key}|{time.time()}'.encode('utf-8')).hexdigest()[:10]}"
+                all_keywords = list(dict.fromkeys(
+                    self._concept_keywords(" ".join([rule_text, subject, predicate, value]))
+                    + list(keywords or [])
+                ))[:12]
+                hypothesis = {
+                    "id": hypothesis_id,
+                    "domain": domain,
+                    "rule": rule_text,
+                    "subject": subject,
+                    "predicate": predicate,
+                    "value": value,
+                    "pattern_key": pattern_key,
+                    "parent": parent,
+                    "confidence": confidence,
+                    "keywords": all_keywords,
+                    "verification_examples": staged_examples,
+                    "cluster": {
+                        "keywords": list(keywords or []),
+                        "count": int(failure_cluster.get("count", 0) or 0),
+                    },
+                    "verified": False,
+                    "verification_attempts": 0,
+                    "verification_successes": 0,
+                    "created_at": time.time(),
+                }
+                self._concept_hypotheses[hypothesis_id] = hypothesis
+                self._concept_hypothesis_stats["generated"] += 1
+                self.save()
+                log.info("[ConceptSynth] %s hypothesis staged: %s (conf=%.2f)",
+                         domain, rule_text[:80], confidence)
+                return {
+                    "hypothesis_id": hypothesis_id,
+                    "rule": rule_text,
+                    "pattern_key": pattern_key,
+                    "parent": parent,
+                    "confidence": confidence,
+                    "verification_examples": staged_examples,
+                }
+        except Exception as exc:
+            log.debug("[ConceptSynth] %s synthesis error: %s", domain, exc)
+        return None
 
     def observe_rule_promotion(self, rule_name: str, domain: str, pattern: str = "",
                                confidence: float = 0.9) -> None:

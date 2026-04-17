@@ -5,7 +5,70 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>SARE-HX · Brain Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+// ── Daemon Control ───────────────────────────────────────────────────────
+async function refreshDaemonStatus() {
+  try {
+    const d = await F('/api/daemon/status');
+    if (d.error) {
+      document.getElementById('daemon-status').textContent = 'Error';
+      document.getElementById('daemon-mode').textContent = 'Error';
+      document.getElementById('daemon-pid').textContent = '-';
+      return;
+    }
+    document.getElementById('daemon-status').textContent = d.running ? (d.turbo ? 'TURBO' : 'RUNNING') : 'STOPPED';
+    document.getElementById('daemon-status').style.color = d.running ? 'var(--accent3)' : 'var(--muted)';
+    document.getElementById('daemon-mode').textContent = d.mode.toUpperCase();
+    document.getElementById('daemon-mode').style.color = d.turbo ? 'var(--accent)' : 'var(--bright)';
+    document.getElementById('daemon-pid').textContent = d.pid || '-';
+  } catch (e) {
+    document.getElementById('daemon-status').textContent = 'Offline';
+    document.getElementById('daemon-mode').textContent = '-';
+    document.getElementById('daemon-pid').textContent = '-';
+  }
+}
+
+async function refreshDaemonActivity() {
+  try {
+    const d = await F('/api/daemon/activity');
+    if (d.error) return;
+    const activity = d.activity || [];
+    document.getElementById('daemon-activity').innerHTML = activity.map(line => 
+      `<div style="margin-bottom:2px;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:2px">${line}</div>`
+    ).join('') || '<div style="color:#666">No recent activity</div>';
+  } catch (e) {
+    // Ignore errors
+  }
+}
+
+async function daemonControl(action, mode) {
+  const resultDiv = document.getElementById('daemon-status');
+  const originalText = resultDiv.textContent;
+  resultDiv.textContent = action + '...';
+  
+  try {
+    const body = {action};
+    if (mode) body.mode = mode;
+    const r = await P('/api/daemon/control', body);
+    if (r.error) {
+      alert('Error: ' + r.error);
+      resultDiv.textContent = originalText;
+      return;
+    }
+    resultDiv.textContent = r.status.toUpperCase();
+    setTimeout(refreshDaemonStatus, 1000);
+  } catch (e) {
+    alert('Error: ' + e.message);
+    resultDiv.textContent = originalText;
+  }
+}
+
+// Start daemon status refresh
+setInterval(refreshDaemonStatus, 3000);
+setInterval(refreshDaemonActivity, 2000);
+refreshDaemonStatus();
+refreshDaemonActivity();
+</script>
   <style>
     :root{
       --bg:#0a0e14;--surface:#111820;--panel:#161e29;--border:#1e2a3a;
@@ -144,17 +207,33 @@
     .tag.new{background:rgba(5,213,158,.15);color:var(--accent3)}
     .tag.bio{background:rgba(167,139,250,.15);color:var(--accent5)}
     .section-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;font-weight:600}
+    .lp-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:10px}
+    .lp-layout{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .lp-row,.lp-domain,.lp-note-item{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 9px}
+    .lp-head{display:flex;justify-content:space-between;gap:8px;margin-bottom:4px;font-size:10px}
+    .lp-name{color:var(--bright);font-weight:600}
+    .lp-meta{color:var(--muted);font-family:'JetBrains Mono',monospace}
+    .lp-track{height:6px;background:rgba(255,255,255,.04);border-radius:999px;overflow:hidden;border:1px solid var(--border)}
+    .lp-fill{height:100%;border-radius:999px}
+    .lp-fill.free{background:var(--accent3)}
+    .lp-fill.retrieval{background:var(--accent)}
+    .lp-fill.hinted{background:var(--accent4)}
+    .lp-fill.template{background:var(--accent2)}
+    .lp-sub{margin-top:4px;font-size:9px;color:var(--muted)}
+    .lp-note{font-size:10px;color:var(--muted);line-height:1.5}
   </style>
 </head>
 <body>
 <div class="header">
-  <h1>🧠 SARE-HX</h1>
-  <span class="badge stage" id="stage">...</span>
-  <span class="badge agi" id="agi-badge">AGI: 98%</span>
-  <span class="badge auto off" id="auto-badge">AUTO: OFF</span>
-  <div class="nav">
-    <a href="/">Classic UI</a>
-    <a href="/dashboard" class="active">Brain</a>
+  <h1>🧠 SARE-HX Dashboard</h1>
+  <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
+    <span class="badge stage" id="stage">...</span>
+    <span class="badge agi" id="agi-badge">AGI: 98%</span>
+    <div class="nav">
+      <a href="/">Classic UI</a>
+      <a href="/dashboard" class="active">Brain</a>
+      <a href="/learning-dashboard">Learning</a>
+    </div>
   </div>
 </div>
 
@@ -215,17 +294,76 @@
     </div>
   </div>
 
-  <!-- ── Brain Status Stats ─────────────────────────────────────────────────── -->
+  <!-- ── System Status ─────────────────────────────────────────────────────── -->
   <div class="card span3">
-    <h2>Brain Status</h2>
+    <h2>System Status</h2>
     <div class="stats">
       <div class="stat c1"><div class="v" id="s-mod">-</div><div class="l">Modules</div></div>
       <div class="stat c2"><div class="v" id="s-sol">0</div><div class="l">Solves</div></div>
-      <div class="stat c3"><div class="v" id="s-rat">0%</div><div class="l">Solve Rate</div></div>
+      <div class="stat c3"><div class="v" id="s-rat">0%</div><div class="l">Rate</div></div>
       <div class="stat c5"><div class="v" id="s-rul">0</div><div class="l">Rules</div></div>
       <div class="stat c2"><div class="v" id="s-cpt">0</div><div class="l">Concepts</div></div>
-      <div class="stat c6"><div class="v" id="s-gpl">0</div><div class="l">Goal Plans</div></div>
+      <div class="stat c6"><div class="v" id="s-gpl">0</div><div class="l">Goals</div></div>
       <div class="stat c1"><div class="v" id="s-up">0s</div><div class="l">Uptime</div></div>
+    </div>
+  </div>
+
+  <div class="card span3">
+    <h2>Learning Progress <span class="tag new">honest</span><span class="cnt" id="lp-total">0 attempts</span></h2>
+    <div class="lp-summary">
+      <div class="stat c1"><div class="v" id="lp-coverage">0%</div><div class="l">Measured</div></div>
+      <div class="stat c2"><div class="v" id="lp-free">-</div><div class="l">Free</div></div>
+      <div class="stat c4"><div class="v" id="lp-template">-</div><div class="l">Template</div></div>
+      <div class="stat c3"><div class="v" id="lp-bench">-</div><div class="l">Bench</div></div>
+      <div class="stat c5"><div class="v" id="lp-mastered">0</div><div class="l">Patterns</div></div>
+      <div class="stat c6"><div class="v" id="lp-cycle">-</div><div class="l">Cycle</div></div>
+    </div>
+    <div class="lp-layout">
+      <div style="grid-column:span 2">
+        <div class="section-label">Solve Mix</div>
+        <div id="lp-mix" class="lp-note">Loading…</div>
+      </div>
+      <div>
+        <div class="section-label">Top Domains</div>
+        <div id="lp-domains" class="lp-note">Loading…</div>
+      </div>
+      <div>
+        <div class="section-label">Interpretation</div>
+        <div id="lp-notes" class="lp-note">Loading…</div>
+      </div>
+      <div>
+        <div class="section-label">Sources</div>
+        <div id="lp-sources" class="lp-note">Loading…</div>
+      </div>
+      <div>
+        <div class="section-label">Backends</div>
+        <div id="lp-backends" class="lp-note">Loading…</div>
+      </div>
+      <div>
+        <div class="section-label">Broker</div>
+        <div id="lp-broker" class="lp-note">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── General Intelligence KB ──────────────────────────────────────────── -->
+  <div class="card span3">
+    <h2>General Intelligence KB <span class="tag new">live</span><span class="cnt" id="gi-answer-to">0 AnswerTo</span></h2>
+    <div class="lp-summary">
+      <div class="stat c1"><div class="v" id="gi-kb-total">0</div><div class="l">KB Facts</div></div>
+      <div class="stat c3"><div class="v" id="gi-kb-hit">-</div><div class="l">Hit Rate</div></div>
+      <div class="stat c2"><div class="v" id="gi-synth">0</div><div class="l">Synthesized</div></div>
+      <div class="stat c6"><div class="v" id="gi-failures">0</div><div class="l">Failures</div></div>
+    </div>
+    <div class="lp-layout">
+      <div style="grid-column:span 3">
+        <div class="section-label">Domain Accuracy (last 50 solves each)</div>
+        <div id="gi-domain-acc" class="lp-note">Loading…</div>
+      </div>
+      <div style="grid-column:span 3">
+        <div class="section-label">Domain Failure Counts</div>
+        <div id="gi-domain-fail" class="lp-note">Loading…</div>
+      </div>
     </div>
   </div>
 
@@ -273,6 +411,29 @@
     <div class="lr" id="lr"></div>
   </div>
 
+
+
+  <!-- ── Daemon Control ─────────────────────────────────────────────────────── -->
+  <div class="card">
+    <h2>🚀 Learn Daemon <span class="cnt" id="daemon-status">Checking...</span></h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+      <div>
+        <div class="section-label">Mode</div>
+        <div id="daemon-mode" style="font-size:14px;font-weight:700">-</div>
+      </div>
+      <div>
+        <div class="section-label">PID</div>
+        <div id="daemon-pid" style="font-size:14px;font-weight:700">-</div>
+      </div>
+    </div>
+    <div class="controls" style="margin-bottom:8px">
+      <button class="btn g" onclick="daemonControl('start', 'normal')">▶ Start Normal</button>
+      <button class="btn p" onclick="daemonControl('start', 'turbo')">⚡ Start Turbo</button>
+      <button class="btn r" onclick="daemonControl('stop')">■ Stop</button>
+    </div>
+    <div class="section-label">Recent Activity</div>
+    <div id="daemon-activity" style="font-size:10px;height:150px;overflow-y:auto;background:#0d1117;color:#c9d1d9;padding:6px;border-radius:6px;font-family:monospace;border:1px solid #30363d;white-space:pre-wrap;display:flex;flex-direction:column-reverse;"></div>
+  </div>
 
 
   <!-- ── Gap 1: Predictive World Loop ────────────────────────────────────────── -->
@@ -510,9 +671,138 @@
     <div class="el" id="ev-list"></div>
   </div>
 
+  <!-- ── AGI metrics panel (genuine learning, orchestrator, novel benchmark) ── -->
+  <div class="card" style="grid-column:span 3;margin-top:10px">
+    <h2>🧠 AGI Learning Metrics</h2>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px">
+      <div class="stat c2"><div class="v" id="agi-schema-hit">—</div><div class="l">Schema Hit Rate (lower=better)</div></div>
+      <div class="stat c3"><div class="v" id="agi-novelty">—</div><div class="l">Curriculum Novelty</div></div>
+      <div class="stat c4"><div class="v" id="agi-active-concepts">—</div><div class="l">Active Concepts / Total</div></div>
+      <div class="stat c5"><div class="v" id="agi-kg-edges">—</div><div class="l">KG Edges</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <div class="section-label">Reasoning Orchestrator</div>
+        <div id="agi-orch" style="font-size:11px;color:var(--text);line-height:1.7">—</div>
+      </div>
+      <div>
+        <div class="section-label">Hierarchical Solver</div>
+        <div id="agi-hier" style="font-size:11px;color:var(--text);line-height:1.7">—</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
+      <div>
+        <div class="section-label">LLM Broker (cache hits / rate limits)</div>
+        <div id="agi-broker" style="font-size:11px;color:var(--text);line-height:1.7">—</div>
+      </div>
+      <div>
+        <div class="section-label">Novel Benchmark (click to run)</div>
+        <button onclick="runNovel()" style="font-size:11px;padding:6px 10px;background:var(--accent3);color:#000;border:none;cursor:pointer;border-radius:3px">Run Novel Benchmark</button>
+        <div id="agi-novel" style="font-size:11px;color:var(--text);line-height:1.5;margin-top:6px">—</div>
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <div class="section-label">Domain Coverage (concepts per domain)</div>
+      <div id="agi-domains" style="font-size:10px;color:var(--text2);line-height:1.6">—</div>
+    </div>
+  </div>
+
 </div>
 
 <script>
+// ── AGI panel refresh ───────────────────────────────────────────────────────
+async function refreshAGI(){
+  try {
+    const [ld, orch, hier, broker, ca, kg] = await Promise.all([
+      fetch('/api/learning/dashboard').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/reasoning/orchestrator').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/reasoning/hierarchical').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/llm/broker').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/concepts/activity').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/knowledge/graph?limit=100').then(r=>r.json()).catch(()=>({})),
+    ]);
+    const gl = (ld && ld.genuine_learning) || {};
+    const hr = typeof gl.schema_hit_rate === 'number' ? gl.schema_hit_rate : 0;
+    const nv = typeof gl.curriculum_novelty_rate === 'number' ? gl.curriculum_novelty_rate : 0;
+    // Color-coded hit rate
+    const hrPct = Math.round(hr * 100);
+    const hrColor = hr < 0.5 ? '#38d' : (hr < 0.8 ? '#e80' : '#e44');
+    document.getElementById('agi-schema-hit').innerHTML = `<span style="color:${hrColor}">${hrPct}%</span>`;
+    document.getElementById('agi-novelty').textContent = Math.round(nv * 100) + '%';
+    document.getElementById('agi-active-concepts').textContent =
+      (ca.active || 0) + ' / ' + (ca.total_concepts || 0);
+    document.getElementById('agi-kg-edges').textContent =
+      (kg.total_edges || 0) + ' edges';
+    // Orchestrator
+    const oel = document.getElementById('agi-orch');
+    if (orch && orch.calls) {
+      oel.innerHTML =
+        `Calls: <b>${orch.calls}</b> &middot; ` +
+        `Solved: <b>${orch.solved}</b> (${Math.round((orch.solve_rate||0)*100)}%)<br/>` +
+        `Retrieve: ${(orch.avg_retrieval_ms||0).toFixed(1)}ms &middot; ` +
+        `Plan: ${(orch.avg_plan_ms||0).toFixed(1)}ms &middot; ` +
+        `Exec: ${(orch.avg_execute_ms||0).toFixed(1)}ms<br/>` +
+        `Strategies: ${Object.entries(orch.by_strategy||{}).map(([k,v])=>k+':'+v).join(', ') || '—'}`;
+    } else {
+      oel.textContent = 'No orchestrator calls yet (daemon uses direct solve path).';
+    }
+    // Hierarchical
+    const hel = document.getElementById('agi-hier');
+    if (hier && hier.attempts) {
+      hel.innerHTML =
+        `Attempts: <b>${hier.attempts}</b> &middot; ` +
+        `Solved: <b>${hier.solved}</b> (${Math.round((hier.solve_rate||0)*100)}%)<br/>` +
+        `Decomposed: ${hier.decomposed} (${Math.round((hier.decomposition_rate||0)*100)}%) &middot; ` +
+        `Avg subgoals: ${(hier.avg_subgoals||0).toFixed(1)}`;
+    } else {
+      hel.textContent = 'No hierarchical solve calls yet.';
+    }
+    // Broker
+    const bel = document.getElementById('agi-broker');
+    if (broker && broker.total_requests) {
+      bel.innerHTML =
+        `Requests: <b>${broker.total_requests}</b> &middot; ` +
+        `Cache hits: <b>${broker.cache_hits}</b> (${Math.round((broker.cache_hit_rate||0)*100)}%)<br/>` +
+        `Rate limited: ${broker.rate_limited} &middot; Errors: ${broker.errors} &middot; ` +
+        `Cache size: ${broker.cache_size}`;
+    } else {
+      bel.textContent = 'LLMBroker not yet used (existing callers still use direct _call_llm).';
+    }
+    // Domain coverage
+    const domEl = document.getElementById('agi-domains');
+    if (ca && ca.domain_coverage) {
+      domEl.innerHTML = Object.entries(ca.domain_coverage)
+        .sort((a,b)=>b[1].total-a[1].total)
+        .map(([d,s]) =>
+          `<span style="display:inline-block;padding:2px 8px;margin:2px;background:var(--bg2);border-radius:3px">` +
+          `${d}: <b>${s.used}/${s.total}</b> used</span>`)
+        .join('');
+    }
+  } catch(e) {
+    console.error('AGI refresh error:', e);
+  }
+}
+
+async function runNovel(){
+  const el = document.getElementById('agi-novel');
+  el.textContent = 'Running — fresh problems generating...';
+  try {
+    const r = await fetch('/api/benchmark/novel?per_domain=2&bypass=1').then(r=>r.json());
+    if (r.error) { el.textContent = 'Error: ' + r.error; return; }
+    const overall = Math.round((r.overall_novel_solve_rate||0)*100);
+    const domains = Object.entries(r.per_domain||{})
+      .map(([d,s])=>`${d}:${s.solved}/${s.total}`).join(' ');
+    el.innerHTML = `<b>${overall}%</b> (${r.total_solved}/${r.total_attempted} solved, cache ${r.cache_bypassed?'bypassed':'on'})<br/>${domains}`;
+  } catch(e) {
+    el.textContent = 'Error: ' + e.message;
+  }
+}
+
+// Auto-refresh every 15s
+setInterval(refreshAGI, 15000);
+setTimeout(refreshAGI, 2000);  // initial load
+
+// ── Main (existing) refresh ──────────────────────────────────────────────────
 // ── Helpers ───────────────────────────────────────────────────────────────────
 async function F(u){try{return await(await fetch(u)).json()}catch(e){return{error:e.message}}}
 async function P(u,b){try{return await(await fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json()}catch(e){return{error:e.message}}}
@@ -780,6 +1070,97 @@ async function planDomain(domain){
 // ── Architecture layer update (perception) ─────────────────────────────────
 function updatePercLayer(){
   document.getElementById('arch-perception').textContent='24/24 NL \u00b7 22/22 robust';
+}
+
+async function refreshLearningReport(){
+  const d=await F('/api/intelligence/learning-progress');
+  if(d.error)return;
+
+  const t=d.totals||{};
+  const lm=d.learning_monitor||{};
+  const gb=d.general_benchmark||{};
+  const rolling=d.rolling_24h||{};
+  const forecast=d.forecast||{};
+  const trainer=d.trainer_summary||{};
+  const debt=d.priority_debt||{};
+
+  document.getElementById('lp-total').textContent=fm(t.attempts||0)+' attempts';
+  document.getElementById('lp-coverage').textContent=pct(t.measured_coverage||0);
+  document.getElementById('lp-free').textContent=t.understanding_share==null?'—':pct(t.understanding_share);
+  document.getElementById('lp-template').textContent=t.memorized_share==null?'—':pct(t.memorized_share);
+  document.getElementById('lp-bench').textContent=gb.total_cases?`${(gb.total_cases||0)-(gb.failed_cases||0)}/${gb.total_cases}`:'—';
+  document.getElementById('lp-mastered').textContent=fm(lm.mastered_patterns||0);
+  document.getElementById('lp-cycle').textContent=lm.latest_cycle?fm(lm.latest_cycle):'—';
+
+  const mix=document.getElementById('lp-mix');
+  const measuredSolved=t.measured_solved||0;
+  if(measuredSolved>0){
+    const rows=[
+      {label:'Free solve', solved:t.understanding_solved||0, share:t.understanding_share||0, cls:'free'},
+      {label:'Retrieval', solved:t.retrieval_solved||0, share:t.retrieval_share||0, cls:'retrieval'},
+      {label:'Hinted', solved:t.hinted_solved||0, share:t.hinted_share||0, cls:'hinted'},
+      {label:'Template replay', solved:t.memorized_solved||0, share:t.memorized_share||0, cls:'template'},
+    ];
+    mix.innerHTML=rows.map(r=>`
+      <div class="lp-row">
+        <div class="lp-head">
+          <span class="lp-name">${r.label}</span>
+          <span class="lp-meta">${r.solved}/${measuredSolved} · ${pct(r.share)}</span>
+        </div>
+        <div class="lp-track"><div class="lp-fill ${r.cls}" style="width:${(r.share||0)>0?Math.max(2,Math.round((r.share||0)*100)):0}%"></div></div>
+      </div>
+    `).join('')+`<div class="lp-sub">${fm(t.legacy_attempts||0)} legacy attempts are still outside measured mode tracking.</div>`;
+  }else{
+    mix.innerHTML=`<div class="lp-note-item lp-note">No mode-labeled solves yet. This means old history is still legacy-only, so the dashboard is waiting on fresh post-change cycles before it can separate understanding from memorization.</div>`;
+  }
+
+  const domains=(d.domains||[])
+    .slice()
+    .sort((a,b)=>((b.measured_attempts||0)-(a.measured_attempts||0))||((b.attempts||0)-(a.attempts||0)))
+    .slice(0,5);
+  document.getElementById('lp-domains').innerHTML=domains.map(dom=>{
+    const modeText=(dom.measured_attempts||0)>0
+      ? `measured ${dom.measured_attempts}/${dom.attempts} · free ${dom.understanding_share==null?'—':pct(dom.understanding_share)} · template ${dom.memorized_share==null?'—':pct(dom.memorized_share)}`
+      : `${dom.attempts||0} attempts · legacy/unclassified`;
+    return `<div class="lp-domain"><div class="lp-head"><span class="lp-name">${dom.domain}</span><span class="lp-meta">${pct(dom.solve_rate||0)}</span></div><div class="lp-note">${modeText}</div></div>`;
+  }).join('')||'<div class="lp-note-item lp-note">No domain data yet.</div>';
+
+  const notes=(d.notes||[]).slice(0,4);
+  const extra=[
+    gb.total_cases?`General benchmark: ${(gb.total_cases||0)-(gb.failed_cases||0)}/${gb.total_cases} passed.`:'',
+    lm.patterns_tracked?`Patterns tracked: ${fm(lm.patterns_tracked||0)}.`:'',
+    rolling.rolling_24h_free_solve_correct!=null?`24h free solve: ${fm(rolling.rolling_24h_free_solve_correct||0)}.`:'',
+    rolling.rolling_24h_template_correct!=null?`24h template: ${fm(rolling.rolling_24h_template_correct||0)}.`:'',
+    rolling.rolling_24h_new_patterns!=null?`24h new patterns: ${fm(rolling.rolling_24h_new_patterns||0)}.`:'',
+    debt.total?`Priority debt: ${fm(debt.total||0)} queued.`:'',
+    trainer.scope?`Trainer stats are ${String(trainer.scope).replaceAll('_',' ')}.`:'',
+    forecast.agi_suite_score_24h!=null?`Forecast (24h): AGI suite ${(forecast.agi_suite_score_24h*100).toFixed(1)}%.`:'',
+  ].filter(Boolean);
+  const allNotes=[...notes,...extra];
+  document.getElementById('lp-notes').innerHTML=allNotes.map(note=>
+    `<div class="lp-note-item lp-note">${note}</div>`
+  ).join('')||'<div class="lp-note-item lp-note">No interpretation available yet.</div>';
+
+  const src=Object.entries(d.source_kind_breakdown||{}).slice(0,5);
+  document.getElementById('lp-sources').innerHTML=src.map(([name,bucket])=>
+    `<div class="lp-note-item lp-note">${name}: ${bucket.attempts||0} attempts · ${pct(bucket.share||0)} · ${pct(bucket.solve_rate||0)}</div>`
+  ).join('')||'<div class="lp-note-item lp-note">No source breakdown yet.</div>';
+
+  const backends=Object.entries(d.backend_breakdown||{}).slice(0,5);
+  document.getElementById('lp-backends').innerHTML=backends.map(([name,bucket])=>
+    `<div class="lp-note-item lp-note">${name}: ${bucket.attempts||0} attempts · ${pct(bucket.share||0)} · ${pct(bucket.solve_rate||0)}</div>`
+  ).join('')||'<div class="lp-note-item lp-note">No backend breakdown yet.</div>';
+
+  const broker=d.curriculum_broker||{};
+  const brokerLines=[
+    broker.available_examples!=null?`available ${fm(broker.available_examples||0)} examples`:'',
+    broker.quarantined!=null?`quarantined ${fm(broker.quarantined||0)}`:'',
+    broker.teacher_examples_generated!=null?`teacher ${fm(broker.teacher_examples_generated||0)} generated`:'',
+    rolling.weak_domain_debt_total!=null?`weak-domain debt ${fm(rolling.weak_domain_debt_total||0)}`:'',
+  ].filter(Boolean);
+  document.getElementById('lp-broker').innerHTML=(brokerLines.map(line=>
+    `<div class="lp-note-item lp-note">${line}</div>`
+  ).join(''))||'<div class="lp-note-item lp-note">No broker snapshot yet.</div>';
 }
 
 // ── AGI Dimensions (static per-session data) ──────────────────────────────
@@ -2344,7 +2725,39 @@ async function csAction(action,n){
   refreshStream();
 }
 
-document.getElementById('expr-input').addEventListener('keydown',e=>{if(e.key==='Enter')brainSolve()});
+async function refreshGeneralIntel(){
+  try{
+    const d=await F('/api/learning/summary');
+    if(d.error)return;
+    document.getElementById('gi-answer-to').textContent=fm(d.answer_to_triples||0)+' AnswerTo';
+    document.getElementById('gi-kb-total').textContent=fm(d.wm_facts_total||0);
+    document.getElementById('gi-kb-hit').textContent=d.kb_hit_rate!=null?pct(d.kb_hit_rate):'—';
+    document.getElementById('gi-synth').textContent=fm(d.synthesis_count||0);
+    const totalFail=Object.values(d.domain_failures||{}).reduce((a,b)=>a+b,0);
+    document.getElementById('gi-failures').textContent=fm(totalFail);
+
+    // Domain accuracy bars
+    const acc=d.domain_accuracy||{};
+    const accEntries=Object.entries(acc).sort((a,b)=>b[1]-a[1]);
+    document.getElementById('gi-domain-acc').innerHTML=accEntries.length
+      ?accEntries.map(([dom,rate])=>`
+        <div class="lp-row">
+          <div class="lp-head"><span class="lp-name">${dom}</span><span class="lp-meta">${pct(rate)}</span></div>
+          <div class="lp-track"><div class="lp-fill ${rate>=0.6?'free':rate>=0.35?'retrieval':'template'}" style="width:${Math.max(2,Math.round(rate*100))}%"></div></div>
+        </div>`).join('')
+      :'<div class="lp-note-item lp-note">No domain accuracy data yet.</div>';
+
+    // Domain failure counts
+    const fail=d.domain_failures||{};
+    const failEntries=Object.entries(fail).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    document.getElementById('gi-domain-fail').innerHTML=failEntries.length
+      ?failEntries.map(([dom,cnt])=>`<div class="lp-note-item lp-note">${dom}: ${fm(cnt)} failures</div>`).join('')
+      :'<div class="lp-note-item lp-note">No failures recorded yet.</div>';
+  }catch(e){}
+}
+
+const _exprInput=document.getElementById('expr-input');
+if(_exprInput)_exprInput.addEventListener('keydown',e=>{if(e.key==='Enter')brainSolve()});
 updatePercLayer();
 renderAGIDims();
 renderGaps();
@@ -2378,6 +2791,7 @@ refreshAttention();
 refreshToM();
 refreshAgentMem();
 refreshStream();
+refreshLearningReport();
 refresh();
 setInterval(refresh,4000);
 setInterval(refreshSelfModel,8000);
@@ -2410,6 +2824,9 @@ setInterval(refreshAttention,5000);
 setInterval(refreshToM,10000);
 setInterval(refreshAgentMem,10000);
 setInterval(refreshStream,4000);
+setInterval(refreshLearningReport,12000);
+setInterval(refreshGeneralIntel,10000);
+refreshGeneralIntel();
 // Multi-agent: refresh agent cards every 2s (SSE handles the live feed)
 setInterval(refreshMultiAgent, 2000);
 // On load, check if agents were already running and reconnect SSE
@@ -2417,6 +2834,69 @@ setInterval(refreshMultiAgent, 2000);
   const d = await F('/api/agents/status');
   if(d && d.running) _maStartSSE();
 })();
+
+// ── Daemon Control ───────────────────────────────────────────────────────
+async function refreshDaemonStatus() {
+  try {
+    const d = await F('/api/daemon/status');
+    if (d.error) {
+      document.getElementById('daemon-status').textContent = 'Error';
+      document.getElementById('daemon-mode').textContent = 'Error';
+      document.getElementById('daemon-pid').textContent = '-';
+      return;
+    }
+    document.getElementById('daemon-status').textContent = d.running ? (d.turbo ? 'TURBO' : 'RUNNING') : 'STOPPED';
+    document.getElementById('daemon-status').style.color = d.running ? 'var(--accent3)' : 'var(--muted)';
+    document.getElementById('daemon-mode').textContent = d.mode.toUpperCase();
+    document.getElementById('daemon-mode').style.color = d.turbo ? 'var(--accent)' : 'var(--bright)';
+    document.getElementById('daemon-pid').textContent = d.pid || '-';
+  } catch (e) {
+    document.getElementById('daemon-status').textContent = 'Offline';
+    document.getElementById('daemon-mode').textContent = '-';
+    document.getElementById('daemon-pid').textContent = '-';
+  }
+}
+
+async function refreshDaemonActivity() {
+  try {
+    const d = await F('/api/daemon/activity');
+    if (d.error) return;
+    const activity = d.activity || [];
+    document.getElementById('daemon-activity').innerHTML = activity.map(line => 
+      `<div style="margin-bottom:2px;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:2px">${line}</div>`
+    ).join('') || '<div style="color:#666">No recent activity</div>';
+  } catch (e) {
+    // Ignore errors
+  }
+}
+
+async function daemonControl(action, mode) {
+  const resultDiv = document.getElementById('daemon-status');
+  const originalText = resultDiv.textContent;
+  resultDiv.textContent = action + '...';
+  
+  try {
+    const body = {action};
+    if (mode) body.mode = mode;
+    const r = await P('/api/daemon/control', body);
+    if (r.error) {
+      alert('Error: ' + r.error);
+      resultDiv.textContent = originalText;
+      return;
+    }
+    resultDiv.textContent = r.status.toUpperCase();
+    setTimeout(refreshDaemonStatus, 1000);
+  } catch (e) {
+    alert('Error: ' + e.message);
+    resultDiv.textContent = originalText;
+  }
+}
+
+// Start daemon status refresh
+setInterval(refreshDaemonStatus, 3000);
+setInterval(refreshDaemonActivity, 2000);
+refreshDaemonStatus();
+refreshDaemonActivity();
 </script>
 </body>
 </html>
