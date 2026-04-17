@@ -167,33 +167,58 @@ class MemoryManager:
             hint.signature = sig
 
             strat = self._strategies.get(sig) or self._semantic_lookup(graph) or self._soft_lookup(sig)
-            # Domain filter: reject cross-domain suggestions. A strategy can be used
-            # only if its stored domain matches (case-insensitive). Strategies that
-            # don't carry a domain label are allowed as a fallback.
+            # Domain filter: reject cross-domain suggestions. Two layers:
+            #   1. If the strategy has a stored domain and it doesn't match, reject.
+            #   2. Even without a stored domain, infer domain from transform names
+            #      using keyword-to-domain patterns. If ANY transform in the sequence
+            #      looks like it belongs to a different domain, reject.
             if strat and domain:
+                d_lower = str(domain).lower()
                 strat_domain = str(strat.get("domain", "")).lower()
-                if strat_domain and strat_domain != str(domain).lower():
-                    # Check transform names for the wrong-domain prefix as a sanity check
-                    tseq = strat.get("transform_sequence", []) or []
-                    _WRONG_DOMAIN_PREFIXES = {
-                        "chemistry": ("chemistry_", "stoich"),
-                        "physics":   ("physics_", "kinematic"),
+                tseq = strat.get("transform_sequence", []) or []
+                rejected = False
+                reason = ""
+
+                # Layer 1: stored domain mismatch
+                if strat_domain and strat_domain != d_lower:
+                    rejected = True
+                    reason = f"stored_domain={strat_domain}"
+
+                # Layer 2: infer domain from transform names
+                if not rejected and tseq:
+                    _DOMAIN_SIGNALS = {
+                        "chemistry":  ("chemistry_", "stoich", "mole_", "_reaction"),
+                        "physics":    ("physics_", "kinematic", "newton", "force_", "mass_"),
+                        "logic":      ("bool_", "_and_", "_or_", "or_false",
+                                       "or_true", "and_false", "and_true",
+                                       "double_negation", "_implies", "conjunction",
+                                       "disjunction"),
+                        "set_theory": ("set_", "_set_union", "_set_inter", "set_idem",
+                                       "union_", "intersect_", "_demorgan"),
+                        "trigonometry": ("trig_", "sin_", "cos_", "tan_", "pythagorean"),
+                        "calculus":   ("deriv_", "integ_", "_derivative", "_integral",
+                                       "power_rule", "chain_rule"),
                     }
-                    rejected = False
-                    for d_own, prefs in _WRONG_DOMAIN_PREFIXES.items():
-                        if str(domain).lower() != d_own and any(
-                            any(t.lower().startswith(p) for p in prefs)
-                            for t in tseq
-                        ):
-                            rejected = True
-                            break
-                    if rejected:
-                        log.debug(
-                            "Memory warmstart SKIPPED (domain mismatch): "
-                            "problem_domain=%s strategy_domain=%s transforms=%s",
-                            domain, strat_domain, tseq[:3],
-                        )
-                        strat = None
+                    wrong_foreign: list = []
+                    for foreign_dom, sigs in _DOMAIN_SIGNALS.items():
+                        if foreign_dom == d_lower:
+                            continue
+                        for t in tseq:
+                            tl = t.lower()
+                            if any(s in tl for s in sigs):
+                                wrong_foreign.append(f"{t}→{foreign_dom}")
+                                break
+                    if wrong_foreign:
+                        rejected = True
+                        reason = f"transforms_from_{wrong_foreign[:2]}"
+
+                if rejected:
+                    log.debug(
+                        "Memory warmstart SKIPPED (domain mismatch): "
+                        "problem_domain=%s %s transforms=%s",
+                        domain, reason, tseq[:3],
+                    )
+                    strat = None
             if strat:
                 hint.found = True
                 hint.transform_sequence = strat.get("transform_sequence", [])
