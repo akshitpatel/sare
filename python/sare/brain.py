@@ -3387,7 +3387,7 @@ class Brain:
         strategy_hint = None
         if self.memory_manager:
             try:
-                strategy_hint = self.memory_manager.before_solve(graph)
+                strategy_hint = self.memory_manager.before_solve(graph, detected_domain or domain)
             except Exception as exc:
                 self._record_runtime_error("memory_manager.before_solve", exc, "solve")
 

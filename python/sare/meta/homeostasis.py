@@ -25,6 +25,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import shutil
+import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -133,6 +136,13 @@ class HomeostaticSystem:
         }
         self._last_tick: float = time.time()
         self._tick_count: int = 0
+        self._health: Dict[str, object] = {
+            "loaded": False,
+            "recovered": False,
+            "reseeded": False,
+            "corrupt_backup_written": False,
+            "last_error": None,
+        }
 
         self.load()
 
@@ -335,6 +345,14 @@ class HomeostaticSystem:
 
     # ── Persistence ────────────────────────────────────────────────────────────
 
+    def _recover_json_payload(self, raw_text: str) -> Optional[dict]:
+        decoder = json.JSONDecoder()
+        try:
+            payload, _ = decoder.raw_decode(raw_text.lstrip())
+        except json.JSONDecodeError:
+            return None
+        return payload if isinstance(payload, dict) else None
+
     def save(self):
         try:
             data = {
@@ -343,21 +361,68 @@ class HomeostaticSystem:
                 "tick_count": self._tick_count,
                 "saved_at": time.time(),
             }
-            with open(self._path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
+            fd, tmp_name = tempfile.mkstemp(
+                prefix=f"{self._path.name}.",
+                suffix=".tmp",
+                dir=str(self._path.parent),
+            )
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(tmp_name, self._path)
+            finally:
+                if os.path.exists(tmp_name):
+                    try:
+                        os.remove(tmp_name)
+                    except OSError:
+                        pass
+            self._health["last_error"] = None
         except OSError as e:
+            self._health["last_error"] = str(e)
             log.warning("HomeostaticSystem save error: %s", e)
 
     def load(self):
         if not self._path.exists():
             return
         try:
-            with open(self._path, encoding="utf-8") as f:
-                data = json.load(f)
+            data = json.loads(self._path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            try:
+                raw_text = self._path.read_text(encoding="utf-8", errors="ignore")
+                data = self._recover_json_payload(raw_text)
+                if data is None:
+                    raise
+                backup = self._path.with_suffix(self._path.suffix + ".corrupt")
+                if not backup.exists():
+                    shutil.copy2(self._path, backup)
+                    self._health["corrupt_backup_written"] = True
+                    log.warning("HomeostaticSystem recovered partial JSON from %s; original backed up to %s", self._path, backup)
+                else:
+                    log.warning("HomeostaticSystem recovered partial JSON from %s", self._path)
+                self._health["recovered"] = True
+            except Exception as e:
+                self._health["last_error"] = str(e)
+                log.warning("HomeostaticSystem load error: %s", e)
+                return
+        except Exception as e:
+            self._health["last_error"] = str(e)
+            log.warning("HomeostaticSystem load error: %s", e)
+            return
 
             # Support legacy homeostasis.json format (has "value" instead of "level")
+        try:
             drives_data = data.get("drives", {})
+            # Only load drives that exist in _DEFAULT_DRIVES — historical saves
+            # contain legacy drives (`competence`, `focus`) that no code path
+            # ever calls satisfy() on, so they stick at level=1.0 forever.
+            _KNOWN_DRIVES = set(_DEFAULT_DRIVES.keys())
+            _filtered_out = []
             for name, dd in drives_data.items():
+                if name not in _KNOWN_DRIVES:
+                    _filtered_out.append(name)
+                    continue
                 if isinstance(dd, dict):
                     # Remap legacy "value" → "level"
                     if "level" not in dd and "value" in dd:
@@ -367,17 +432,22 @@ class HomeostaticSystem:
                     # Remap legacy "decay_rate" (negative meant building up → flip sign)
                     if dd.get("decay_rate", 0) < 0:
                         dd["decay_rate"] = abs(dd["decay_rate"])
-                    if name in self.drives:
-                        self.drives[name] = Drive.from_dict(dd)
-                    else:
-                        self.drives[name] = Drive.from_dict(dd)
+                    self.drives[name] = Drive.from_dict(dd)
+            if _filtered_out:
+                log.info("HomeostaticSystem: dropped legacy drives (no satisfy handler): %s",
+                         _filtered_out)
 
             self._last_tick = data.get("last_tick", time.time())
             self._tick_count = data.get("tick_count", 0)
-
+            self._health["loaded"] = True
+            self._health["last_error"] = None
             log.info("HomeostaticSystem loaded: %d drives", len(self.drives))
         except Exception as e:
+            self._health["last_error"] = str(e)
             log.warning("HomeostaticSystem load error: %s", e)
+
+    def health(self) -> dict:
+        return dict(self._health)
 
 
 # ── Singleton ──────────────────────────────────────────────────────────────────

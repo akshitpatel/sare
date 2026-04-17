@@ -456,11 +456,8 @@ class CurriculumGenerator:
 
         # ── GoalSetter weight boost: active goal domains get 1.5× weight ─
         try:
-            from sare.meta.goal_setter import GoalSetter
-            _gs = GoalSetter.__new__(GoalSetter)
-            _gs._goals = {}
-            _gs._goal_count = 0
-            _gs.load()
+            from sare.meta.goal_setter import get_goal_setter
+            _gs = get_goal_setter()
             _goal_domains = _gs.active_goal_domains()
             if _goal_domains and _domain_weights:
                 for _gd in _goal_domains:
@@ -633,12 +630,16 @@ class CurriculumGenerator:
             from sare.engine import Graph as PyGraph
             cb = get_commonsense_base()
             # Build 2-hop chains: A→rel1→B→rel2→C → "does A rel2 C?"
+            # Snapshot to avoid "dictionary changed size during iteration" when
+            # LLM teacher injects new facts concurrently in another thread.
+            _fwd_snapshot = list(cb._forward.items())
+            _fwd_copy = {k: list(v) for k, v in _fwd_snapshot}
             chain_pairs = []
-            for subj, triples in cb._forward.items():
+            for subj, triples in _fwd_snapshot:
                 for rel1, mid in triples:
                     if rel1 not in ("Causes", "Enables", "HasProperty"):
                         continue
-                    for rel2, obj in cb._forward.get(mid, []):
+                    for rel2, obj in _fwd_copy.get(mid, []):
                         if rel2 in ("Causes", "HasProperty") and subj != obj:
                             chain_pairs.append((subj, rel1, mid, rel2, obj))
             random.shuffle(chain_pairs)
@@ -798,11 +799,8 @@ class CurriculumGenerator:
             pass
         # GoalSetter active goals: boost domains that the system has an explicit goal for
         try:
-            from sare.meta.goal_setter import GoalSetter
-            gs = GoalSetter.__new__(GoalSetter)
-            gs._goals = {}
-            gs._goal_count = 0
-            gs.load()
+            from sare.meta.goal_setter import get_goal_setter
+            gs = get_goal_setter()
             goal_domains = gs.active_goal_domains()
             # Insert goal-targeted domains at the front (highest priority) without duplicates
             for gd in reversed(goal_domains):

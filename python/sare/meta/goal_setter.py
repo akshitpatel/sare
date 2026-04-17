@@ -286,8 +286,8 @@ class GoalSetter:
                 except Exception as _ge:
                     logger.debug("[GoalSetter] Skipping malformed goal %s: %s", k, _ge)
                     skipped += 1
-            logger.info("[GoalSetter] Restored %d goals (%d expired/skipped) from %s",
-                        len(self._goals), skipped, path)
+            logger.debug("[GoalSetter] Restored %d goals (%d expired/skipped) from %s",
+                         len(self._goals), skipped, path)
         except Exception as e:
             logger.warning("[GoalSetter] Load failed: %s", e)
 
@@ -298,3 +298,29 @@ class GoalSetter:
             if g.status == GoalStatus.ACTIVE and g.domain:
                 domains.append(g.domain)
         return domains
+
+
+# Singleton + throttled load — the curriculum generator was constructing a
+# fresh GoalSetter per problem and calling load() which flooded logs with
+# "Restored 0 goals" every ~30ms. Provide a singleton with a time-based reload.
+_GS_SINGLETON: Optional["GoalSetter"] = None
+_GS_LAST_LOAD: float = 0.0
+_GS_RELOAD_INTERVAL_S: float = 30.0
+
+
+def get_goal_setter(force_reload: bool = False) -> "GoalSetter":
+    """Return the process-wide GoalSetter singleton. Reloads from disk at
+    most once every 30s to avoid the observed log-flood from hot callers."""
+    global _GS_SINGLETON, _GS_LAST_LOAD
+    import time as _t
+    now = _t.time()
+    if _GS_SINGLETON is None:
+        _GS_SINGLETON = GoalSetter()
+        _GS_LAST_LOAD = now
+    elif force_reload or (now - _GS_LAST_LOAD) > _GS_RELOAD_INTERVAL_S:
+        try:
+            _GS_SINGLETON.load()
+            _GS_LAST_LOAD = now
+        except Exception:
+            pass
+    return _GS_SINGLETON

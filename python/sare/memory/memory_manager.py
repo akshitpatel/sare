@@ -18,7 +18,9 @@ from __future__ import annotations
 import json
 import logging
 import os
+import shutil
 import sys
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
@@ -145,12 +147,17 @@ class MemoryManager:
             log.warning("VectorDB semantic lookup failed: %s", e)
         return None
 
-    def before_solve(self, graph) -> StrategyHint:
+    def before_solve(self, graph, domain: Optional[str] = None) -> StrategyHint:
         """
         Compute signature for `graph`, look up best past strategy.
         First tries exact structural match, then falls back to Semantic Vector ANN search.
         Returns a StrategyHint with the recommended transform sequence.
         Tracks warmstart hit rate via _warmstart_hits / _warmstart_total.
+
+        domain: if provided, only return strategies whose stored domain matches
+        (or is compatible). This prevents cross-domain contamination — e.g.
+        `chemistry_stoich_reaction` being suggested for logic problems because
+        their generic signature (`operator:1_v`) matched.
         """
         hint = StrategyHint()
         self._warmstart_total += 1
@@ -160,6 +167,33 @@ class MemoryManager:
             hint.signature = sig
 
             strat = self._strategies.get(sig) or self._semantic_lookup(graph) or self._soft_lookup(sig)
+            # Domain filter: reject cross-domain suggestions. A strategy can be used
+            # only if its stored domain matches (case-insensitive). Strategies that
+            # don't carry a domain label are allowed as a fallback.
+            if strat and domain:
+                strat_domain = str(strat.get("domain", "")).lower()
+                if strat_domain and strat_domain != str(domain).lower():
+                    # Check transform names for the wrong-domain prefix as a sanity check
+                    tseq = strat.get("transform_sequence", []) or []
+                    _WRONG_DOMAIN_PREFIXES = {
+                        "chemistry": ("chemistry_", "stoich"),
+                        "physics":   ("physics_", "kinematic"),
+                    }
+                    rejected = False
+                    for d_own, prefs in _WRONG_DOMAIN_PREFIXES.items():
+                        if str(domain).lower() != d_own and any(
+                            any(t.lower().startswith(p) for p in prefs)
+                            for t in tseq
+                        ):
+                            rejected = True
+                            break
+                    if rejected:
+                        log.debug(
+                            "Memory warmstart SKIPPED (domain mismatch): "
+                            "problem_domain=%s strategy_domain=%s transforms=%s",
+                            domain, strat_domain, tseq[:3],
+                        )
+                        strat = None
             if strat:
                 hint.found = True
                 hint.transform_sequence = strat.get("transform_sequence", [])
@@ -240,6 +274,7 @@ class MemoryManager:
                 "success_rate": 1.0,
                 "attempts": 1,
                 "usage_count": 1,
+                "domain": getattr(episode, "domain", "general") or "general",
             }
             # Epic 12: Insert into VectorDB for semantic lookup
             if self._vector_db and GraphEmbedder and graph and episode.problem_id not in self._payload_to_strategy:
@@ -272,15 +307,45 @@ class MemoryManager:
     def save(self):
         """Flush all in-memory data to disk."""
         try:
-            with open(self._episodes_path, "w", encoding="utf-8") as f:
-                for ep in self._episodes:
-                    f.write(json.dumps(ep.to_dict()) + "\n")
+            fd, tmp_name = tempfile.mkstemp(
+                prefix=f"{self._episodes_path.name}.",
+                suffix=".tmp",
+                dir=str(self._episodes_path.parent),
+            )
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    for ep in self._episodes:
+                        f.write(json.dumps(ep.to_dict()) + "\n")
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(tmp_name, self._episodes_path)
+            finally:
+                if os.path.exists(tmp_name):
+                    try:
+                        os.remove(tmp_name)
+                    except OSError:
+                        pass
         except OSError as e:
             log.warning("Failed to save episodes: %s", e)
 
         try:
-            with open(self._strategies_path, "w", encoding="utf-8") as f:
-                json.dump(self._strategies, f, indent=2)
+            fd, tmp_name = tempfile.mkstemp(
+                prefix=f"{self._strategies_path.name}.",
+                suffix=".tmp",
+                dir=str(self._strategies_path.parent),
+            )
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    json.dump(self._strategies, f, indent=2)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(tmp_name, self._strategies_path)
+            finally:
+                if os.path.exists(tmp_name):
+                    try:
+                        os.remove(tmp_name)
+                    except OSError:
+                        pass
         except OSError as e:
             log.warning("Failed to save strategies: %s", e)
 
@@ -302,12 +367,30 @@ class MemoryManager:
         if self._episodes_path.exists():
             try:
                 with open(self._episodes_path, encoding="utf-8") as f:
-                    for line in f:
+                    recovered_lines = 0
+                    bad_lines: List[int] = []
+                    for line_no, line in enumerate(f, start=1):
                         line = line.strip()
                         if line:
-                            self._episodes.append(
-                                SolveEpisode.from_dict(json.loads(line))
-                            )
+                            try:
+                                self._episodes.append(
+                                    SolveEpisode.from_dict(json.loads(line))
+                                )
+                            except Exception:
+                                recovered_lines += 1
+                                bad_lines.append(line_no)
+                    if recovered_lines:
+                        backup = self._episodes_path.with_suffix(self._episodes_path.suffix + ".corrupt")
+                        try:
+                            shutil.copyfile(self._episodes_path, backup)
+                        except Exception:
+                            pass
+                        self._rewrite_clean_episodes()
+                        log.warning(
+                            "Recovered episodes.jsonl by skipping %d corrupt lines (first bad line %s)",
+                            recovered_lines,
+                            bad_lines[0] if bad_lines else "?",
+                        )
                 log.info("Loaded %d episodes from disk", len(self._episodes))
             except Exception as e:
                 log.warning("Episode load error: %s", e)
@@ -328,6 +411,16 @@ class MemoryManager:
                 log.info("Loaded %d vectors from VectorDB", self._vector_db.size())
             except Exception as e:
                 log.warning("VectorDB load error: %s", e)
+
+    def _rewrite_clean_episodes(self) -> None:
+        try:
+            tmp = self._episodes_path.with_name(f"{self._episodes_path.stem}.{os.getpid()}.clean.tmp")
+            with open(tmp, "w", encoding="utf-8") as f:
+                for ep in self._episodes:
+                    f.write(json.dumps(ep.to_dict()) + "\n")
+            tmp.replace(self._episodes_path)
+        except Exception as exc:
+            log.warning("Failed to rewrite clean episodes: %s", exc)
 
     # ── Soft matching (Python fallback) ─────────────────────────────────────────────
 
@@ -422,6 +515,17 @@ class MemoryManager:
                 )
         except Exception as e:
             log.debug("Auto-training trigger failed: %s", e)
+
+
+_MM_SINGLETON: Optional["MemoryManager"] = None
+
+
+def get_memory_manager() -> "MemoryManager":
+    """Return the process-wide MemoryManager singleton."""
+    global _MM_SINGLETON
+    if _MM_SINGLETON is None:
+        _MM_SINGLETON = MemoryManager()
+    return _MM_SINGLETON
 
 
 # ── Standalone self-test ───────────────────────────────────────────────────────
